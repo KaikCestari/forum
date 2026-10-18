@@ -463,6 +463,35 @@ code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size:
 .llama-card.is-off i { background: var(--sev-critico); }
 .llama-card span { grid-column: 2; color: var(--ink-2); }
 .llama-card code { white-space: nowrap; }
+.image-review { display: grid; gap: 14px; padding: 18px; background: var(--ink); color: var(--ground); }
+.image-review-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.image-review .eyebrow { margin: 0 0 4px; color: var(--water); font-size: 0.8125rem; }
+.image-review h2 { color: var(--ground); font-size: 1.15rem; }
+.image-review-mark { color: var(--water); font-size: 1.6rem; line-height: 1; }
+.image-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.image-flow li { display: grid; gap: 5px; color: color-mix(in oklab, var(--ground) 48%, transparent); font-size: 0.75rem; line-height: 1.1; }
+.image-flow li span { display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid color-mix(in oklab, var(--ground) 30%, transparent); border-radius: 50%; font-size: 0.6875rem; }
+.image-flow li.is-current, .image-flow li.is-done { color: var(--ground); }
+.image-flow li.is-current span { border-color: var(--water); color: var(--water); }
+.image-flow li.is-done span { border-color: var(--iqa-boa); background: var(--iqa-boa); color: #fff; }
+.image-dropzone { display: grid; gap: 5px; padding: 22px 14px; border: 1px dashed var(--water); color: var(--ground); cursor: pointer; }
+.image-dropzone:hover { background: color-mix(in oklab, var(--water) 12%, transparent); }
+.image-dropzone span, .image-review-copy span, .review-result span { color: color-mix(in oklab, var(--ground) 68%, transparent); font-size: 0.875rem; }
+.image-dropzone input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.image-review-preview { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--tone-2); }
+.image-review-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.review-badge { position: absolute; left: 10px; bottom: 10px; padding: 5px 8px; background: var(--ground); color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
+.review-badge.is-analyzing { color: var(--accent); }
+.review-badge.is-accepted { color: var(--good-ink); }
+.review-badge.is-rejected { color: var(--bad-ink); }
+.image-review-copy { display: grid; gap: 3px; }
+.review-result { display: flex; align-items: baseline; justify-content: space-between; padding-top: 10px; border-top: 1px solid color-mix(in oklab, var(--ground) 22%, transparent); }
+.review-result strong { font-size: 1.35rem; color: var(--water); }
+.review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.review-actions .button { padding: 10px 14px; }
+.review-actions .text-button { padding: 8px 0; color: var(--ground); }
+.review-confirm { padding-top: 10px; border-top: 1px solid color-mix(in oklab, var(--ground) 22%, transparent); color: var(--water); font-size: 0.9375rem; }
+.review-confirm.is-muted { color: color-mix(in oklab, var(--ground) 68%, transparent); }
 .ai-suggest { display: flex; flex-wrap: wrap; gap: 8px; }
 .ai-suggest button {
   border: 0; padding: 9px 13px; background: var(--tone-1); color: var(--ink); text-align: left; cursor: pointer;

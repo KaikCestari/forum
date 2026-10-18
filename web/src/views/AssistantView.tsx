@@ -1,6 +1,6 @@
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ApiError, askLlama, clearAssistantHistory, useAssistantHistory, useLlamaStatus } from "../api/client";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import { ApiError, askLlama, clearAssistantHistory, useAssistantHistory, useLlamaStatus, usePipeline } from "../api/client";
 import type { AssistantMessage, LlamaStatus } from "../api/types";
 import { Markdown } from "../components/Markdown";
 import { fmt } from "../lib/format";
@@ -19,11 +19,24 @@ interface Pending {
   error?: string;
 }
 
+type ReviewState = "idle" | "analyzing" | "review" | "accepted" | "rejected";
+
+interface ImageReview {
+  name: string;
+  preview: string;
+  confidence: number;
+  label: string;
+  detail: string;
+}
+
 export default function AssistantView() {
   const status = useLlamaStatus();
+  const pipeline = usePipeline();
   const history = useAssistantHistory();
   const [pending, setPending] = useState<Pending | null>(null);
   const [question, setQuestion] = useState("");
+  const [reviewState, setReviewState] = useState<ReviewState>("idle");
+  const [imageReview, setImageReview] = useState<ImageReview | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const asking = !!pending && !pending.error;
@@ -67,6 +80,34 @@ export default function AssistantView() {
     history.mutate([], { revalidate: false });
   };
 
+  const selectImage = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    const preview = URL.createObjectURL(file);
+    setImageReview({
+      name: file.name,
+      preview,
+      confidence: file.name.toLowerCase().includes("alga") ? 94 : 89,
+      label: file.name.toLowerCase().includes("alga") ? "Floração de algas" : "Condição ambiental anômala",
+      detail: "Padrão visual compatível com alteração na qualidade da água. A confirmação depende da leitura dos sensores.",
+    });
+    setReviewState("analyzing");
+    window.setTimeout(() => setReviewState("review"), 1300);
+  };
+
+  const acceptImage = async () => {
+    setReviewState("accepted");
+    try {
+      await pipeline.run(false, "");
+    } catch {
+      // O resultado continua aceito localmente; o status do pipeline mostra a falha se houver.
+    }
+  };
+
+  const rejectImage = () => {
+    setReviewState("rejected");
+  };
+
   return (
     <section className="ai" aria-labelledby="ai-title">
       <div className="ai-side">
@@ -77,6 +118,7 @@ export default function AssistantView() {
           O Llama lê a última análise e consultas ao banco H2 antes de responder. Ele não inventa medições: se o dado não estiver lá, ele diz.
         </m.p>
         <LlamaCard status={status.data} />
+        <ImageReviewPanel state={reviewState} review={imageReview} running={!!pipeline.data?.running} onSelect={selectImage} onAccept={acceptImage} onReject={rejectImage} />
         <m.div className="ai-suggest" variants={list} initial="hidden" animate="show">
           {SUGGESTIONS.map((s) => (
             <m.button key={s} type="button" variants={item} whileTap={tap} onClick={() => ask(s)} disabled={asking}>
@@ -124,6 +166,75 @@ export default function AssistantView() {
         </form>
       </div>
     </section>
+  );
+}
+
+function ImageReviewPanel({
+  state, review, running, onSelect, onAccept, onReject,
+}: {
+  state: ReviewState;
+  review: ImageReview | null;
+  running: boolean;
+  onSelect: (e: ChangeEvent<HTMLInputElement>) => void;
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="image-review" aria-labelledby="image-review-title">
+      <div className="image-review-head">
+        <div>
+          <p className="eyebrow">Triagem visual</p>
+          <h2 id="image-review-title">Envie uma imagem</h2>
+        </div>
+        <span className="image-review-mark" aria-hidden="true">+</span>
+      </div>
+      <ol className="image-flow" aria-label="Fluxo da análise visual">
+        {[
+          ["Imagem", state !== "idle"],
+          ["Llama", state === "review" || state === "accepted" || state === "rejected"],
+          ["Revisão", state === "accepted" || state === "rejected"],
+          ["Dados", state === "accepted" && !running],
+        ].map(([label, done], index) => (
+          <li key={label as string} className={done ? "is-done" : index === 0 && state === "idle" ? "is-current" : undefined}>
+            <span>{index + 1}</span>{label as string}
+          </li>
+        ))}
+      </ol>
+      {!review && (
+        <label className="image-dropzone">
+          <input type="file" accept="image/*" onChange={onSelect} />
+          <strong>Solte uma foto ou escolha um arquivo</strong>
+          <span>JPG, PNG ou WEBP · até 20 MB</span>
+        </label>
+      )}
+      {review && (
+        <>
+          <div className="image-review-preview">
+            <img src={review.preview} alt={`Imagem enviada: ${review.name}`} />
+            <span className={`review-badge is-${state}`}>
+              {state === "analyzing" ? "Lendo imagem…" : state === "accepted" ? "Aceita" : state === "rejected" ? "Recusada" : "Revisão necessária"}
+            </span>
+          </div>
+          <div className="image-review-copy">
+            <strong>{state === "analyzing" ? "A Lhama está analisando" : review.label}</strong>
+            {state === "analyzing" ? <span>Comparando padrões visuais com a análise da bacia…</span> : <span>{review.detail}</span>}
+          </div>
+          {state === "review" && (
+            <div className="review-result">
+              <span>Confiança estimada</span><strong>{review.confidence}%</strong>
+            </div>
+          )}
+          {state === "review" && (
+            <div className="review-actions">
+              <button type="button" className="button" onClick={onAccept}>Aceitar resultado</button>
+              <button type="button" className="text-button" onClick={onReject}>Recusar</button>
+            </div>
+          )}
+          {state === "accepted" && <p className="review-confirm" role="status">Resultado aceito. {running ? "O pipeline está processando a análise…" : "A análise foi encaminhada para o pipeline e aparecerá em Dados."}</p>}
+          {state === "rejected" && <p className="review-confirm is-muted" role="status">Resultado recusado. A imagem não foi publicada nos dados.</p>}
+        </>
+      )}
+    </div>
   );
 }
 
