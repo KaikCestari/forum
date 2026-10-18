@@ -378,7 +378,7 @@ main { padding: 24px var(--margin) 0; max-width: 1480px; margin: 0 auto; }
 
 #view-pipeline > h1 { padding-top: clamp(24px, 4vw, 56px); }
 #view-pipeline > .lede { margin-top: 16px; max-width: 48ch; }
-.flow { list-style: none; margin: clamp(40px, 6vw, 80px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.flow { list-style: none; margin: clamp(40px, 6vw, 80px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; }
 .stage { position: relative; padding: 24px clamp(14px, 2vw, 28px) 28px; background: var(--tone-1); }
 .stage + .stage { margin-left: 28px; }
 .stage .lang { font-size: var(--step-2); font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
@@ -423,6 +423,107 @@ main { padding: 24px var(--margin) 0; max-width: 1480px; margin: 0 auto; }
 .numbers dd { order: -1; }
 .numbers dt { color: var(--ink-2); }
 .numbers dd { margin: 0; font-size: var(--step-2); font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* ---------- vista dados (H2) ---------- */
+
+.eyebrow { padding-top: clamp(24px, 4vw, 56px); margin-bottom: 12px; color: var(--accent); font-weight: 600; }
+#view-dados > .lede { margin-top: 16px; max-width: 56ch; }
+code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.875em; padding: 1px 4px; background: var(--tone-2); }
+
+.import-panel {
+  display: grid; grid-template-columns: 5fr 6fr; gap: 24px clamp(24px, 4vw, 64px); align-items: start;
+  margin-top: calc(var(--gap-section) * 0.5); padding: clamp(20px, 3vw, 40px); background: var(--tone-1);
+}
+.import-panel p { color: var(--ink-2); margin-top: 8px; max-width: 60ch; }
+.import-panel .format { font-size: 0.95rem; line-height: 1.6; }
+.import-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+.file-field { display: grid; gap: 6px; min-width: 0; }
+.file-field span { font-weight: 600; }
+.file-field em { display: block; font-style: normal; font-weight: 400; font-size: 0.875rem; color: var(--ink-2); }
+.file-field input { width: 100%; min-width: 0; padding: 10px 12px; border: 0; background: var(--ground); }
+.file-field input::file-selector-button {
+  font: inherit; font-weight: 600; margin-right: 12px; padding: 6px 12px; border: 0; cursor: pointer;
+  background: var(--ink); color: var(--ground);
+}
+.import-form .button { justify-self: start; }
+.form-msg { grid-column: 1 / -1; color: var(--ink-2); }
+.form-msg:empty { display: none; }
+.form-msg.error { color: var(--bad-ink); font-weight: 600; }
+.form-msg ul { margin: 6px 0 0; padding-left: 20px; }
+
+.db-block { margin-top: var(--gap-section); }
+.db-split { display: grid; grid-template-columns: 5fr 7fr; gap: clamp(24px, 4vw, 64px); }
+.db-split h2 { margin-bottom: 16px; }
+
+.heat-wrap { overflow-x: auto; }
+.heat { border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+.heat th { font-weight: 500; color: var(--ink-2); font-size: 0.875rem; padding: 4px 8px; white-space: nowrap; }
+.heat thead th { text-align: center; }
+.heat tbody th { text-align: left; color: var(--ink); font-weight: 600; font-size: 1rem; padding-right: 16px; }
+.heat td {
+  min-width: 46px; padding: 9px 4px; text-align: center; font-size: 0.875rem; font-weight: 600;
+  background: color-mix(in oklab, var(--c) 78%, var(--ground)); color: #fff;
+}
+.heat td.none { background: var(--tone-1); color: var(--muted); font-weight: 400; }
+
+.db-stations, .runs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.db-stations li { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; padding: 12px 14px; background: var(--tone-1); }
+.db-stations .s-name { font-weight: 600; }
+.db-stations .s-count { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.db-stations .s-meta { grid-column: 1 / -1; color: var(--ink-2); font-size: 0.95rem; }
+.runs li {
+  display: grid; grid-template-columns: 44px 1fr auto; gap: 2px 16px; padding: 12px 14px; background: var(--tone-1);
+  align-items: baseline;
+}
+.runs .r-id { color: var(--muted); font-variant-numeric: tabular-nums; }
+.runs .r-name { font-weight: 600; }
+.runs .r-src { font-size: 0.875rem; font-weight: 600; color: var(--accent); }
+.runs .r-meta { grid-column: 2 / -1; color: var(--ink-2); font-size: 0.95rem; }
+.runs li.current { box-shadow: inset 4px 0 0 var(--accent); }
+
+/* ---------- vista assistente (Llama) ---------- */
+
+.ai { display: grid; grid-template-columns: 4fr 7fr; gap: clamp(24px, 4vw, 72px); padding-top: clamp(24px, 4vw, 56px); align-items: start; }
+.ai-side { position: sticky; top: 96px; display: grid; gap: 20px; }
+.ai-side .lede { font-size: 1.1rem; max-width: 40ch; color: var(--ink-2); }
+.ai-status { display: grid; grid-template-columns: 12px 1fr; gap: 4px 12px; padding: 14px 16px; background: var(--tone-1); }
+.ai-status i { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; background: var(--muted); }
+.ai-status.ok i { background: var(--iqa-boa); }
+.ai-status.off i { background: var(--sev-critico); }
+.ai-status strong { font-weight: 600; }
+.ai-status span { grid-column: 2; color: var(--ink-2); font-size: 0.95rem; }
+.ai-status code { white-space: nowrap; }
+.ai-suggest { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-suggest button {
+  border: 0; cursor: pointer; padding: 8px 12px; background: var(--tone-1); color: var(--ink); text-align: left;
+  transition: background var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+}
+.ai-suggest button:hover { background: var(--tone-2); }
+.ai-suggest button:active { transform: scale(0.97); }
+
+.ai-main { display: grid; gap: 16px; min-width: 0; }
+.chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.chat li { max-width: 72ch; }
+.chat .q { justify-self: end; padding: 12px 16px; background: var(--ink); color: var(--ground); }
+.chat .a { padding: 16px 18px; background: var(--tone-1); }
+.chat .a p + p, .chat .a p + ul, .chat .a ul + p, .chat .a ol + p, .chat .a p + ol { margin-top: 10px; }
+.chat .a ul, .chat .a ol { margin: 0; padding-left: 22px; }
+.chat .a li { margin-top: 4px; }
+.chat .a h4 { margin: 14px 0 4px; font-size: 1rem; }
+.chat .meta { display: block; margin-top: 10px; font-size: 0.8125rem; color: var(--muted); }
+.chat .a.error { box-shadow: inset 4px 0 0 var(--sev-critico); }
+.chat .a.thinking { color: var(--ink-2); }
+.chat .a.thinking::after { content: ""; display: inline-block; width: 1.2em; text-align: left; animation: dots 1.2s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+.chat .empty { padding: 24px; background: var(--tone-1); color: var(--ink-2); max-width: none; }
+
+.ask { position: sticky; bottom: 0; display: grid; gap: 8px; padding: 12px 0 16px; background: var(--ground); }
+.ask textarea {
+  width: 100%; resize: vertical; min-height: 64px; padding: 12px 14px; border: 0; font: inherit; color: var(--ink);
+  background: var(--tone-1);
+}
+.ask-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- rodapé e tooltip ---------- */
 
@@ -481,7 +582,9 @@ main { padding: 24px var(--margin) 0; max-width: 1480px; margin: 0 auto; }
 
 @media (max-width: 960px) {
   .basin { grid-template-columns: 1fr; }
-  .station-body, .station-foot, .model-anomaly, .model-classifier, .model-clusters, .run-panel { grid-template-columns: 1fr; }
+  .station-body, .station-foot, .model-anomaly, .model-classifier, .model-clusters, .run-panel,
+  .import-panel, .db-split, .ai { grid-template-columns: 1fr; }
+  .ai-side { position: static; }
   .model-classifier .model-claim { order: 0; }
   .facts { grid-template-columns: repeat(2, 1fr); row-gap: 32px; }
   .flow { grid-template-columns: 1fr 1fr; gap: 28px; }
@@ -491,6 +594,8 @@ main { padding: 24px var(--margin) 0; max-width: 1480px; margin: 0 auto; }
 }
 @media (max-width: 640px) {
   .bar { gap: 14px; }
+  .views { overflow-x: auto; scrollbar-width: none; }
+  .import-form { grid-template-columns: 1fr; }
   .run-state { display: none; }
   .views { gap: 14px; font-size: 0.95rem; }
   .station-head { grid-template-columns: 1fr; align-items: start; }

@@ -18,6 +18,8 @@
     <a href="#estacao" data-view="estacao">Estações</a>
     <a href="#modelos" data-view="modelos">Modelos</a>
     <a href="#pipeline" data-view="pipeline">Pipeline</a>
+    <a href="#dados" data-view="dados">Dados</a>
+    <a href="#assistente" data-view="assistente">Assistente</a>
     <span class="nav-mark" aria-hidden="true"></span>
   </nav>
   <a class="run-state" id="run-state" href="#pipeline">—</a>
@@ -163,11 +165,76 @@
     </div>
     <dl class="numbers" id="numbers"></dl>
   </section>
+
+  <!-- Vista 5: o banco H2 -->
+  <section class="view" id="view-dados" aria-labelledby="db-headline" hidden>
+    <p class="eyebrow" id="db-source" data-rise style="--i:0">—</p>
+    <h1 id="db-headline" data-rise style="--i:0">—</h1>
+    <p class="lede" id="db-lede" data-rise style="--i:1"></p>
+
+    <div class="import-panel">
+      <div>
+        <h2>Importar dados reais</h2>
+        <p>Envie as leituras dos seus sensores em CSV. O AquaML grava tudo no banco H2, substitui o conjunto atual e refaz a análise inteira com os mesmos modelos.</p>
+        <p class="format">Colunas: <code>timestamp</code> e <code>station_id</code>, mais os parâmetros que você tiver (<code>ph</code>, <code>do_mgl</code>, <code>temp_c</code>, <code>turbidity_ntu</code>, <code>conductivity_uscm</code>, <code>nitrate_mgl</code>, <code>phosphorus_mgl</code>, <code>coliforms_nmp</code>). Também aceita <code>;</code> com vírgula decimal, datas <code>dd/mm/aaaa hh:mm</code> e cabeçalhos como “Data/Hora”, “Estação”, “OD (mg/L)” ou “Fósforo total”. Os dias precisam de pelo menos 6 leituras, como as de sensores contínuos.</p>
+      </div>
+      <form class="import-form" id="import-form">
+        <label class="file-field"><span>Leituras <em>obrigatório</em></span><input type="file" name="measurements" accept=".csv,text/csv" required></label>
+        <label class="file-field"><span>Estações <em>opcional: id, nome, tipo, lat, lon</em></span><input type="file" name="stations" accept=".csv,text/csv"></label>
+        <label class="file-field"><span>Eventos conhecidos <em>opcional: avalia a IA</em></span><input type="file" name="events" accept=".csv,text/csv"></label>
+        <label class="file-field"><span>Nome do conjunto</span><input type="text" name="name" placeholder="ex.: Rede municipal, 2025"></label>
+        <button class="button" id="import-btn" type="submit">Importar e analisar</button>
+        <div class="form-msg" id="import-msg" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div class="db-block">
+      <div class="block-head">
+        <h2>IQA mês a mês</h2>
+        <p>Média mensal do IQA de cada estação, calculada por uma consulta SQL no H2 sobre a série diária da última análise. Passe o mouse para ver o pior dia e os dias anormais.</p>
+      </div>
+      <div class="heat-wrap"><table class="heat" id="db-monthly"></table></div>
+    </div>
+
+    <div class="db-block db-split">
+      <div>
+        <h2>Leituras guardadas</h2>
+        <ul class="db-stations" id="db-stations"></ul>
+      </div>
+      <div>
+        <h2>Histórico de análises</h2>
+        <ol class="runs" id="db-runs"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vista 6: assistente Llama -->
+  <section class="view" id="view-assistente" aria-labelledby="ai-headline" hidden>
+    <div class="ai">
+      <div class="ai-side">
+        <h1 id="ai-headline" data-rise style="--i:0">Pergunte à bacia</h1>
+        <p class="lede" data-rise style="--i:1">O Llama lê a última análise e consultas ao banco H2 antes de responder. Ele não inventa medições: se o dado não estiver lá, ele diz.</p>
+        <div class="ai-status" id="ai-status" data-rise style="--i:2"></div>
+        <div class="ai-suggest" id="ai-suggest" data-rise style="--i:2"></div>
+      </div>
+      <div class="ai-main">
+        <ol class="chat" id="chat" aria-live="polite"></ol>
+        <form class="ask" id="ask-form">
+          <label class="visually-hidden" for="question">Pergunta</label>
+          <textarea id="question" rows="2" maxlength="2000" placeholder="Ex.: o que mudou na qualidade da água no último mês?"></textarea>
+          <div class="ask-row">
+            <button class="text-button" id="chat-clear" type="button">Limpar conversa</button>
+            <button class="button" id="ask-btn" type="submit">Perguntar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer class="foot">
   <span class="foot-name">AquaML</span>
-  <span>Protótipo acadêmico · Java 21, Rust e Python · dados sintéticos</span>
+  <span id="foot-note">Protótipo acadêmico · Java 21, Rust, Python, H2 e Llama</span>
 </footer>
 
 <div class="tip" id="tip" role="tooltip" hidden></div>

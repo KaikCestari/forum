@@ -2,8 +2,9 @@
 
 /* ====================================================================
    AquaML — painel
-   Quatro vistas (bacia, estação, modelos, pipeline) com roteamento por
-   hash. Os dados vêm da API Java; nada aqui é inventado no navegador.
+   Seis vistas (bacia, estação, modelos, pipeline, dados e assistente) com
+   roteamento por hash. Os dados vêm da API Java, do banco H2 e do Llama;
+   nada aqui é inventado no navegador.
    ==================================================================== */
 
 /* ---------- utilidades ---------- */
@@ -91,6 +92,8 @@ function limitFor(param, type) {
 
 /* ---------- estado ---------- */
 
+const VIEWS = ["bacia", "estacao", "modelos", "pipeline", "dados", "assistente"];
+
 const state = {
   data: null,
   series: {},
@@ -99,15 +102,42 @@ const state = {
   param: "iqa",
   range: "365",
   focus: null,
-  dirty: new Set(["bacia", "estacao", "modelos", "pipeline"]),
+  dirty: new Set(VIEWS),
   charts: {},
   status: null,
   alertsAll: false,
   trendsAll: false,
+  layout: null,
+  db: null,
+  asking: false,
 };
 
 const stationById = (id) => state.data.stations.find((s) => s.id === id);
-const riverOrder = () => [...state.data.stations].sort((a, b) => (SCHEMA[a.id]?.x ?? 2000) - (SCHEMA[b.id]?.x ?? 2000));
+const riverOrder = () => { const { pos } = stationLayout(); return [...state.data.stations].sort((a, b) => pos[a.id].x - pos[b.id].x); };
+
+/* Altura do rio principal num ponto x (interpolação linear entre os vértices). */
+function riverY(x) {
+  for (let i = 1; i < MAIN_RIVER.length; i++) {
+    const [x0, y0] = MAIN_RIVER[i - 1], [x1, y1] = MAIN_RIVER[i];
+    if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0);
+  }
+  return MAIN_RIVER.at(-1)[1];
+}
+
+/* Posições no esquema. As estações da bacia sintética têm lugar fixo; dados reais
+   com outras estações são distribuídos ao longo do rio, de oeste para leste. */
+function stationLayout() {
+  if (state.layout) return state.layout;
+  const st = state.data.stations;
+  if (state.db?.dataset?.source !== "real" && st.every((s) => SCHEMA[s.id])) return (state.layout = { schematic: true, pos: SCHEMA });
+  const order = [...st].sort((a, b) => (a.lon ?? 0) - (b.lon ?? 0) || a.id.localeCompare(b.id));
+  const pos = {};
+  order.forEach((s, i) => {
+    const x = Math.round(120 + (i + 0.5) * (760 / order.length));
+    pos[s.id] = { x, y: Math.round(riverY(x)), lab: i % 2 ? "bottom" : "top" };
+  });
+  return (state.layout = { schematic: false, pos });
+}
 const knownEvents = () => state.data.anomalies.evaluation?.events ?? [];
 
 async function getSeries(id) {
@@ -212,27 +242,14 @@ function renderMap() {
   const svg = $("#map");
   svg.innerHTML = "";
   const order = riverOrder();
-
-  // Terreno desenhado a partir do assunto: mata na nascente, lavouras no ribeirão, cidade, oceano.
-  const land = el("g", {}, svg);
-  [[34, 300, 16], [58, 318, 13], [84, 300, 15], [108, 322, 12], [62, 286, 10], [128, 300, 10]].forEach(([cx, cy, r]) => el("circle", { cx, cy, r, class: "land" }, land));
-  el("text", { x: 34, y: 352, class: "map-label" }, land).textContent = "mata da nascente";
-  for (let i = 0; i < 5; i++) el("rect", { x: 96 + i * 15, y: 60, width: 9, height: 58, class: "land" }, land);
-  el("text", { x: 96, y: 46, class: "map-label" }, land).textContent = "lavouras";
-  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) el("rect", { x: 352 + c * 22, y: 158 + r * 18, width: 16, height: 12, class: "land" }, land);
-  el("text", { x: 352, y: 146, class: "map-label" }, land).textContent = "área urbana";
-
-  // Corpos d'água e rios.
-  const bodies = el("g", {}, svg);
+  const { schematic, pos: positions } = stationLayout();
   const delayAt = (x) => 300 + (x / 1000) * 1600;
-  el("ellipse", { cx: 570, cy: 196, rx: 64, ry: 28, transform: "rotate(-14 570 196)", class: "water-body appear", style: `--d:${delayAt(570)}ms` }, bodies);
-  el("ellipse", { cx: 726, cy: 258, rx: 76, ry: 24, transform: "rotate(12 726 258)", class: "water-body appear", style: `--d:${delayAt(726)}ms` }, bodies);
-  el("path", { d: "M872,294 C925,292 962,280 1000,268 L1000,436 C962,390 925,330 872,306 Z", class: "water-body appear", style: `--d:${delayAt(880)}ms` }, bodies);
-  el("rect", { x: 798, y: 258, width: 8, height: 40, rx: 2, transform: "rotate(12 802 278)", fill: "var(--ink-2)", class: "water-body appear", style: `--d:${delayAt(800)}ms` }, bodies);
-  el("text", { x: 806, y: 352, class: "map-label" }, bodies).textContent = "barragem";
-  el("text", { x: 992, y: 428, class: "map-label", "text-anchor": "end", style: "fill:var(--ink-2)" }, bodies).textContent = "oceano";
+  $(".map figcaption").textContent = schematic
+    ? "Esquema ilustrativo da bacia, da nascente ao oceano. Cor de cada estação: classe do IQA nos últimos 30 dias. Clique numa estação para abrir."
+    : "Estações dispostas de oeste para leste (pela longitude, quando informada); o traçado do rio é apenas ilustrativo. Cor: classe do IQA nos últimos 30 dias.";
 
-  for (const [pts, width] of [[TRIBUTARY, 6], [MAIN_RIVER, 10]]) {
+  if (schematic) drawTerrain(svg, delayAt);
+  for (const [pts, width] of schematic ? [[TRIBUTARY, 6], [MAIN_RIVER, 10]] : [[MAIN_RIVER, 10]]) {
     const d = smoothPath(pts);
     const p = el("path", { d, class: "river river-draw", "stroke-width": width }, svg);
     p.style.setProperty("--len", Math.ceil(p.getTotalLength()));
@@ -241,7 +258,7 @@ function renderMap() {
 
   // Estações.
   for (const s of order) {
-    const pos = SCHEMA[s.id];
+    const pos = positions[s.id];
     if (!pos) continue;
     const cls = iqaClass(s.iqa_30d);
     const critRecent = state.data.alerts.some((a) => a.station_id === s.id && a.severity === "critico" && dayDiff(a.end, state.data.period[1]) <= 90);
@@ -262,6 +279,27 @@ function renderMap() {
       `<strong>${esc(s.name)}</strong>IQA ${fmt(s.iqa_30d)} (${cls}) nos últimos 30 dias<br>${s.alerts_recent} alerta(s) recente(s) · perfil ${esc(lower1(s.cluster_label ?? "—"))}`, e));
     g.addEventListener("mouseleave", hideTip);
   }
+}
+
+/* Terreno e corpos d'água da bacia sintética (não se aplicam a dados reais). */
+function drawTerrain(svg, delayAt) {
+  // Terreno desenhado a partir do assunto: mata na nascente, lavouras no ribeirão, cidade, oceano.
+  const land = el("g", {}, svg);
+  [[34, 300, 16], [58, 318, 13], [84, 300, 15], [108, 322, 12], [62, 286, 10], [128, 300, 10]].forEach(([cx, cy, r]) => el("circle", { cx, cy, r, class: "land" }, land));
+  el("text", { x: 34, y: 352, class: "map-label" }, land).textContent = "mata da nascente";
+  for (let i = 0; i < 5; i++) el("rect", { x: 96 + i * 15, y: 60, width: 9, height: 58, class: "land" }, land);
+  el("text", { x: 96, y: 46, class: "map-label" }, land).textContent = "lavouras";
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) el("rect", { x: 352 + c * 22, y: 158 + r * 18, width: 16, height: 12, class: "land" }, land);
+  el("text", { x: 352, y: 146, class: "map-label" }, land).textContent = "área urbana";
+
+  // Corpos d'água e rios.
+  const bodies = el("g", {}, svg);
+  el("ellipse", { cx: 570, cy: 196, rx: 64, ry: 28, transform: "rotate(-14 570 196)", class: "water-body appear", style: `--d:${delayAt(570)}ms` }, bodies);
+  el("ellipse", { cx: 726, cy: 258, rx: 76, ry: 24, transform: "rotate(12 726 258)", class: "water-body appear", style: `--d:${delayAt(726)}ms` }, bodies);
+  el("path", { d: "M872,294 C925,292 962,280 1000,268 L1000,436 C962,390 925,330 872,306 Z", class: "water-body appear", style: `--d:${delayAt(880)}ms` }, bodies);
+  el("rect", { x: 798, y: 258, width: 8, height: 40, rx: 2, transform: "rotate(12 802 278)", fill: "var(--ink-2)", class: "water-body appear", style: `--d:${delayAt(800)}ms` }, bodies);
+  el("text", { x: 806, y: 352, class: "map-label" }, bodies).textContent = "barragem";
+  el("text", { x: 992, y: 428, class: "map-label", "text-anchor": "end", style: "fill:var(--ink-2)" }, bodies).textContent = "oceano";
 }
 
 function renderFacts() {
@@ -595,10 +633,12 @@ function renderModels() {
   const names = Object.fromEntries(d.stations.map((s) => [s.id, s.name]));
   const ev = d.anomalies.evaluation;
 
+  $(".model-anomaly .of").hidden = !ev;
   if (ev) {
     const hits = ev.events.filter((e) => e.detected).length;
     countUp($("#m-detected"), hits);
     $("#m-events").textContent = ev.events.length;
+    $("#models-headline").textContent = "eventos encontrados pela IA";
     $("#m-anomaly-text").textContent =
       `O Isolation Forest não sabe onde estão os eventos plantados nos dados. Ele aprende o comportamento normal de cada estação e marca o que foge dele. ` +
       `${Math.round(ev.day_precision * 100)}% dos dias marcados caem dentro de um evento; os demais são, em geral, chuvas fortes, que também são mudanças reais na água.`;
@@ -608,6 +648,21 @@ function renderModels() {
         <span class="e-name">${esc(e.description)}</span>
         <span class="e-hit${e.detected ? "" : " miss"}">${e.detected ? "Encontrado" : "Não encontrado"}</span>
         <span class="e-meta">${esc(names[e.station_id])} · ${dmy(e.start)} a ${dmy(e.end)}</span></li>`).join("");
+  } else {
+    // Dados reais costumam vir sem eventos rotulados: mostra o que a IA encontrou sozinha.
+    const eps = [...d.anomalies.episodes].sort((a, b) => b.start.localeCompare(a.start));
+    countUp($("#m-detected"), eps.length);
+    $("#models-headline").textContent = "episódios anormais encontrados pela IA";
+    $("#m-anomaly-text").textContent =
+      `Sem eventos rotulados para conferir, o Isolation Forest aprende o comportamento normal de cada estação e marca os dias que fogem dele. ` +
+      `Ao lado, os mais recentes: vale confirmar cada um com coleta de campo.`;
+    const ul = $("#m-events-list");
+    ul.className = "event-list stagger";
+    ul.innerHTML = eps.slice(0, 8).map((e, i) => `<li style="--n:${i}">
+        <span class="e-name">${esc(names[e.station_id] ?? e.station_id)}</span>
+        <span class="e-hit">${e.days} dia${e.days > 1 ? "s" : ""}</span>
+        <span class="e-meta">${dmy(e.start)}${e.end !== e.start ? ` a ${dmy(e.end)}` : ""}${e.params.length ? ` · ${esc(e.params.map((p) => lower1(d.parameters[p]?.label ?? p)).join(", "))}` : ""}</span></li>`).join("")
+      || `<li class="empty">Nenhum episódio anormal.</li>`;
   }
 
   const c = d.classification;
@@ -699,10 +754,11 @@ function renderModelTrends() {
    ==================================================================== */
 
 const STAGES = [
-  { lang: "Python", match: "Geração", task: "Gera os dados", what: "Seis estações, dois anos de leituras horárias, falhas de sensor e sete eventos ambientais escondidos." },
-  { lang: "Rust", match: "Processamento", task: "Processa e calcula o IQA", what: "Descarta leituras impossíveis, preenche lacunas, consolida por dia e calcula o índice, em paralelo." },
-  { lang: "Python", match: "Análise", task: "Aprende com os dados", what: "Isolation Forest, Random Forest, K-Means e Mann-Kendall transformam números em alertas." },
-  { lang: "Java", match: null, task: "Coordena e entrega", what: "Executa cada etapa na ordem, guarda os resultados e serve a API e este painel." },
+  { lang: "Dados", match: /Geração|Importação/, task: "Sensores ou simulação", what: "Leituras reais importadas de CSV ou, para demonstração, seis estações sintéticas com eventos escondidos." },
+  { lang: "H2", match: /Carga|Exportação/, task: "Guarda as leituras", what: "O banco H2 é a fonte dos dados: cada execução parte do que está nele." },
+  { lang: "Rust", match: /Processamento/, task: "Processa e calcula o IQA", what: "Descarta leituras impossíveis, preenche lacunas, consolida por dia e calcula o índice, em paralelo." },
+  { lang: "Python", match: /Análise com/, task: "Aprende com os dados", what: "Isolation Forest, Random Forest, K-Means e Mann-Kendall transformam números em alertas." },
+  { lang: "Java", match: /Gravação/, task: "Registra e entrega", what: "Grava a análise e os alertas no H2, serve a API e este painel e alimenta o Llama." },
 ];
 
 function renderPipeline() {
@@ -713,7 +769,7 @@ function renderPipeline() {
   const flow = $("#flow");
   flow.classList.toggle("running", !!st?.running);
   flow.innerHTML = STAGES.map((g, i) => {
-    const step = g.match ? steps.find((s) => s.name.includes(g.match)) : null;
+    const step = [...steps].reverse().find((s) => g.match.test(s.name));
     let cls = "", time = "—", out = "";
     if (step) {
       cls = step.status === "ok" ? "done" : step.status === "erro" ? "fail" : "active";
@@ -721,10 +777,12 @@ function renderPipeline() {
       out = step.output.split("\n").at(-1);
     } else if (g.lang === "Rust" && d?.processing) {
       cls = "done"; time = `${fmt(d.processing.total_ms)} ms`;
-    } else if (g.match === "Análise" && py != null) {
+    } else if (g.lang === "Python" && py != null) {
       cls = "done"; time = `${fmt(py, 1)} s`;
-    } else if (g.match === "Geração") {
-      time = st?.running ? "aguardando" : "dados já existentes";
+    } else if (g.lang === "Dados") {
+      time = st?.running ? "aguardando" : state.db?.dataset?.source === "real" ? "dados reais" : "dados já existentes";
+    } else if (g.lang === "H2") {
+      cls = st?.running ? "" : "done"; time = st?.running ? "aguardando" : `${fmt(state.db?.totals?.measurements)} leituras`;
     } else if (g.lang === "Java") {
       cls = st?.running ? "active" : "done"; time = st?.running ? "coordenando" : "no ar";
     }
@@ -743,10 +801,206 @@ function renderPipeline() {
 }
 
 /* ====================================================================
+   Vista 5 — dados (banco H2)
+   ==================================================================== */
+
+const dmyT = (s) => (s ? dmy(s.slice(0, 10)) : "—");
+const whenPt = (s) => new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+async function loadDb() {
+  const r = await api("/api/db/summary");
+  if (!r.ok) return;
+  state.db = r.body;
+  const ds = state.db.dataset;
+  $("#foot-note").textContent = `Protótipo acadêmico · Java 21, Rust, Python, H2 e Llama · ${ds?.source === "real" ? `dados reais: ${ds.name}` : "dados sintéticos"}`;
+}
+
+async function renderDados() {
+  const [runs, monthly] = await Promise.all([api("/api/db/runs?limit=12"), api("/api/db/monthly"), loadDb()]);
+  const ds = state.db?.dataset, t = state.db?.totals ?? {};
+  $("#db-source").textContent = !ds ? "Banco H2 vazio" : ds.source === "real" ? "Dados reais" : "Dados sintéticos de demonstração";
+  $("#db-headline").textContent = ds?.name ?? "Nenhum conjunto carregado";
+  $("#db-lede").textContent = t.measurements
+    ? `${fmt(t.measurements)} leituras de ${t.stations} estaç${t.stations > 1 ? "ões" : "ão"}, de ${dmyT(t.first_reading)} a ${dmyT(t.last_reading)}. ` +
+      `O banco H2 guarda também ${t.runs} análise${t.runs === 1 ? "" : "s"} e ${t.messages} pergunta${t.messages === 1 ? "" : "s"} feita${t.messages === 1 ? "" : "s"} ao Llama.`
+    : "Importe um CSV abaixo ou execute o pipeline para gerar dados de demonstração.";
+
+  const st = state.status;
+  const msg = $("#import-msg");
+  if (st?.error && !st.running && !msg.textContent) {
+    msg.className = "form-msg error";
+    msg.textContent = `A última execução falhou: ${st.error}`;
+  }
+
+  renderHeat(monthly.ok ? monthly.body : []);
+
+  $("#db-stations").innerHTML = (state.db?.stations ?? []).map((x) => `<li>
+      <span class="s-name">${esc(x.name)}</span><span class="s-count">${fmt(x.readings)}</span>
+      <span class="s-meta">${esc(x.id)} · ${esc(x.type)} · ${fmt(x.readings_per_day, 1)} leituras por dia · ${dmyT(x.first_reading)} a ${dmyT(x.last_reading)}</span></li>`).join("")
+    || `<li class="empty">Nenhuma leitura no banco.</li>`;
+
+  const list = runs.ok ? runs.body : [];
+  $("#db-runs").innerHTML = list.map((r, i) => `<li class="${i === 0 ? "current" : ""}">
+      <span class="r-id">nº ${r.id}</span><span class="r-name">${esc(r.dataset_name ?? "—")}</span>
+      <span class="r-src">${r.source === "real" ? "real" : "sintético"}</span>
+      <span class="r-meta">${whenPt(r.created_at)} · ${dmyT(r.period_start)} a ${dmyT(r.period_end)} · ${r.stations} estações · IQA médio ${fmt(r.mean_iqa)} · ${r.alerts} alertas (${r.critical_alerts} críticos)${r.accuracy != null ? ` · acurácia ${fmt(r.accuracy * 100)}%` : ""}</span></li>`).join("")
+    || `<li class="empty">Nenhuma análise ainda.</li>`;
+}
+
+function renderHeat(rows) {
+  const table = $("#db-monthly");
+  if (!rows.length) { table.innerHTML = `<tbody><tr><td class="none">Sem série diária no banco.</td></tr></tbody>`; return; }
+  const months = [...new Set(rows.map((r) => r.month))].sort();
+  const by = new Map(rows.map((r) => [`${r.station_id}|${r.month}`, r]));
+  const ids = state.data ? riverOrder().map((x) => x.id) : [...new Set(rows.map((r) => r.station_id))];
+  const name = (id) => rows.find((r) => r.station_id === id)?.station_name ?? id;
+  table.innerHTML = `<thead><tr><th></th>${months.map((m) => `<th scope="col">${monthLabel(m)}</th>`).join("")}</tr></thead><tbody>` +
+    ids.map((id) => `<tr><th scope="row">${esc(name(id))}</th>${months.map((m) => {
+      const r = by.get(`${id}|${m}`);
+      if (!r || r.iqa_mean == null) return `<td class="none">—</td>`;
+      const cls = iqaClass(r.iqa_mean);
+      return `<td data-k="${esc(id)}|${m}" style="--c:var(${IQA_VAR[cls]})${cls === "Regular" ? ";color:#0c1a1d" : ""}">${fmt(r.iqa_mean)}</td>`;
+    }).join("")}</tr>`).join("") + "</tbody>";
+  table.onmousemove = (e) => {
+    const td = e.target.closest("td[data-k]");
+    if (!td) { hideTip(); return; }
+    const r = by.get(td.dataset.k);
+    showTip(`<strong>${esc(name(r.station_id))} · ${monthLabel(r.month)}</strong>IQA médio ${fmt(r.iqa_mean)} (${iqaClass(r.iqa_mean)}), pior dia ${fmt(r.iqa_min)}<br>` +
+      `OD ${fmt(r.do_mean, 1)} mg/L · fósforo ${fmt(r.phosphorus_mean, 3)} mg/L<br>${r.anomaly_days} de ${r.days} dias anormais segundo a IA`, e);
+  };
+  table.onmouseleave = hideTip;
+}
+
+$("#import-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target, msg = $("#import-msg"), btn = $("#import-btn");
+  const fd = new FormData(form);
+  for (const k of ["stations", "events"]) if (!fd.get(k)?.size) fd.delete(k);
+  msg.className = "form-msg";
+  msg.textContent = "Enviando e validando os arquivos…";
+  btn.disabled = true;
+  const r = await api("/api/data/import", { method: "POST", body: fd }).catch(() => ({ ok: false, body: {} }));
+  btn.disabled = false;
+  if (!r.ok) {
+    msg.className = "form-msg error";
+    msg.textContent = r.body.error || "Não foi possível importar os arquivos.";
+    return;
+  }
+  const b = r.body;
+  msg.innerHTML = `${fmt(b.measurements)} leituras de ${b.stations} estaç${b.stations > 1 ? "ões" : "ão"} recebidas (${fmt(b.readingsPerDay, 1)} por dia). ` +
+    `A análise começou e o painel se atualiza sozinho ao terminar.` +
+    (b.warnings.length ? `<ul>${b.warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>` : "");
+  form.reset();
+  state.status = b.pipeline;
+  poll();
+});
+
+/* ====================================================================
+   Vista 6 — assistente (Llama)
+   ==================================================================== */
+
+const SUGGESTIONS = [
+  "Qual estação está em pior situação e por quê?",
+  "Resuma os alertas críticos mais recentes.",
+  "Alguma estação está piorando com o tempo?",
+  "O que priorizar na fiscalização este mês?",
+];
+
+/* Markdown mínimo das respostas: parágrafos, listas, títulos, negrito e código. */
+function md(text) {
+  const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const out = [];
+  let list = null, para = [];
+  const flushPara = () => { if (para.length) out.push(`<p>${para.map(inline).join("<br>")}</p>`); para = []; };
+  const flushList = () => { if (list) out.push(`<${list.tag}>${list.items.map((i) => `<li>${inline(i)}</li>`).join("")}</${list.tag}>`); list = null; };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    const ul = line.match(/^[-*•]\s+(.*)/), ol = line.match(/^\d+[.)]\s+(.*)/), h = line.match(/^#{1,6}\s+(.*)/);
+    if (!line) { flushPara(); flushList(); continue; }
+    if (h) { flushPara(); flushList(); out.push(`<h4>${inline(h[1])}</h4>`); continue; }
+    if (ul || ol) {
+      flushPara();
+      const tag = ul ? "ul" : "ol";
+      if (list?.tag !== tag) { flushList(); list = { tag, items: [] }; }
+      list.items.push((ul ?? ol)[1]);
+      continue;
+    }
+    flushList();
+    para.push(line);
+  }
+  flushPara(); flushList();
+  return out.join("");
+}
+
+function renderLlamaStatus(s) {
+  const box = $("#ai-status");
+  box.className = `ai-status ${s.modelInstalled ? "ok" : "off"}`;
+  box.innerHTML = s.modelInstalled
+    ? `<i></i><strong>Llama pronto</strong><span>Modelo <code>${esc(s.model)}</code> rodando no Ollama em ${esc(s.url)}.</span>`
+    : s.available
+      ? `<i></i><strong>Modelo ainda não baixado</strong><span>O Ollama está no ar. Rode <code>ollama pull ${esc(s.model)}</code> ou <code>make llama</code>.</span>`
+      : `<i></i><strong>Llama fora do ar</strong><span>Instale o Ollama (ollama.com), rode <code>ollama serve</code> e depois <code>make llama</code> para baixar o <code>${esc(s.model)}</code>.</span>`;
+  $("#ask-btn").disabled = state.asking;
+}
+
+const chatQ = (q) => `<li class="q">${esc(q)}</li>`;
+const chatA = (m) => {
+  const ms = m.duration_ms ?? m.durationMs;
+  return `<li class="a">${md(m.answer)}<span class="meta">${esc(m.model)}${ms != null ? ` · ${fmt(ms / 1000, 1)} s` : ""}</span></li>`;
+};
+const chatEmpty = `<li class="empty">Nenhuma pergunta ainda. Comece por uma sugestão ao lado ou escreva a sua.</li>`;
+
+async function renderAssistant() {
+  const sug = $("#ai-suggest");
+  sug.innerHTML = SUGGESTIONS.map((q) => `<button type="button">${esc(q)}</button>`).join("");
+  sug.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => ask(b.textContent)));
+  const [st, hist] = await Promise.all([api("/api/assistant/status"), api("/api/assistant/history")]);
+  renderLlamaStatus(st.body);
+  if (state.asking) return;
+  const msgs = hist.ok ? hist.body : [];
+  $("#chat").innerHTML = msgs.map((m) => chatQ(m.question) + chatA(m)).join("") || chatEmpty;
+}
+
+async function ask(question) {
+  const q = question.trim();
+  if (!q || state.asking) return;
+  state.asking = true;
+  $("#ask-btn").disabled = true;
+  $("#question").value = "";
+  const chat = $("#chat");
+  chat.querySelector(".empty")?.remove();
+  chat.insertAdjacentHTML("beforeend", chatQ(q) + `<li class="a thinking">O Llama está lendo a análise</li>`);
+  const pending = chat.lastElementChild;
+  pending.scrollIntoView({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
+  const r = await api("/api/assistant/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) })
+    .catch(() => ({ ok: false, body: { error: "Sem resposta do servidor." } }));
+  state.asking = false;
+  $("#ask-btn").disabled = false;
+  if (r.ok) {
+    pending.outerHTML = chatA(r.body);
+  } else {
+    pending.className = "a error";
+    pending.textContent = r.body.error || "O Llama não respondeu.";
+    if (r.body.llama) renderLlamaStatus(r.body.llama);
+  }
+  chat.lastElementChild.scrollIntoView({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
+}
+
+$("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); ask($("#question").value); });
+$("#question").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(e.target.value); }
+});
+$("#chat-clear").addEventListener("click", async () => {
+  if (state.asking) return;
+  await api("/api/assistant/history", { method: "DELETE" });
+  $("#chat").innerHTML = chatEmpty;
+});
+
+/* ====================================================================
    Navegação e ciclo de vida
    ==================================================================== */
 
-const RENDER = { bacia: renderBasin, estacao: renderStation, modelos: renderModels, pipeline: renderPipeline };
+const RENDER = { bacia: renderBasin, estacao: renderStation, modelos: renderModels, pipeline: renderPipeline, dados: renderDados, assistente: renderAssistant };
 
 function parseHash() {
   const [view, id, date] = location.hash.replace(/^#/, "").split("/");
@@ -796,7 +1050,9 @@ async function loadData() {
   if (!r.ok) return false;
   state.data = r.body;
   state.series = {};
-  ["bacia", "estacao", "modelos", "pipeline"].forEach((v) => state.dirty.add(v));
+  state.layout = null;
+  VIEWS.forEach((v) => state.dirty.add(v));
+  await loadDb();
   $("#booting").hidden = true;
   return true;
 }
@@ -823,6 +1079,7 @@ async function poll() {
   setRunState(st);
   if (!state.data) $("#booting").textContent = st.error ? `Falha no pipeline: ${st.error}` : st.running ? "Executando o pipeline pela primeira vez…" : "Carregando a bacia…";
   if (state.view === "pipeline") renderPipeline();
+  if (state.view === "dados" && wasRunning && !st.running && st.error) renderDados();
   clearTimeout(pollTimer);
   if (st.running) { pollTimer = setTimeout(poll, 900); return; }
   if ((wasRunning || !state.data) && await loadData()) {
@@ -865,7 +1122,7 @@ addEventListener("resize", () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   if (!state.data) return;
-  state.dirty = new Set(["bacia", "estacao", "modelos", "pipeline"]);
+  state.dirty = new Set(VIEWS);
   state.dirty.delete(state.view);
   RENDER[state.view]();
 });
