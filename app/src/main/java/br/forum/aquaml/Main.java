@@ -1,21 +1,30 @@
 package br.forum.aquaml;
 
 import io.javalin.Javalin;
-import io.javalin.http.staticfiles.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Ponto de entrada do AquaML: sobe a API e o painel web. */
+import java.util.List;
+
+/** Ponto de entrada do AquaML: sobe a API REST consumida pelo front-end React. */
 public final class Main {
 
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     private Main() {}
 
-    public static Javalin createApp(ResultsRepository repo, PipelineService pipeline) {
+    public static Javalin createApp(ResultsRepository repo, PipelineService pipeline, List<String> corsOrigins) {
         Javalin app = Javalin.create(cfg -> {
-            cfg.staticFiles.add("/static", Location.CLASSPATH);
             cfg.showJavalinBanner = false;
+            if (!corsOrigins.isEmpty()) {
+                cfg.bundledPlugins.enableCors(cors -> cors.addRule(rule -> {
+                    if (corsOrigins.contains("*")) {
+                        rule.anyHost();
+                    } else {
+                        corsOrigins.forEach(rule::allowHost);
+                    }
+                }));
+            }
         });
         ApiRoutes.register(app, repo, pipeline);
         return app;
@@ -33,7 +42,8 @@ public final class Main {
             pipeline.start(false, null);
         }
 
-        createApp(repo, pipeline).start(config.port());
-        log.info("AquaML disponível em http://localhost:{} (raiz: {})", config.port(), config.root());
+        createApp(repo, pipeline, config.corsOrigins()).start(config.port());
+        log.info("API do AquaML em http://localhost:{} (raiz: {}, CORS: {})",
+                config.port(), config.root(), config.corsOrigins());
     }
 }

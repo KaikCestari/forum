@@ -1,0 +1,37 @@
+{
+  "name": "aquaml-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Front-end do AquaML: painel de monitoramento de ecossistemas aquáticos",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "d3-array": "^3.2.4",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0",
+    "motion": "^12.43.0",
+    "react": "^19.2.9",
+    "react-dom": "^19.2.9",
+    "react-router": "^7.18.4",
+    "swr": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/d3-array": "^3.2.2",
+    "@types/d3-scale": "^4.0.9",
+    "@types/d3-shape": "^3.2.0",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^3.2.7"
+  }
+}

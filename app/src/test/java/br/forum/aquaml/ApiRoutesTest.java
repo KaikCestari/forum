@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,6 +26,8 @@ class ApiRoutesTest {
              "series": {"RIO-01": {"dates": ["2025-01-01"], "iqa": [90.0]}}}
             """;
 
+    private static final String FRONT = "http://localhost:5173";
+
     @TempDir
     Path tmp;
     private Javalin app;
@@ -34,8 +37,8 @@ class ApiRoutesTest {
     @BeforeEach
     void setUp() {
         repo = new ResultsRepository(tmp.resolve("results.json"));
-        PipelineService pipeline = new PipelineService(new AppConfig(tmp, 0), repo);
-        app = Main.createApp(repo, pipeline).start(0);
+        PipelineService pipeline = new PipelineService(new AppConfig(tmp, 0, List.of(FRONT)), repo);
+        app = Main.createApp(repo, pipeline, List.of(FRONT)).start(0);
     }
 
     @AfterEach
@@ -71,10 +74,24 @@ class ApiRoutesTest {
     }
 
     @Test
-    void servesDashboard() throws Exception {
+    void rootDescribesTheApi() throws Exception {
         HttpResponse<String> index = get("/");
         assertEquals(200, index.statusCode());
-        assertTrue(index.body().contains("AquaML"));
+        assertTrue(index.body().contains("AquaML API"));
+        assertTrue(index.body().contains("/api/overview"));
+    }
+
+    @Test
+    void allowsTheFrontEndOrigin() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + "/api/pipeline/status"))
+                .header("Origin", FRONT).build();
+        HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(FRONT, res.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+
+        HttpRequest other = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + "/api/pipeline/status"))
+                .header("Origin", "http://evil.example").build();
+        HttpResponse<String> denied = http.send(other, HttpResponse.BodyHandlers.ofString());
+        assertTrue(denied.headers().firstValue("Access-Control-Allow-Origin").isEmpty());
     }
 
     private static int countOccurrences(String s, String needle) {
