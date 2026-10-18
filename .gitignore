@@ -1,0 +1,19 @@
+# Dados gerados
+data/raw/*
+data/processed/*
+data/results/*
+!data/**/.gitkeep
+
+# Rust
+processor/target/
+
+# Python
+ml/.venv/
+__pycache__/
+.pytest_cache/
+
+# Java
+app/target/
+
+# Inspeções de design (taste-skill)
+.taste-skill/
