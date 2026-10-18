@@ -28,8 +28,14 @@ export const SEVERITY: Record<Severity, { label: string; color: string; rank: nu
 /** Tendências e situações recorrentes cobrem o período todo; o resto são episódios. */
 export const isLongTerm = (a: Alert) => a.category === "tendencia" || a.severity === "cronico";
 
-/** Posição de cada estação no esquema da bacia (um mapa de metrô, não geografia exata). */
-export const SCHEMA: Record<string, { x: number; y: number; label: "top" | "bottom" | "right" }> = {
+export interface StationPos {
+  x: number;
+  y: number;
+  label: "top" | "bottom" | "right";
+}
+
+/** Posição de cada estação no esquema da bacia sintética (um mapa de metrô, não geografia exata). */
+export const SCHEMA: Record<string, StationPos> = {
   "RIO-01": { x: 160, y: 236, label: "top" },
   "RIO-03": { x: 262, y: 96, label: "right" },
   "RIO-02": { x: 410, y: 256, label: "bottom" },
@@ -38,9 +44,42 @@ export const SCHEMA: Record<string, { x: number; y: number; label: "top" | "bott
   "EST-01": { x: 905, y: 300, label: "top" },
 };
 
+/** Traçado do rio principal no esquema (coordenadas do viewBox 1000×440). */
+export const MAIN_RIVER: [number, number][] = [
+  [14, 262], [90, 252], [160, 236], [250, 246], [330, 238], [410, 256], [490, 226],
+  [570, 196], [655, 222], [740, 262], [800, 280], [860, 292], [905, 300], [1000, 312],
+];
+
+/** Altura do rio principal num ponto x (interpolação linear entre os vértices). */
+export function riverY(x: number): number {
+  for (let i = 1; i < MAIN_RIVER.length; i++) {
+    const [x0, y0] = MAIN_RIVER[i - 1];
+    const [x1, y1] = MAIN_RIVER[i];
+    if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0);
+  }
+  return MAIN_RIVER[MAIN_RIVER.length - 1][1];
+}
+
+/**
+ * Onde desenhar cada estação. A bacia sintética usa o esquema fixo; dados reais
+ * (ou estações fora dele) são distribuídos ao longo do rio, de oeste para leste.
+ */
+export function stationLayout(stations: Station[], real = false): { schematic: boolean; pos: Record<string, StationPos> } {
+  if (!real && stations.every((s) => SCHEMA[s.id])) return { schematic: true, pos: SCHEMA };
+  const order = stations.toSorted((a, b) => (a.lon ?? 0) - (b.lon ?? 0) || a.id.localeCompare(b.id));
+  const pos: Record<string, StationPos> = {};
+  order.forEach((s, i) => {
+    const x = Math.round(120 + (i + 0.5) * (760 / order.length));
+    pos[s.id] = { x, y: Math.round(riverY(x)), label: i % 2 ? "bottom" : "top" };
+  });
+  return { schematic: false, pos };
+}
+
 /** Estações na ordem em que a água passa por elas. */
-export const riverOrder = (stations: Station[]) =>
-  stations.toSorted((a, b) => (SCHEMA[a.id]?.x ?? 2000) - (SCHEMA[b.id]?.x ?? 2000));
+export function riverOrder(stations: Station[], real = false): Station[] {
+  const { pos } = stationLayout(stations, real);
+  return stations.toSorted((a, b) => pos[a.id].x - pos[b.id].x);
+}
 
 export const shortName = (name: string) => name.replace("Rio Claro — ", "");
 

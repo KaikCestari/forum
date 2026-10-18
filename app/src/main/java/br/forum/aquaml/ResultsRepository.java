@@ -11,7 +11,10 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-/** Mantém em memória o último results.json produzido pela etapa de ML. */
+/**
+ * Mantém em memória o último results.json produzido pela etapa de ML. A cópia
+ * definitiva fica no H2; o arquivo serve de passagem entre o Python e o Java.
+ */
 public class ResultsRepository {
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -29,6 +32,24 @@ public class ResultsRepository {
         }
         results = mapper.readTree(file.toFile());
         return true;
+    }
+
+    /** Carrega o JSON de uma análise guardada no banco. */
+    public void load(String json) throws IOException {
+        results = mapper.readTree(json);
+    }
+
+    /** Lê o results.json do disco sem publicá-lo; quem chama decide quando usar. */
+    public JsonNode readFile() throws IOException {
+        return mapper.readTree(file.toFile());
+    }
+
+    public void set(JsonNode json) {
+        results = json;
+    }
+
+    public JsonNode current() {
+        return results;
     }
 
     public boolean isLoaded() {

@@ -8,7 +8,7 @@
     <artifactId>aquaml</artifactId>
     <version>0.1.0</version>
     <name>AquaML</name>
-    <description>Estrutura principal: orquestra o pipeline Rust + Python e serve o painel web</description>
+    <description>Estrutura principal: orquestra o pipeline Rust + Python, guarda dados no H2 e serve o painel web</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -16,6 +16,7 @@
         <javalin.version>6.3.0</javalin.version>
         <jackson.version>2.17.2</jackson.version>
         <junit.version>5.11.0</junit.version>
+        <h2.version>2.3.232</h2.version>
     </properties>
 
     <dependencies>
@@ -28,6 +29,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -1,16 +1,13 @@
 import { m, useReducedMotion } from "motion/react";
 import { memo, useMemo } from "react";
 import { useNavigate } from "react-router";
+import { useDbSummary } from "../api/client";
 import type { Overview } from "../api/types";
-import { IQA_COLOR, SCHEMA, hadRecentCritical, iqaClass, riverOrder, shortName } from "../lib/domain";
+import { IQA_COLOR, MAIN_RIVER, hadRecentCritical, iqaClass, riverOrder, shortName, stationLayout } from "../lib/domain";
 import { fmt } from "../lib/format";
 import { ease, spring } from "../motion/tokens";
 import { useTooltip } from "./Tooltip";
 
-const MAIN_RIVER: [number, number][] = [
-  [14, 262], [90, 252], [160, 236], [250, 246], [330, 238], [410, 256], [490, 226],
-  [570, 196], [655, 222], [740, 262], [800, 280], [860, 292], [905, 300], [1000, 312],
-];
 const TRIBUTARY: [number, number][] = [[176, 14], [214, 54], [262, 96], [296, 170], [330, 238]];
 
 /** Curva suave (Catmull-Rom convertida em Bézier) que passa por todos os pontos. */
@@ -28,10 +25,10 @@ function smoothPath(pts: [number, number][]): string {
   return d;
 }
 
-const RIVERS = [
-  { d: smoothPath(TRIBUTARY), width: 6, delay: 0.2 },
-  { d: smoothPath(MAIN_RIVER), width: 10, delay: 0 },
-];
+const MAIN = { d: smoothPath(MAIN_RIVER), width: 10, delay: 0 };
+/** O afluente e o terreno só existem no esquema da bacia sintética. */
+const RIVERS_SCHEMATIC = [{ d: smoothPath(TRIBUTARY), width: 6, delay: 0.2 }, MAIN];
+const RIVERS_PLAIN = [MAIN];
 const DRAW = 2.1;
 /** Momento em que a água "chega" a cada ponto x do esquema. */
 const arrival = (x: number) => 0.25 + (x / 1000) * DRAW;
@@ -60,13 +57,15 @@ function BasinMapImpl({ data }: Props) {
   const navigate = useNavigate();
   const tooltip = useTooltip();
   const reduce = useReducedMotion();
-  const stations = useMemo(() => riverOrder(data.stations), [data.stations]);
+  const real = useDbSummary().data?.dataset?.source === "real";
+  const { schematic, pos: positions } = useMemo(() => stationLayout(data.stations, real), [data.stations, real]);
+  const stations = useMemo(() => riverOrder(data.stations, real), [data.stations, real]);
 
   return (
     <svg viewBox="0 0 1000 440" className="basin-map" role="group" aria-label="Esquema da bacia com as estações de monitoramento">
-      {terrain}
+      {schematic && terrain}
 
-      <g aria-hidden="true">
+      {schematic && <g aria-hidden="true">
         <m.ellipse
           cx={570} cy={196} rx={64} ry={28} transform="rotate(-14 570 196)" className="water"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.9, delay: arrival(570), ease: ease.out }}
@@ -85,9 +84,9 @@ function BasinMapImpl({ data }: Props) {
         />
         <text x={806} y={352} className="map-label">barragem</text>
         <text x={992} y={428} className="map-label map-label-strong" textAnchor="end">oceano</text>
-      </g>
+      </g>}
 
-      {RIVERS.map((r) => (
+      {(schematic ? RIVERS_SCHEMATIC : RIVERS_PLAIN).map((r) => (
         <g key={r.d} aria-hidden="true">
           <m.path
             d={r.d}
@@ -114,7 +113,7 @@ function BasinMapImpl({ data }: Props) {
       ))}
 
       {stations.map((s) => {
-        const pos = SCHEMA[s.id];
+        const pos = positions[s.id];
         if (!pos) return null;
         const cls = iqaClass(s.iqa_30d)!;
         const critical = hadRecentCritical(data, s.id);

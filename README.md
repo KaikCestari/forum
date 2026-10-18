@@ -6,24 +6,71 @@ alterações e apoia a tomada de decisão no monitoramento de ecossistemas aquá
 
 | Linguagem | Papel | Onde |
 |-----------|-------|------|
-| **Java 21** | Estrutura principal: orquestra o pipeline, expõe a API REST e serve o painel web | `app/` |
+| **Java 21** | Estrutura principal: orquestra o pipeline e expõe a API REST | `app/` |
+| **React + Vite** | Painel web: bacia, estações, modelos, pipeline, dados e assistente | `web/` |
 | **Rust** | Processamento de alto desempenho: limpeza, interpolação, agregação diária e cálculo do IQA | `processor/` |
 | **Python** | IA/ML: detecção de anomalias, classificação, agrupamento, tendências e alertas | `ml/` |
+| **H2** | Banco de dados: leituras (reais ou sintéticas), histórico de análises, alertas, série diária e conversas | `data/db/` |
+| **Llama** (via Ollama) | Assistente que responde perguntas sobre a bacia com base na análise e em consultas SQL ao H2 | `app/…/AssistantService.java` |
 
 ## Arquitetura
 
 ```
-                ┌────────────────────── Java 21 (Javalin) ──────────────────────┐
-                │  PipelineService ── ProcessBuilder ──┐      ApiRoutes /api/*   │
-                │  ResultsRepository ◄── results.json  │      painel web (/)     │
-                └──────────────────────────────────────┼─────────────────────────┘
+                ┌──────────────────────────── Java 21 (Javalin) ────────────────────────────┐
+                │  PipelineService ── ProcessBuilder ──┐   ApiRoutes /api/* ◄── painel React │
+                │  Database (H2) ◄──── grava análise ──┼── ResultsRepository                 │
+                │  AssistantService ── LlamaClient ────┼──────────────► Ollama (Llama 3.2)   │
+                └──────────────────────────────────────┼─────────────────────────────────────┘
                                                        ▼
- generate_data.py ──► measurements.csv ──► aqua-processor (Rust) ──► processed.csv ──► analyze.py ──► results.json
-   (Python)            105 mil leituras      validação, lacunas,       4.380 dias       Isolation Forest
-                       horárias              médias móveis, IQA                         Random Forest
-                                                                                         K-Means + PCA
-                                                                                         Mann-Kendall sazonal
+ CSV real (upload)  ┐
+                    ├─► H2: leituras ──► measurements.csv ──► aqua-processor (Rust) ──► processed.csv ──► analyze.py ──► results.json ──► H2
+ generate_data.py   ┘     estações         (exportado)          validação, lacunas,                         Isolation Forest              histórico,
+   (sintético)            eventos                               médias móveis, IQA                          Random Forest                 alertas,
+                                                                                                            K-Means + PCA                 série diária
+                                                                                                            Mann-Kendall sazonal
 ```
+
+### Banco de dados (H2)
+O H2 roda embutido no Java, gravando em `data/db/aquaml.mv.db`, e é a fonte da verdade:
+cada execução exporta as leituras do banco para o Rust e grava o resultado de volta.
+
+| Tabela | Conteúdo |
+|--------|----------|
+| `dataset` | Conjunto atual: origem (`real` ou `sintetico`), nome e data da importação |
+| `stations`, `measurements`, `events` | Estações, leituras horárias e eventos conhecidos (opcionais) |
+| `analysis_runs` | Histórico de análises com resumo (IQA médio, alertas, acurácia); as 5 mais recentes guardam o `results.json` completo |
+| `alerts` | Alertas de cada análise |
+| `daily` | Série diária da última análise, base das consultas SQL (ex.: IQA mensal) |
+| `assistant_messages` | Perguntas e respostas do Llama |
+
+Ao subir, o app carrega a última análise do H2, sem refazer o pipeline. Para explorar o
+banco com SQL enquanto o app roda, use `make h2` (console web do H2; usuário `sa`, sem senha).
+
+### Dados reais
+Na vista **Dados** do painel (ou em `POST /api/data/import`), envie:
+
+- **leituras** (obrigatório): colunas `timestamp`, `station_id` e os parâmetros disponíveis
+  (`ph`, `do_mgl`, `temp_c`, `turbidity_ntu`, `conductivity_uscm`, `nitrate_mgl`,
+  `phosphorus_mgl`, `coliforms_nmp`);
+- **estações** (opcional): `id`, `name`, `type` (`rio`, `lago`, `reservatorio`, `estuario`), `lat`, `lon`;
+- **eventos conhecidos** (opcional): `station_id`, `start`, `end`, `type`, `description`, usados
+  só para medir quantos a IA encontra.
+
+O leitor aceita planilhas exportadas no Brasil: separador `;` com vírgula decimal, datas
+`dd/mm/aaaa hh:mm`, cabeçalhos como “Data/Hora”, “Estação”, “OD (mg/L)” ou “Fósforo total”,
+e valores abaixo do limite de detecção (`<0,02` vira metade do limite). A importação
+substitui o conjunto atual no H2 e refaz toda a análise.
+
+O processador só consolida dias com **pelo menos 6 leituras**, então os dados reais devem
+vir de sensores contínuos (por exemplo, de hora em hora). Coletas mensais de laboratório não
+bastam; a importação avisa quando a média de leituras por dia é baixa.
+
+### Assistente (Llama)
+A vista **Assistente** conversa com um Llama rodando localmente no [Ollama](https://ollama.com).
+A cada pergunta, o Java monta um contexto com as estações, conclusões, alertas recentes,
+tendências e o IQA mensal consultado no H2, e instrui o modelo a usar apenas esses dados.
+As conversas ficam no H2, e as três últimas trocas vão junto para permitir perguntas de
+seguimento. O texto exato enviado ao modelo pode ser visto em `GET /api/assistant/context`.
 
 ### Dados (sintéticos)
 `ml/generate_data.py` gera 2 anos de leituras horárias de 6 estações (rios, lagoa,
@@ -56,19 +103,32 @@ eutrofização identificadas no reservatório.
 
 ## Como executar
 
-Pré-requisitos: **JDK 21**, Maven, Rust (cargo) e Python 3.11 ou superior.
+Pré-requisitos: **JDK 21**, Maven, Rust (cargo) e Python 3.11 ou superior. Para o
+assistente, o [Ollama](https://ollama.com) (opcional: sem ele, o resto do painel funciona normalmente).
+
+Para o painel, também **Node.js 20** ou superior.
 
 ```bash
-make setup     # cria o venv Python e compila o Rust e o Java
-make run       # http://localhost:7070
+make setup     # cria o venv Python e compila o Rust e o Java (o H2 vem como dependência Maven)
+ollama serve & # opcional: sobe o Ollama
+make llama     # opcional: baixa o modelo (padrão llama3.2; outro: make llama LLAMA_MODEL=llama3.1:8b)
+make run       # API em http://localhost:7070
+make web       # em outro terminal: painel em http://localhost:5173
 ```
 
-Na primeira execução, sem resultados, o Java roda o pipeline completo sozinho. No painel,
-**Reexecutar análise** refaz o processo; marque *novos dados* e informe uma semente para
-gerar outro cenário.
+O painel (Vite) encaminha `/api` para a API Java. Para servir o painel de outro endereço,
+gere-o com `make web-build`, defina `VITE_API_URL` e libere a origem em `AQUAML_CORS_ORIGINS`.
 
-Outros alvos: `make pipeline` (só as etapas de dados), `make test` (testes Rust, Python e
-Java) e `make clean`. Se o JDK 21 não estiver em `~/.local/opt/jdk-21`, use
+Variáveis: `OLLAMA_URL` (padrão `http://localhost:11434`), `LLAMA_MODEL` (padrão `llama3.2`)
+e `AQUAML_DB_URL` (outra URL JDBC do H2).
+
+Na primeira execução, com o banco vazio, o Java roda o pipeline completo sozinho. Na vista
+**Pipeline** do painel, **Executar pipeline** refaz o processo; marque *gerar novos dados* e
+informe uma semente para criar outro cenário sintético.
+
+Outros alvos: `make pipeline` (só as etapas de dados, sem o H2), `make test` (testes Rust,
+Python, Java e do painel), `make h2` (console SQL), `make clean` (preserva o banco) e `make clean-db`
+(apaga o banco, inclusive dados reais importados). Se o JDK 21 não estiver em `~/.local/opt/jdk-21`, use
 `make run JAVA_HOME=/caminho/do/jdk-21`.
 
 ## API
@@ -80,12 +140,17 @@ Java) e `make clean`. Se o JDK 21 não estiver em `~/.local/opt/jdk-21`, use
 | `GET /api/stations/{id}/series` | Série diária completa da estação |
 | `GET /api/alerts?station=&severity=` | Alertas (crítico, alto, atenção, recorrente) |
 | `GET /api/anomalies` · `/api/classification` · `/api/clusters` · `/api/trends?significant=true` | Resultados de cada modelo |
-| `GET /api/pipeline/status` · `POST /api/pipeline/run?regenerate=&seed=` | Execução do pipeline |
+| `GET /api/pipeline/status` · `POST /api/pipeline/run?regenerate=&seed=` | Execução do pipeline (`regenerate` substitui os dados do H2 por novos sintéticos) |
+| `POST /api/data/import` (multipart: `measurements`, `stations`, `events`, `name`) | Importa dados reais para o H2 e refaz a análise |
+| `GET /api/db/summary` · `/api/db/runs?limit=` · `/api/db/monthly?station=` | Conjunto atual, histórico de análises e IQA mensal (SQL) |
+| `GET /api/assistant/status` · `POST /api/assistant/ask` `{"question": "…"}` | Estado do Llama e perguntas ao assistente |
+| `GET` · `DELETE /api/assistant/history` · `GET /api/assistant/context` | Conversa guardada no H2 e contexto enviado ao modelo |
 
 ## Limitações
-- Os dados são sintéticos. Para usar dados reais, basta fornecer um `measurements.csv`
-  com as mesmas colunas, além de `stations.csv`. O `events.csv` é opcional e só serve
-  para a avaliação.
+- Sem importação, os dados são sintéticos. Dados reais entram pela vista Dados (veja acima)
+  e precisam de leituras contínuas.
+- O Llama roda localmente e responde a partir do contexto montado pelo Java; modelos pequenos
+  como o `llama3.2` (3B) podem errar contas ou simplificar demais, então confira os números no painel.
 - O IQA é uma aproximação: DBO e sólidos totais não são medidos, e os pesos são renormalizados.
 - Com 2 anos de dados, o teste de tendência tem pouco poder estatístico, e tendências
   fracas podem surgir por acaso.

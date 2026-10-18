@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Series, Station } from "../api/types";
-import { basinHeadline, daysOutside, iqaClass, limitFor, riverOrder, stationSummary } from "./domain";
-import { dateRange, fmt, joinPt } from "./format";
+import { basinHeadline, daysOutside, iqaClass, limitFor, riverOrder, stationLayout, stationSummary } from "./domain";
+import { dateRange, fmt, joinPt, periodLength } from "./format";
 
 const station = (over: Partial<Station>): Station => ({
   id: "RIO-02", name: "Rio Claro — Jusante urbana", type: "rio", lat: 0, lon: 0,
@@ -87,5 +87,31 @@ describe("textos", () => {
     expect(fmt(0.24, 3)).toBe("0,240");
     expect(joinPt(["a", "b", "c"])).toBe("a, b e c");
     expect(dateRange("2026-07-12", "2026-07-14")).toBe("12 a 14/07/2026");
+  });
+});
+
+describe("stationLayout", () => {
+  it("usa o esquema fixo só para a bacia sintética", () => {
+    const synthetic = [station({ id: "RIO-01" }), station({ id: "LAG-01" })];
+    expect(stationLayout(synthetic).schematic).toBe(true);
+    expect(stationLayout(synthetic, true).schematic).toBe(false);
+  });
+
+  it("distribui estações reais de oeste para leste ao longo do rio", () => {
+    const real = [station({ id: "B", lon: -46.7 }), station({ id: "A", lon: -47.1 }), station({ id: "C", lon: null })];
+    const { schematic, pos } = stationLayout(real, true);
+    expect(schematic).toBe(false);
+    expect(pos.A.x).toBeLessThan(pos.B.x);
+    expect(pos.B.x).toBeLessThan(pos.C.x);
+    expect(riverOrder(real, true).map((s) => s.id)).toEqual(["A", "B", "C"]);
+  });
+});
+
+describe("periodLength", () => {
+  it("descreve o período em anos ou meses", () => {
+    expect(periodLength("2024-10-01", "2026-09-30")).toBe("Dois anos");
+    expect(periodLength("2025-06-01", "2026-09-30")).toBe("16 meses");
+    expect(periodLength("2025-01-01", "2025-12-31")).toBe("Um ano");
+    expect(periodLength("2025-03-01", "2025-03-20")).toBe("Um mês");
   });
 });

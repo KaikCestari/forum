@@ -8,8 +8,8 @@ export interface Station {
   id: string;
   name: string;
   type: StationType;
-  lat: number;
-  lon: number;
+  lat: number | null;
+  lon: number | null;
   latest: { date: string; iqa: number; iqa_class: IqaClass } & Record<string, number | string>;
   iqa_30d: number;
   iqa_period: number;
@@ -159,4 +159,90 @@ export interface PipelineStatus {
   finishedAt: string | null;
   steps: PipelineStep[];
   error: string | null;
+}
+
+// Banco H2: conjunto de dados atual, histórico de análises e agregados em SQL.
+
+export type DataSource = "real" | "sintetico";
+
+export interface DbSummary {
+  dataset: { source: DataSource; name: string | null; imported_at: string } | null;
+  totals: {
+    stations: number;
+    measurements: number;
+    first_reading: string | null;
+    last_reading: string | null;
+    events: number;
+    daily_rows: number;
+    runs: number;
+    messages: number;
+  };
+  stations: {
+    id: string;
+    name: string;
+    type: StationType;
+    readings: number;
+    first_reading: string | null;
+    last_reading: string | null;
+    readings_per_day: number;
+  }[];
+}
+
+export interface AnalysisRun {
+  id: number;
+  created_at: string;
+  source: DataSource;
+  dataset_name: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  stations: number;
+  alerts: number;
+  critical_alerts: number;
+  accuracy: number | null;
+  mean_iqa: number | null;
+}
+
+export interface MonthlyRow {
+  station_id: string;
+  station_name: string | null;
+  month: string;
+  iqa_mean: number | null;
+  iqa_min: number | null;
+  do_mean: number | null;
+  phosphorus_mean: number | null;
+  coliforms_mean: number | null;
+  anomaly_days: number;
+  days: number;
+}
+
+export interface ImportResult {
+  name: string;
+  measurements: number;
+  stations: number;
+  events: number;
+  readingsPerDay: number;
+  warnings: string[];
+  pipeline: PipelineStatus;
+}
+
+// Assistente Llama (Ollama).
+
+export interface LlamaStatus {
+  available: boolean;
+  modelInstalled: boolean;
+  url: string;
+  model: string;
+  models: string[];
+  error: string | null;
+}
+
+/** Mensagem guardada no H2 (histórico) ou recém-respondida (`durationMs`). */
+export interface AssistantMessage {
+  id: number;
+  question: string;
+  answer: string;
+  model: string;
+  duration_ms?: number;
+  durationMs?: number;
+  created_at?: string;
 }

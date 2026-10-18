@@ -1,0 +1,1 @@
+import{a as e}from"./motion-BRKjGmOO.js";function i(){const n=e.useRef(null),[o,r]=e.useState(0);return e.useLayoutEffect(()=>{const t=n.current;if(!t)return;r(t.clientWidth);const s=new ResizeObserver(([c])=>r(Math.round(c.contentRect.width)));return s.observe(t),()=>s.disconnect()},[]),[n,o]}export{i as u};

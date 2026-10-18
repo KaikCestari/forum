@@ -1,15 +1,17 @@
 import { m } from "motion/react";
 import { useMemo } from "react";
 import { Link } from "react-router";
+import { useDbSummary } from "../api/client";
 import type { Overview } from "../api/types";
 import { BasinMap } from "../components/BasinMap";
 import { Timeline } from "../components/Timeline";
 import { SEVERITY, basinHeadline, basinLede, isLongTerm } from "../lib/domain";
-import { dateRange } from "../lib/format";
+import { dateRange, periodLength } from "../lib/format";
 import { ease, item, list } from "../motion/tokens";
 
 export default function BasinView({ data }: { data: Overview }) {
   const attention = useMemo(() => data.alerts.filter((a) => !isLongTerm(a)).slice(0, 4), [data.alerts]);
+  const real = useDbSummary().data?.dataset?.source === "real";
 
   return (
     <>
@@ -25,7 +27,10 @@ export default function BasinView({ data }: { data: Overview }) {
         <figure className="basin-figure">
           <BasinMap data={data} />
           <figcaption>
-            Esquema ilustrativo da bacia, da nascente ao oceano. A cor de cada estação é a classe do IQA nos últimos 30 dias. Clique numa estação para abri-la.
+            {real
+              ? "Estações de oeste para leste, pela longitude quando informada; o traçado do rio é só ilustrativo."
+              : "Esquema ilustrativo da bacia, da nascente ao oceano."}{" "}
+            A cor de cada estação é a classe do IQA nos últimos 30 dias. Clique numa estação para abri-la.
           </figcaption>
         </figure>
       </section>
@@ -56,7 +61,7 @@ export default function BasinView({ data }: { data: Overview }) {
 
       <section className="timeline-block" aria-labelledby="timeline-title">
         <div className="block-head">
-          <h2 id="timeline-title">Dois anos de monitoramento</h2>
+          <h2 id="timeline-title">{periodLength(data.period[0], data.period[1])} de monitoramento</h2>
           <p>
             Cada faixa é uma estação. Marcas coloridas são alertas, pontos são dias que a IA achou anormais e as áreas claras são os
             eventos conhecidos. Clique numa marca para ver o dia no gráfico.

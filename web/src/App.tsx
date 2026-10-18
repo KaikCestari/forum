@@ -13,6 +13,8 @@ const BasinView = lazy(() => import("./views/BasinView"));
 const StationView = lazy(() => import("./views/StationView"));
 const ModelsView = lazy(() => import("./views/ModelsView"));
 const PipelineView = lazy(() => import("./views/PipelineView"));
+const DataView = lazy(() => import("./views/DataView"));
+const AssistantView = lazy(() => import("./views/AssistantView"));
 
 export function App() {
   const location = useLocation();
@@ -34,6 +36,8 @@ export function App() {
                     <Route path="estacoes/:id?" element={<StationView data={overview.data} />} />
                     <Route path="modelos" element={<ModelsView data={overview.data} />} />
                     <Route path="pipeline" element={<PipelineView data={overview.data} pipeline={pipeline} />} />
+                    <Route path="dados" element={<DataView data={overview.data} pipeline={pipeline} />} />
+                    <Route path="assistente" element={<AssistantView />} />
                     <Route path="*" element={<BasinView data={overview.data} />} />
                   </Routes>
                 </Suspense>
