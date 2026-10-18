@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/** Rotas HTTP da API consumida pelo painel. */
+/** Rotas HTTP da API consumida pelo front-end React. */
 public final class ApiRoutes {
 
     private ApiRoutes() {}
@@ -28,6 +28,17 @@ public final class ApiRoutes {
 
     public static void register(Javalin app, ResultsRepository repo, PipelineService pipeline,
                                 Database db, AssistantService assistant) {
+        app.get("/", ctx -> ctx.json(Map.of(
+                "name", "AquaML API",
+                "ready", repo.isLoaded(),
+                "endpoints", List.of(
+                        "GET /api/overview", "GET /api/stations", "GET /api/stations/{id}/series",
+                        "GET /api/alerts", "GET /api/anomalies", "GET /api/classification",
+                        "GET /api/clusters", "GET /api/trends", "GET /api/pipeline/status",
+                        "POST /api/pipeline/run", "POST /api/data/import", "GET /api/db/summary",
+                        "GET /api/db/runs", "GET /api/db/monthly", "GET /api/assistant/status",
+                        "POST /api/assistant/ask", "GET /api/assistant/history",
+                        "DELETE /api/assistant/history", "GET /api/assistant/context"))));
         app.get("/api/overview", ctx -> respond(ctx, repo.overview(), pipeline));
         app.get("/api/stations", ctx -> respond(ctx, repo.get("stations"), pipeline));
         app.get("/api/stations/{id}/series", ctx -> {

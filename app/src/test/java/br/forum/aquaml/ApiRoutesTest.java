@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,6 +42,8 @@ class ApiRoutesTest {
                                    "anomaly": [false, true]}}}
             """;
 
+    private static final String FRONT = "http://localhost:5173";
+
     @TempDir
     Path tmp;
     private Javalin app;
@@ -56,13 +59,13 @@ class ApiRoutesTest {
     void setUp() throws Exception {
         ollama = fakeOllama();
         String llamaUrl = "http://localhost:" + ollama.getAddress().getPort();
-        AppConfig config = new AppConfig(tmp, 0, "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1",
+        AppConfig config = new AppConfig(tmp, 0, List.of(FRONT), "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1",
                 llamaUrl, "llama3.2");
         db = new Database(config.dbUrl());
         repo = new ResultsRepository(tmp.resolve("results.json"));
         pipeline = new PipelineService(config, repo, db);
         AssistantService assistant = new AssistantService(new LlamaClient(llamaUrl, "llama3.2"), repo, db);
-        app = Main.createApp(repo, pipeline, db, assistant).start(0);
+        app = Main.createApp(repo, pipeline, db, assistant, List.of(FRONT)).start(0);
     }
 
     @AfterEach
@@ -228,10 +231,24 @@ class ApiRoutesTest {
     }
 
     @Test
-    void servesDashboard() throws Exception {
+    void rootDescribesTheApi() throws Exception {
         HttpResponse<String> index = get("/");
         assertEquals(200, index.statusCode());
-        assertTrue(index.body().contains("AquaML"));
+        assertTrue(index.body().contains("AquaML API"));
+        assertTrue(index.body().contains("/api/overview"));
+    }
+
+    @Test
+    void allowsTheFrontEndOrigin() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + "/api/pipeline/status"))
+                .header("Origin", FRONT).build();
+        HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(FRONT, res.headers().firstValue("Access-Control-Allow-Origin").orElse(null));
+
+        HttpRequest other = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + "/api/pipeline/status"))
+                .header("Origin", "http://evil.example").build();
+        HttpResponse<String> denied = http.send(other, HttpResponse.BodyHandlers.ofString());
+        assertTrue(denied.headers().firstValue("Access-Control-Allow-Origin").isEmpty());
     }
 
     private void awaitPipeline() throws InterruptedException {

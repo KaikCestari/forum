@@ -2,16 +2,23 @@ package br.forum.aquaml;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 
-/** Caminhos do projeto, banco H2, Llama e executáveis de cada etapa do pipeline. */
-public record AppConfig(Path root, int port, String dbUrl, String ollamaUrl, String llamaModel) {
+/**
+ * Caminhos do projeto, porta da API, origens autorizadas (CORS) para o
+ * front-end React, que roda separado, banco H2 e Llama.
+ */
+public record AppConfig(Path root, int port, List<String> corsOrigins, String dbUrl, String ollamaUrl,
+                        String llamaModel) {
 
+    static final String DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:4173";
     public static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
     public static final String DEFAULT_LLAMA_MODEL = "llama3.2";
 
     /** Configuração com o banco em arquivo dentro de {@code root} e o Llama local padrão. */
-    public AppConfig(Path root, int port) {
-        this(root, port, fileDbUrl(root), DEFAULT_OLLAMA_URL, DEFAULT_LLAMA_MODEL);
+    public AppConfig(Path root, int port, List<String> corsOrigins) {
+        this(root, port, corsOrigins, fileDbUrl(root), DEFAULT_OLLAMA_URL, DEFAULT_LLAMA_MODEL);
     }
 
     public Path rawDir() { return root.resolve("data/raw"); }
@@ -29,14 +36,16 @@ public record AppConfig(Path root, int port, String dbUrl, String ollamaUrl, Str
     /**
      * Raiz do projeto: variável AQUAML_ROOT ou, na falta dela, o primeiro
      * diretório (a partir do atual, subindo) que contenha processor/ e ml/.
+     * Origens CORS: AQUAML_CORS_ORIGINS, separadas por vírgula.
      * AQUAML_DB_URL, OLLAMA_URL e LLAMA_MODEL sobrescrevem os padrões.
      */
     public static AppConfig fromEnvironment() {
         var env = System.getenv();
         int port = Integer.parseInt(env.getOrDefault("PORT", "7070"));
+        List<String> origins = parseOrigins(env.getOrDefault("AQUAML_CORS_ORIGINS", DEFAULT_ORIGINS));
         Path root = findRoot(env.get("AQUAML_ROOT"));
         String db = env.getOrDefault("AQUAML_DB_URL", "");
-        return new AppConfig(root, port,
+        return new AppConfig(root, port, origins,
                 db.isBlank() ? fileDbUrl(root) : db,
                 env.getOrDefault("OLLAMA_URL", DEFAULT_OLLAMA_URL),
                 env.getOrDefault("LLAMA_MODEL", DEFAULT_LLAMA_MODEL));
@@ -54,5 +63,12 @@ public record AppConfig(Path root, int port, String dbUrl, String ollamaUrl, Str
             dir = dir.getParent();
         }
         throw new IllegalStateException("Raiz do projeto não encontrada; defina AQUAML_ROOT");
+    }
+
+    static List<String> parseOrigins(String value) {
+        return Arrays.stream(value.split(","))
+                .map(String::strip)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 }
