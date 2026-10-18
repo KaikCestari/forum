@@ -9,6 +9,8 @@ const LINKS = [
   { to: "/estacoes", label: "Estações", end: false },
   { to: "/modelos", label: "Modelos", end: false },
   { to: "/pipeline", label: "Pipeline", end: false },
+  { to: "/dados", label: "Dados", end: false },
+  { to: "/assistente", label: "Assistente", end: false },
 ];
 
 interface Props {

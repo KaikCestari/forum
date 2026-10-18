@@ -29,7 +29,7 @@ const reveal = {
 function AnomalySection({ data }: { data: Overview }) {
   const ev = data.anomalies.evaluation;
   const names = useMemo(() => new Map(data.stations.map((s) => [s.id, s.name])), [data.stations]);
-  if (!ev) return null;
+  if (!ev) return <EpisodeSection data={data} names={names} />;
   const hits = ev.events.filter((e) => e.detected).length;
 
   return (
@@ -54,6 +54,40 @@ function AnomalySection({ data }: { data: Overview }) {
           </m.li>
         ))}
       </m.ul>
+    </section>
+  );
+}
+
+/** Dados reais costumam vir sem eventos rotulados: mostra o que a IA encontrou sozinha. */
+function EpisodeSection({ data, names }: { data: Overview; names: Map<string, string> }) {
+  const episodes = useMemo(() => data.anomalies.episodes.toSorted((a, b) => b.start.localeCompare(a.start)), [data.anomalies.episodes]);
+
+  return (
+    <section className="model model-anomaly" aria-labelledby="anomaly-title">
+      <div className="model-claim">
+        <p className="huge" aria-hidden="true"><AnimatedNumber value={episodes.length} /></p>
+        <m.h1 id="anomaly-title" {...reveal}>episódios anormais encontrados pela IA</m.h1>
+        <m.p {...reveal} transition={{ ...reveal.transition, delay: 0.1 }}>
+          Sem eventos rotulados para conferir, o Isolation Forest aprende o comportamento normal de cada estação e marca os dias que
+          fogem dele. Ao lado estão os mais recentes; vale confirmar cada um com coleta de campo.
+        </m.p>
+      </div>
+      {episodes.length ? (
+        <m.ul className="event-list" variants={list} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }}>
+          {episodes.slice(0, 8).map((e) => (
+            <m.li key={`${e.station_id}-${e.start}`} variants={item}>
+              <span className="event-name">{names.get(e.station_id) ?? e.station_id}</span>
+              <span className="event-hit">{e.days === 1 ? "1 dia" : `${e.days} dias`}</span>
+              <span className="event-meta">
+                {dateRange(e.start, e.end)}
+                {e.params.length ? `, ${e.params.map((p) => data.parameters[p]?.label.toLowerCase() ?? p).join(", ")}` : ""}
+              </span>
+            </m.li>
+          ))}
+        </m.ul>
+      ) : (
+        <p className="empty">Nenhum episódio anormal no período.</p>
+      )}
     </section>
   );
 }

@@ -64,3 +64,16 @@ export function mean(values: (number | null)[]): number | null {
   }
   return n ? sum / n : null;
 }
+
+const YEARS = ["", "Um ano", "Dois anos", "Três anos", "Quatro anos", "Cinco anos"];
+
+/** Duração de um período em palavras: "Dois anos", "16 meses", "Um mês". */
+export function periodLength(start: string, end: string): string {
+  const days = dayDiff(start, end) + 1;
+  const years = Math.round(days / 365.25);
+  if (days >= 365.25 * 1.9 || (years === 1 && Math.abs(days - 365.25) < 20)) {
+    return YEARS[years] ?? `${years} anos`;
+  }
+  const months = Math.max(1, Math.round(days / 30.44));
+  return months === 1 ? "Um mês" : `${months} meses`;
+}

@@ -6,7 +6,8 @@ alterações e apoia a tomada de decisão no monitoramento de ecossistemas aquá
 
 | Linguagem | Papel | Onde |
 |-----------|-------|------|
-| **Java 21** | Estrutura principal: orquestra o pipeline, expõe a API REST e serve o painel web | `app/` |
+| **Java 21** | Estrutura principal: orquestra o pipeline e expõe a API REST | `app/` |
+| **React + Vite** | Painel web: bacia, estações, modelos, pipeline, dados e assistente | `web/` |
 | **Rust** | Processamento de alto desempenho: limpeza, interpolação, agregação diária e cálculo do IQA | `processor/` |
 | **Python** | IA/ML: detecção de anomalias, classificação, agrupamento, tendências e alertas | `ml/` |
 | **H2** | Banco de dados: leituras (reais ou sintéticas), histórico de análises, alertas, série diária e conversas | `data/db/` |
@@ -16,7 +17,7 @@ alterações e apoia a tomada de decisão no monitoramento de ecossistemas aquá
 
 ```
                 ┌──────────────────────────── Java 21 (Javalin) ────────────────────────────┐
-                │  PipelineService ── ProcessBuilder ──┐   ApiRoutes /api/*   painel web (/) │
+                │  PipelineService ── ProcessBuilder ──┐   ApiRoutes /api/* ◄── painel React │
                 │  Database (H2) ◄──── grava análise ──┼── ResultsRepository                 │
                 │  AssistantService ── LlamaClient ────┼──────────────► Ollama (Llama 3.2)   │
                 └──────────────────────────────────────┼─────────────────────────────────────┘
@@ -105,22 +106,28 @@ eutrofização identificadas no reservatório.
 Pré-requisitos: **JDK 21**, Maven, Rust (cargo) e Python 3.11 ou superior. Para o
 assistente, o [Ollama](https://ollama.com) (opcional: sem ele, o resto do painel funciona normalmente).
 
+Para o painel, também **Node.js 20** ou superior.
+
 ```bash
 make setup     # cria o venv Python e compila o Rust e o Java (o H2 vem como dependência Maven)
 ollama serve & # opcional: sobe o Ollama
 make llama     # opcional: baixa o modelo (padrão llama3.2; outro: make llama LLAMA_MODEL=llama3.1:8b)
-make run       # http://localhost:7070
+make run       # API em http://localhost:7070
+make web       # em outro terminal: painel em http://localhost:5173
 ```
+
+O painel (Vite) encaminha `/api` para a API Java. Para servir o painel de outro endereço,
+gere-o com `make web-build`, defina `VITE_API_URL` e libere a origem em `AQUAML_CORS_ORIGINS`.
 
 Variáveis: `OLLAMA_URL` (padrão `http://localhost:11434`), `LLAMA_MODEL` (padrão `llama3.2`)
 e `AQUAML_DB_URL` (outra URL JDBC do H2).
 
-Na primeira execução, sem resultados, o Java roda o pipeline completo sozinho. No painel,
-**Reexecutar análise** refaz o processo; marque *novos dados* e informe uma semente para
-gerar outro cenário.
+Na primeira execução, com o banco vazio, o Java roda o pipeline completo sozinho. Na vista
+**Pipeline** do painel, **Executar pipeline** refaz o processo; marque *gerar novos dados* e
+informe uma semente para criar outro cenário sintético.
 
 Outros alvos: `make pipeline` (só as etapas de dados, sem o H2), `make test` (testes Rust,
-Python e Java), `make h2` (console SQL), `make clean` (preserva o banco) e `make clean-db`
+Python, Java e do painel), `make h2` (console SQL), `make clean` (preserva o banco) e `make clean-db`
 (apaga o banco, inclusive dados reais importados). Se o JDK 21 não estiver em `~/.local/opt/jdk-21`, use
 `make run JAVA_HOME=/caminho/do/jdk-21`.
 
