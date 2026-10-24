@@ -65,7 +65,8 @@ class ApiRoutesTest {
         repo = new ResultsRepository(tmp.resolve("results.json"));
         pipeline = new PipelineService(config, repo, db);
         AssistantService assistant = new AssistantService(new LlamaClient(llamaUrl, "llama3.2"), repo, db);
-        app = Main.createApp(repo, pipeline, db, assistant, List.of(FRONT)).start(0);
+        ImageService images = new ImageService(db, new LlamaClient(llamaUrl, "llama3.2"), tmp.resolve("images"), "gemma4:31b");
+        app = Main.createApp(repo, pipeline, db, assistant, images, List.of(FRONT)).start(0);
     }
 
     @AfterEach
@@ -98,6 +99,11 @@ class ApiRoutesTest {
 
     private HttpResponse<String> get(String path) throws Exception {
         return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path)).build(),
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> delete(String path) throws Exception {
+        return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path)).DELETE().build(),
                 HttpResponse.BodyHandlers.ofString());
     }
 
@@ -219,6 +225,52 @@ class ApiRoutesTest {
 
         assertEquals(1, mapper.readTree(get("/api/assistant/history").body()).size());
         assertEquals(400, post("/api/assistant/ask", "application/json", "{\"question\":\"  \"}").statusCode());
+    }
+
+    @Test
+    void fieldNotesCanBeCreatedFilteredAndDeleted() throws Exception {
+        String json = "{\"station_id\":\"RIO-1\",\"date\":\"2025-02-03\",\"kind\":\"ocorrencia\",\"text\":\"Peixes mortos perto da ponte\"}";
+        HttpResponse<String> created = post("/api/notes", "application/json", json);
+        assertEquals(201, created.statusCode(), created.body());
+        JsonNode note = mapper.readTree(created.body());
+        assertEquals("2025-02-03", note.get("noted_on").asText());
+        assertEquals("ocorrencia", note.get("kind").asText());
+
+        post("/api/notes", "application/json", json.replace("RIO-1", "LAG-1").replace("2025-02-03", "2025-03-01"));
+        assertEquals(2, mapper.readTree(get("/api/notes").body()).size());
+        JsonNode only = mapper.readTree(get("/api/notes?station=RIO-1").body());
+        assertEquals(1, only.size());
+        assertEquals("Peixes mortos perto da ponte", only.get(0).get("text").asText());
+        assertEquals("LAG-1", mapper.readTree(get("/api/notes").body()).get(0).get("station_id").asText(),
+                "a anotação de data mais recente vem primeiro");
+
+        assertEquals(204, delete("/api/notes/" + note.get("id").asLong()).statusCode());
+        assertEquals(404, delete("/api/notes/" + note.get("id").asLong()).statusCode());
+        assertEquals(404, delete("/api/notes/abc").statusCode());
+        assertEquals(1, mapper.readTree(get("/api/notes").body()).size());
+    }
+
+    @Test
+    void fieldNotesAreValidated() throws Exception {
+        String ok = "{\"station_id\":\"RIO-1\",\"date\":\"2025-02-03\",\"kind\":\"coleta\",\"text\":\"Coleta de água\"}";
+        assertEquals(400, post("/api/notes", "application/json", ok.replace("coleta\"", "outro\"")).statusCode());
+        assertEquals(400, post("/api/notes", "application/json", ok.replace("2025-02-03", "ontem")).statusCode());
+        assertEquals(400, post("/api/notes", "application/json", ok.replace("Coleta de água", "  ")).statusCode());
+        assertEquals(400, post("/api/notes", "application/json", ok.replace("RIO-1", "")).statusCode());
+        assertEquals(400, post("/api/notes", "application/json", ok.replace("2025-02-03", "2999-01-01")).statusCode());
+        assertEquals(0, mapper.readTree(get("/api/notes").body()).size());
+    }
+
+    @Test
+    void assistantContextIncludesFieldNotes() throws Exception {
+        loadSample();
+        post("/api/notes", "application/json",
+                "{\"station_id\":\"RIO-1\",\"date\":\"2025-02-03\",\"kind\":\"observacao\",\"text\":\"Espuma branca na margem\"}");
+        HttpResponse<String> r = post("/api/assistant/ask", "application/json", "{\"question\":\"Oi\"}");
+        assertEquals(200, r.statusCode(), r.body());
+        String system = mapper.readTree(lastLlamaRequest.get()).get("messages").get(0).get("content").asText();
+        assertTrue(system.contains("Espuma branca na margem"), "o contexto deve trazer as anotações de campo");
+        assertTrue(system.contains("biólogos"), "o prompt deve pedir linguagem para biólogos");
     }
 
     @Test

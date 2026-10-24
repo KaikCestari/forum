@@ -2,6 +2,7 @@ import { AnimatePresence, m } from "motion/react";
 import { useMemo, useState } from "react";
 import type { Overview } from "../api/types";
 import { AnimatedNumber } from "../components/AnimatedNumber";
+import { HowItWorks } from "../components/HowItWorks";
 import { CLUSTER_COLORS, ClusterScatter } from "../components/ClusterScatter";
 import { Sparkline } from "../components/Sparkline";
 import { trendTone, verdictLabel } from "../lib/domain";
@@ -38,12 +39,13 @@ function AnomalySection({ data }: { data: Overview }) {
         <p className="huge" aria-hidden="true">
           <AnimatedNumber value={hits} /><span className="huge-of">/{ev.events.length}</span>
         </p>
-        <m.h1 id="anomaly-title" {...reveal}>eventos encontrados pela IA</m.h1>
+        <m.h1 id="anomaly-title" {...reveal}>eventos conhecidos encontrados pela IA</m.h1>
         <m.p {...reveal} transition={{ ...reveal.transition, delay: 0.1 }}>
-          O Isolation Forest não sabe onde estão os eventos plantados nos dados. Ele aprende o comportamento normal de cada estação e
-          marca o que foge dele. {fmt(ev.day_precision * 100)}% dos dias marcados caem dentro de um evento. Os outros são, em geral,
-          chuvas fortes, que também mudam a água de verdade.
+          A IA aprende como cada estação costuma ser e marca os dias que fogem desse padrão. Ela não sabia onde estavam os eventos e
+          encontrou {hits} de {ev.events.length} por conta própria. {fmt(ev.day_precision * 100)}% dos dias marcados coincidem com um
+          evento. Os outros são, em geral, chuvas fortes, que também mudam a água de verdade.
         </m.p>
+        <HowItWorks>Isolation Forest combinado com z-score sobre os 30 dias anteriores, aplicado a todas as medidas de cada estação.</HowItWorks>
       </div>
       <m.ul className="event-list" variants={list} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }}>
         {ev.events.map((e) => (
@@ -66,11 +68,12 @@ function EpisodeSection({ data, names }: { data: Overview; names: Map<string, st
     <section className="model model-anomaly" aria-labelledby="anomaly-title">
       <div className="model-claim">
         <p className="huge" aria-hidden="true"><AnimatedNumber value={episodes.length} /></p>
-        <m.h1 id="anomaly-title" {...reveal}>episódios anormais encontrados pela IA</m.h1>
+        <m.h1 id="anomaly-title" {...reveal}>episódios fora do padrão encontrados pela IA</m.h1>
         <m.p {...reveal} transition={{ ...reveal.transition, delay: 0.1 }}>
-          Sem eventos rotulados para conferir, o Isolation Forest aprende o comportamento normal de cada estação e marca os dias que
-          fogem dele. Ao lado estão os mais recentes; vale confirmar cada um com coleta de campo.
+          Sem eventos conhecidos para conferir, a IA aprende como cada estação costuma ser e marca os dias que fogem desse padrão. Ao
+          lado estão os mais recentes; vale confirmar cada um com coleta de campo.
         </m.p>
+        <HowItWorks>Isolation Forest combinado com z-score sobre os 30 dias anteriores, aplicado a todas as medidas de cada estação.</HowItWorks>
       </div>
       {episodes.length ? (
         <m.ul className="event-list" variants={list} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }}>
@@ -86,7 +89,7 @@ function EpisodeSection({ data, names }: { data: Overview; names: Map<string, st
           ))}
         </m.ul>
       ) : (
-        <p className="empty">Nenhum episódio anormal no período.</p>
+        <p className="empty">Nenhum episódio fora do padrão no período.</p>
       )}
     </section>
   );
@@ -100,15 +103,16 @@ function ClassifierSection({ data }: { data: Overview }) {
     <section className="model model-classifier" aria-labelledby="clf-title">
       <div className="model-claim">
         <p className="huge" aria-hidden="true"><AnimatedNumber value={c.accuracy * 100} />%</p>
-        <m.h2 id="clf-title" {...reveal}>de acerto na classe da água</m.h2>
+        <m.h2 id="clf-title" {...reveal}>de acerto ao reconhecer a classe da água</m.h2>
         <m.p {...reveal} transition={{ ...reveal.transition, delay: 0.1 }}>
-          Um Random Forest treinado com {fmt(c.n_train)} dias aprendeu a reconhecer a classe do IQA direto das leituras dos sensores.
-          Testado em {fmt(c.n_test)} dias que nunca viu, ele acerta {fmt(c.accuracy * 100)}% das vezes e ainda{" "}
-          {fmt(c.accuracy_one_sensor_missing * 100)}% com um sensor desligado.
+          A IA aprendeu com {fmt(c.n_train)} dias de leituras a dizer se a água é Ótima, Boa, Regular, Ruim ou Péssima olhando só os
+          sensores. Em {fmt(c.n_test)} dias que nunca tinha visto, acertou {fmt(c.accuracy * 100)}%, e {fmt(c.accuracy_one_sensor_missing * 100)}%
+          mesmo com um sensor desligado.
         </m.p>
+        <HowItWorks>Random Forest treinado com os dias mais antigos e testado nos mais recentes, para simular o uso real.</HowItWorks>
       </div>
       <div className="model-detail">
-        <h3>O que mais pesa na decisão</h3>
+        <h3>Quais medidas mais influenciam a classe</h3>
         <m.ul className="bars" variants={list} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-10%" }}>
           {c.feature_importance.map((f) => (
             <m.li key={f.feature} className="bar-row" variants={item}>
@@ -124,12 +128,13 @@ function ClassifierSection({ data }: { data: Overview }) {
             </m.li>
           ))}
         </m.ul>
-        <h3>Onde o modelo acerta e onde erra</h3>
+        <h3>Onde a IA acerta e onde erra</h3>
+        <p className="block-intro">Cada linha é a classe real da água e cada coluna é a que a IA previu. Os números da diagonal são os acertos.</p>
         <div className="table-wrap">
           <table className="confusion">
             <thead>
               <tr>
-                <th scope="col">Real, previsto</th>
+                <th scope="col">Real × prevista</th>
                 {c.labels.map((l) => <th key={l} scope="col">{l}</th>)}
               </tr>
             </thead>
@@ -176,9 +181,10 @@ function ClusterSection({ data }: { data: Overview }) {
       <div className="model-claim">
         <m.h2 id="cluster-title" {...reveal}>Três perfis de ecossistema</m.h2>
         <m.p {...reveal} transition={{ ...reveal.transition, delay: 0.1 }}>
-          O K-Means agrupou {c.points.length} meses de todas as estações pelo que a água tinha em comum, sem saber de onde vinha cada
+          A IA agrupou {c.points.length} meses de todas as estações pelo que a água tinha em comum, sem saber de qual estação vinha cada
           mês. Os grupos se separaram sozinhos pelo grau de impacto humano. Passe o mouse num perfil para destacá-lo.
         </m.p>
+        <HowItWorks>K-Means sobre as médias mensais, com PCA para desenhar o gráfico em duas dimensões.</HowItWorks>
         <ul className="profiles" onPointerLeave={() => setActive(null)}>
           {c.profiles.map((p) => (
             <li key={p.cluster}>
@@ -223,9 +229,9 @@ function TrendSection({ data }: { data: Overview }) {
         </label>
       </div>
       <p className="block-intro">
-        Teste de Mann-Kendall sazonal. Ele compara cada mês com o mesmo mês do ano seguinte, para não confundir a estação do ano com
-        mudança real.
+        Compara cada mês com o mesmo mês do ano seguinte, para não confundir a estação do ano (chuva e seca) com mudança real.
       </p>
+      <HowItWorks>Teste de Mann-Kendall sazonal, com declive de Sen para estimar a variação por ano.</HowItWorks>
       <m.ul className="trend-grid" layout>
         <AnimatePresence initial={false} mode="popLayout">
           {trends.map((t, i) => (
@@ -240,7 +246,9 @@ function TrendSection({ data }: { data: Overview }) {
               <span className="trend-value">{t.pct_per_year > 0 ? "+" : ""}{fmt(t.pct_per_year)}% ao ano</span>
               <span className="trend-name">{t.label} em {names.get(t.station_id)}</span>
               <span className="trend-desc">
-                {t.significant ? `${verdictLabel(t)} significativa (p = ${fmt(t.p_value, 3)})` : `Estável (p = ${fmt(t.p_value, 2)})`}
+                <span title={`p = ${fmt(t.p_value, t.significant ? 3 : 2)}`}>
+                  {t.significant ? `${verdictLabel(t)} confirmada estatisticamente` : "Sem mudança confirmada"}
+                </span>
               </span>
               <Sparkline values={t.monthly.map((x) => x.value)} width={120} height={48} color="var(--tone)" strokeWidth={2} delay={0.2} />
             </m.li>

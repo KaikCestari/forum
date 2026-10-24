@@ -2,15 +2,18 @@ import { AnimatePresence, m } from "motion/react";
 import { Link, NavLink } from "react-router";
 import type { PipelineStatus } from "../api/types";
 import { dmy, lowerFirst } from "../lib/format";
+import { friendlyStep } from "../lib/stages";
 import { ease, spring } from "../motion/tokens";
 
 const LINKS = [
-  { to: "/", label: "Bacia", end: true },
+  { to: "/", label: "Visão geral", end: true },
+  { to: "/imagens", label: "Imagens", end: false },
   { to: "/estacoes", label: "Estações", end: false },
-  { to: "/modelos", label: "Modelos", end: false },
-  { to: "/pipeline", label: "Pipeline", end: false },
-  { to: "/dados", label: "Dados", end: false },
+  { to: "/analises", label: "Análises da IA", end: false },
+  { to: "/relatorio", label: "Relatório", end: false },
+  { to: "/dados", label: "Meus dados", end: false },
   { to: "/assistente", label: "Assistente", end: false },
+  { to: "/guia", label: "Guia", end: false },
 ];
 
 interface Props {
@@ -22,14 +25,14 @@ export function AppBar({ pipeline, period }: Props) {
   const running = !!pipeline?.running;
   const step = pipeline?.steps.at(-1);
   const state = running
-    ? step ? `${step.language}: ${lowerFirst(step.name)}` : "Iniciando o pipeline"
-    : pipeline?.error ? "O pipeline falhou"
+    ? step ? `Atualizando: ${lowerFirst(friendlyStep(step.name))}` : "Iniciando a atualização"
+    : pipeline?.error ? "A atualização falhou"
     : period ? `Dados de ${dmy(period[0])} a ${dmy(period[1])}` : "";
 
   return (
     <header className="bar">
       <Link to="/" className="wordmark">AquaML</Link>
-      <nav className="nav" aria-label="Vistas">
+      <nav className="nav" aria-label="Seções">
         {LINKS.map((l) => (
           <NavLink key={l.to} to={l.to} end={l.end} className="nav-link">
             {({ isActive }) => (
@@ -41,7 +44,7 @@ export function AppBar({ pipeline, period }: Props) {
           </NavLink>
         ))}
       </nav>
-      <Link to="/pipeline" className={`bar-state ${running ? "is-running" : ""}`}>
+      <Link to="/atualizar" className={`bar-state ${running ? "is-running" : ""}`}>
         <AnimatePresence mode="wait" initial={false}>
           <m.span key={state} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: ease.out }}>
             {state}

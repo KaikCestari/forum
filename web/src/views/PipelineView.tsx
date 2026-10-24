@@ -3,16 +3,9 @@ import { useState, type FormEvent } from "react";
 import { useDbSummary, type usePipeline } from "../api/client";
 import type { DbSummary, Overview, PipelineStep } from "../api/types";
 import { AnimatedNumber } from "../components/AnimatedNumber";
-import { fmt } from "../lib/format";
+import { fmt, shortPaths } from "../lib/format";
+import { STAGES } from "../lib/stages";
 import { ease, item, list, tap } from "../motion/tokens";
-
-const STAGES = [
-  { lang: "Dados", match: /Geração|Importação/, task: "Sensores ou simulação", what: "Leituras reais importadas de CSV ou, para demonstração, seis estações sintéticas com eventos escondidos." },
-  { lang: "H2", match: /Carga|Exportação/, task: "Guarda as leituras", what: "O banco H2 é a fonte dos dados: cada execução parte do que está guardado nele." },
-  { lang: "Rust", match: /Processamento/, task: "Processa e calcula o IQA", what: "Descarta leituras impossíveis, preenche lacunas, consolida por dia e calcula o índice, em paralelo." },
-  { lang: "Python", match: /Análise com/, task: "Aprende com os dados", what: "Isolation Forest, Random Forest, K-Means e Mann-Kendall transformam números em alertas." },
-  { lang: "Java", match: /Gravação/, task: "Registra e entrega", what: "Grava a análise e os alertas no H2, serve a API deste painel e alimenta o Llama." },
-] as const;
 
 type Pipeline = ReturnType<typeof usePipeline>;
 type StageState = "idle" | "active" | "done" | "fail";
@@ -22,13 +15,13 @@ function stageInfo(i: number, steps: PipelineStep[], running: boolean, data: Ove
   const step = steps.findLast((s) => g.match.test(s.name));
   if (step) {
     const state = step.status === "ok" ? "done" : step.status === "erro" ? "fail" : "active";
-    return { state, time: state === "active" ? "executando" : `${fmt(step.durationMs / 1000, 2)} s`, output: step.output.split("\n").at(-1) };
+    return { state, time: state === "active" ? "executando" : `${fmt(step.durationMs / 1000, 2)} s`, output: shortPaths(step.output.split("\n").at(-1) ?? "") };
   }
   if (running) return { state: "idle", time: "aguardando" };
-  if (g.lang === "Java") return { state: "done", time: "no ar" };
-  if (g.lang === "H2") return { state: "done", time: db ? `${fmt(db.totals.measurements)} leituras` : "—" };
-  if (g.lang === "Rust" && data.processing) return { state: "done", time: `${fmt(data.processing.total_ms)} ms` };
-  if (g.lang === "Python") return { state: "done", time: `${fmt(Object.values(data.timings_s).reduce((a, b) => a + b, 0), 1)} s` };
+  if (g.key === "publicar") return { state: "done", time: "no ar" };
+  if (g.key === "guardar") return { state: "done", time: db ? `${fmt(db.totals.measurements)} leituras` : "—" };
+  if (g.key === "limpar" && data.processing) return { state: "done", time: `${fmt(data.processing.total_ms)} ms` };
+  if (g.key === "ia") return { state: "done", time: `${fmt(Object.values(data.timings_s).reduce((a, b) => a + b, 0), 1)} s` };
   return { state: "idle", time: db?.dataset?.source === "real" ? "dados reais" : "dados já existentes" };
 }
 
@@ -38,15 +31,13 @@ export default function PipelineView({ data, pipeline }: { data: Overview; pipel
   const steps = status?.steps ?? [];
   const reduce = useReducedMotion();
   const db = useDbSummary().data;
-  const [regenerate, setRegenerate] = useState(false);
-  const [seed, setSeed] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      await pipeline.run(regenerate, seed);
+      await pipeline.run();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível iniciar o pipeline.");
     }
@@ -59,24 +50,24 @@ export default function PipelineView({ data, pipeline }: { data: Overview; pipel
     [p.missing_values, "valores ausentes"],
     [p.interpolated_hourly, "lacunas curtas preenchidas"],
     [p.days_output, "dias consolidados"],
-    [p.threads, "threads em paralelo no Rust"],
+    [p.days_with_iqa, "dias com IQA calculado"],
   ] as const : [];
 
   return (
     <>
       <section className="pipeline-intro">
-        <m.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: ease.out }}>Do sensor ao alerta</m.h1>
-        <m.p className="lede" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: ease.out, delay: 0.12 }}>
-          Três linguagens e um banco, cada um no que faz melhor. O H2 guarda os dados, o Rust processa o volume, o Python aprende com
-          eles e o Java coordena tudo.
+        <m.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: ease.out }}>Atualizar a análise</m.h1>
+        <m.p className="lede" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: ease.out, delay: 0.12 }}>
+          Aqui você recalcula tudo a partir dos dados guardados. São cinco etapas, do sensor ao alerta, e dá para acompanhar cada uma
+          enquanto roda.
         </m.p>
       </section>
 
-      <m.ol className="flow" variants={list} initial="hidden" animate="show" aria-label="Etapas do pipeline">
+      <m.ol className="flow" variants={list} initial="hidden" animate="show" aria-label="Etapas da atualização">
         {STAGES.map((g, i) => {
           const info = stageInfo(i, steps, running, data, db);
           return (
-            <m.li key={g.task} className={`stage is-${info.state}`} variants={item}>
+            <m.li key={g.key} className={`stage is-${info.state}`} variants={item}>
               <m.span className="stage-bar" layout aria-hidden="true"
                 animate={info.state === "active" && !reduce ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
                 transition={info.state === "active" ? { duration: 1.1, repeat: Infinity } : { duration: 0.3 }}
@@ -89,39 +80,33 @@ export default function PipelineView({ data, pipeline }: { data: Overview; pipel
                   ))}
                 </span>
               )}
-              <span className="stage-lang">{g.lang}</span>
-              <span className="stage-task">{g.task}</span>
+              <span className="stage-lang">{g.title}</span>
               <p className="stage-what">{g.what}</p>
               <AnimatePresence mode="wait" initial={false}>
                 <m.span key={info.time} className="stage-time" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                   {info.time}
                 </m.span>
               </AnimatePresence>
-              {info.output && <span className="stage-out">{info.output}</span>}
+              <details className="stage-tech">
+                <summary>Detalhe técnico</summary>
+                <span>{g.tech}{info.output ? `: ${info.output}` : ""}</span>
+              </details>
             </m.li>
           );
         })}
       </m.ol>
 
-      <m.section className="run-panel" aria-labelledby="run-title" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-10%" }} transition={{ duration: 0.7, ease: ease.out }}>
+      <m.section className="run-panel" aria-labelledby="run-title" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: "-10%" }} transition={{ duration: 0.7, ease: ease.out }}>
         <div>
-          <h2 id="run-title">Executar de novo</h2>
+          <h2 id="run-title">Atualizar agora</h2>
           <p>
-            Refaz todo o caminho a partir do que está no H2. Com novos dados, o gerador cria outro cenário sintético, com outros eventos
-            e outro ruído, e substitui o conjunto atual no banco, inclusive dados reais importados.
+            Refaz todo o caminho a partir das leituras de sensores guardadas. Use depois de importar uma planilha nova ou quando
+            quiser recalcular tudo.
           </p>
         </div>
         <form className="run-form" onSubmit={submit}>
-          <label className="toggle">
-            <input type="checkbox" checked={regenerate} onChange={(e) => setRegenerate(e.target.checked)} />
-            Gerar novos dados
-          </label>
-          <label className="seed">
-            Semente
-            <input type="number" inputMode="numeric" placeholder="aleatória" value={seed} onChange={(e) => setSeed(e.target.value)} disabled={!regenerate} />
-          </label>
           <m.button type="submit" className="button" disabled={running} whileTap={tap}>
-            {running ? "Executando…" : "Executar pipeline"}
+            {running ? "Atualizando…" : "Atualizar análise"}
           </m.button>
           <AnimatePresence>
             {error && (

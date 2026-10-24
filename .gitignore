@@ -3,6 +3,7 @@ data/raw/*
 data/processed/*
 data/results/*
 data/db/*
+data/images/*
 !data/**/.gitkeep
 
 # Rust
@@ -18,3 +19,8 @@ app/target/
 
 # Inspeções de design (taste-skill)
 .taste-skill/
+
+# Segredos locais
+.env
+.env.*
+!.env.example

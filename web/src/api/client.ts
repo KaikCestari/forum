@@ -1,10 +1,13 @@
-import useSWR, { useSWRConfig } from "swr";
+import useSWR, { mutate as globalMutate, useSWRConfig } from "swr";
 import { useCallback, useEffect, useRef } from "react";
 import type {
-  AnalysisRun, AssistantMessage, DbSummary, ImportResult, LlamaStatus, MonthlyRow, Overview, PipelineStatus, Series,
+  AnalysisRun, AssistantMessage, DbSummary, FieldNote, ImageAnalysis, ImageObservation, ImportResult, NoteKind, Point, LlamaStatus, MonthlyRow, Overview, PipelineStatus, Series,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+
+/** Endereço completo de um caminho da API, para usar em <img src>. */
+export const apiUrl = (path: string) => `${BASE}${path}`;
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -66,6 +69,77 @@ export async function clearAssistantHistory() {
   if (!res.ok) throw new ApiError(`Erro ${res.status}`, res.status);
 }
 
+/** Anotações do caderno de campo, de uma estação ou de todas. */
+export function useNotes(stationId?: string) {
+  const query = stationId ? `?station=${encodeURIComponent(stationId)}` : "";
+  return useSWR<FieldNote[]>(`/api/notes${query}`, fetchJson, swrOptions);
+}
+
+const refreshNotes = () => globalMutate((key) => typeof key === "string" && key.startsWith("/api/notes"));
+
+export async function addNote(note: { station_id: string; date: string; kind: NoteKind; text: string }) {
+  const created = await fetchJson<FieldNote>("/api/notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(note),
+  });
+  await refreshNotes();
+  return created;
+}
+
+export async function deleteNote(id: number) {
+  const res = await fetch(`${BASE}/api/notes/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 404) throw new ApiError(`Erro ${res.status}`, res.status);
+  await refreshNotes();
+}
+
+/** Pontos de monitoramento criados a partir de imagens. */
+export function usePoints() {
+  return useSWR<Point[]>("/api/points", fetchJson, swrOptions);
+}
+
+/** Observações por imagem, da mais recente para a mais antiga; filtre por ponto e por situação. */
+export function useImages(stationId?: string, status?: "pendente" | "confirmado") {
+  const qs = new URLSearchParams();
+  if (stationId) qs.set("station", stationId);
+  if (status) qs.set("status", status);
+  const query = qs.toString();
+  return useSWR<ImageObservation[]>(`/api/images${query ? `?${query}` : ""}`, fetchJson, swrOptions);
+}
+
+const refreshImages = () => globalMutate((key) => typeof key === "string" && (key.startsWith("/api/images") || key === "/api/points"));
+
+/** Envia a imagem; a API guarda, calcula os indicadores e pede a leitura à IA. */
+export async function uploadImage(form: FormData) {
+  const created = await fetchJson<ImageObservation>("/api/images", { method: "POST", body: form });
+  await refreshImages();
+  return created;
+}
+
+export async function confirmImage(id: number, analysis: ImageAnalysis) {
+  const done = await fetchJson<ImageObservation>(`/api/images/${id}/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(analysis),
+  });
+  await refreshImages();
+  return done;
+}
+
+export async function deleteImage(id: number) {
+  const res = await fetch(`${BASE}/api/images/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 404) throw new ApiError(`Erro ${res.status}`, res.status);
+  await refreshImages();
+}
+
+/** Apaga o conjunto de dados de sensores e as análises; imagens, anotações e conversas ficam. */
+export async function clearSensorData() {
+  const res = await fetch(`${BASE}/api/data`, { method: "DELETE" });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(body.error ?? `Erro ${res.status}`, res.status);
+  await globalMutate((key) => typeof key === "string" && key.startsWith("/api/"), undefined, { revalidate: true });
+}
+
 export function useSeries(stationId: string | undefined) {
   return useSWR<Series>(stationId ? `/api/stations/${encodeURIComponent(stationId)}/series` : null, fetchJson, swrOptions);
 }
@@ -92,10 +166,8 @@ export function usePipeline() {
     wasRunning.current = running;
   }, [status.data?.running, mutate]);
 
-  const run = useCallback(async (regenerate: boolean, seed: string) => {
-    const qs = new URLSearchParams({ regenerate: String(regenerate) });
-    if (seed.trim()) qs.set("seed", seed.trim());
-    const next = await fetchJson<PipelineStatus>(`/api/pipeline/run?${qs}`, { method: "POST" });
+  const run = useCallback(async () => {
+    const next = await fetchJson<PipelineStatus>("/api/pipeline/run", { method: "POST" });
     await status.mutate(next, { revalidate: false });
   }, [status]);
 

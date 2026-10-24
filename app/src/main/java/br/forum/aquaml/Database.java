@@ -93,7 +93,22 @@ public class Database implements AutoCloseable {
                 CREATE TABLE IF NOT EXISTS assistant_messages (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY, created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                     question CLOB NOT NULL, answer CLOB NOT NULL, model VARCHAR(64), duration_ms BIGINT,
-                    run_id BIGINT)""");
+                    run_id BIGINT)""",
+                """
+                CREATE TABLE IF NOT EXISTS field_notes (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY, station_id VARCHAR(64) NOT NULL, noted_on DATE NOT NULL,
+                    kind VARCHAR(20) NOT NULL, text VARCHAR(2000) NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL)""",
+                """
+                CREATE TABLE IF NOT EXISTS points (
+                    id VARCHAR(64) PRIMARY KEY, name VARCHAR(255) NOT NULL, type VARCHAR(32) NOT NULL,
+                    lat DOUBLE, lon DOUBLE, created_at TIMESTAMP WITH TIME ZONE NOT NULL)""",
+                """
+                CREATE TABLE IF NOT EXISTS image_observations (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY, station_id VARCHAR(64) NOT NULL, observed_on DATE NOT NULL,
+                    kind VARCHAR(16) NOT NULL, file_name VARCHAR(255) NOT NULL, mime VARCHAR(32) NOT NULL,
+                    width INT, height INT, note VARCHAR(500), metrics CLOB, analysis CLOB, analysis_error VARCHAR(500),
+                    model VARCHAR(64), status VARCHAR(16) NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                    confirmed_at TIMESTAMP WITH TIME ZONE)""");
     }
 
     /* ---------------- conjunto de dados ---------------- */
@@ -409,6 +424,171 @@ public class Database implements AutoCloseable {
 
     public void clearMessages() {
         exec("DELETE FROM assistant_messages");
+    }
+
+    /* ---------------- caderno de campo ---------------- */
+
+    /** Guarda uma anotação e devolve o registro criado. As anotações sobrevivem à troca do conjunto de dados. */
+    public Map<String, Object> addNote(String stationId, LocalDate notedOn, String kind, String text) {
+        long id = inTransaction(c -> {
+            try (PreparedStatement ps = c.prepareStatement("""
+                    INSERT INTO field_notes (station_id, noted_on, kind, text, created_at)
+                    VALUES (?, ?, ?, ?, ?)""", Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, stationId);
+                ps.setObject(2, notedOn);
+                ps.setString(3, kind);
+                ps.setString(4, text);
+                ps.setObject(5, Instant.now().atOffset(java.time.ZoneOffset.UTC));
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    keys.next();
+                    return keys.getLong(1);
+                }
+            }
+        });
+        return query("SELECT id, station_id, noted_on, kind, text, created_at FROM field_notes WHERE id = ?", id).get(0);
+    }
+
+    /** Anotações da mais recente para a mais antiga, de uma estação ou de todas. */
+    public List<Map<String, Object>> notes(String stationId, int limit) {
+        String cols = "SELECT id, station_id, noted_on, kind, text, created_at FROM field_notes ";
+        String order = " ORDER BY noted_on DESC, id DESC LIMIT ?";
+        return stationId == null || stationId.isBlank()
+                ? query(cols + order.substring(1), limit)
+                : query(cols + "WHERE station_id = ?" + order, stationId, limit);
+    }
+
+    /** @return se havia uma anotação com esse id */
+    public boolean deleteNote(long id) {
+        return inTransaction(c -> {
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM field_notes WHERE id = ?")) {
+                ps.setLong(1, id);
+                return ps.executeUpdate() > 0;
+            }
+        });
+    }
+
+    /* ---------------- pontos de monitoramento e imagens ---------------- */
+
+    /** Cria um ponto de monitoramento (para quem trabalha só com imagens, sem sensores). */
+    public Map<String, Object> addPoint(String name, String type, Double lat, Double lon) {
+        String id = "PT-" + java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
+        inTransaction(c -> {
+            try (PreparedStatement ps = c.prepareStatement(
+                    "INSERT INTO points (id, name, type, lat, lon, created_at) VALUES (?, ?, ?, ?, ?, ?)")) {
+                ps.setString(1, id);
+                ps.setString(2, name);
+                ps.setString(3, type);
+                setDouble(ps, 4, lat);
+                setDouble(ps, 5, lon);
+                ps.setObject(6, Instant.now().atOffset(java.time.ZoneOffset.UTC));
+                ps.executeUpdate();
+                return null;
+            }
+        });
+        return query("SELECT id, name, type, lat, lon FROM points WHERE id = ?", id).get(0);
+    }
+
+    public List<Map<String, Object>> points() {
+        return query("SELECT id, name, type, lat, lon FROM points ORDER BY name");
+    }
+
+    /** O código é de um ponto de imagens ou de uma estação do conjunto de dados atual? */
+    public boolean stationKnown(String id) {
+        return !query("SELECT id FROM points WHERE id = ? UNION SELECT id FROM stations WHERE id = ?", id, id).isEmpty();
+    }
+
+    /** Nome legível de cada ponto ou estação conhecida. */
+    public Map<String, String> stationNames() {
+        Map<String, String> names = new LinkedHashMap<>();
+        for (Map<String, Object> r : query("SELECT id, name FROM stations UNION SELECT id, name FROM points")) {
+            names.put((String) r.get("id"), (String) r.get("name"));
+        }
+        return names;
+    }
+
+    public long addImage(String stationId, LocalDate observedOn, String kind, String fileName, String mime,
+                         int width, int height, String note, String metricsJson, String analysisJson,
+                         String analysisError, String model) {
+        return inTransaction(c -> {
+            try (PreparedStatement ps = c.prepareStatement("""
+                    INSERT INTO image_observations (station_id, observed_on, kind, file_name, mime, width, height, note,
+                                                    metrics, analysis, analysis_error, model, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', ?)""", Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, stationId);
+                ps.setObject(2, observedOn);
+                ps.setString(3, kind);
+                ps.setString(4, fileName);
+                ps.setString(5, mime);
+                ps.setInt(6, width);
+                ps.setInt(7, height);
+                ps.setString(8, note);
+                ps.setString(9, metricsJson);
+                ps.setString(10, analysisJson);
+                ps.setString(11, analysisError);
+                ps.setString(12, model);
+                ps.setObject(13, Instant.now().atOffset(java.time.ZoneOffset.UTC));
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    keys.next();
+                    return keys.getLong(1);
+                }
+            }
+        });
+    }
+
+    private static final String IMAGE_COLS = """
+            SELECT id, station_id, observed_on, kind, file_name, mime, width, height, note, metrics, analysis,
+                   analysis_error, model, status, created_at, confirmed_at FROM image_observations""";
+
+    /** Observações da mais recente para a mais antiga; filtros opcionais por ponto e situação. */
+    public List<Map<String, Object>> images(String stationId, String status, int limit) {
+        StringBuilder sql = new StringBuilder(IMAGE_COLS).append(" WHERE 1 = 1");
+        List<Object> args = new ArrayList<>();
+        if (stationId != null && !stationId.isBlank()) {
+            sql.append(" AND station_id = ?");
+            args.add(stationId);
+        }
+        if (status != null && !status.isBlank()) {
+            sql.append(" AND status = ?");
+            args.add(status);
+        }
+        sql.append(" ORDER BY observed_on DESC, id DESC LIMIT ?");
+        args.add(limit);
+        return query(sql.toString(), args.toArray());
+    }
+
+    public Optional<Map<String, Object>> image(long id) {
+        return query(IMAGE_COLS + " WHERE id = ?", id).stream().findFirst();
+    }
+
+    /** Grava a análise revisada pelo biólogo e marca a observação como confirmada. */
+    public boolean confirmImage(long id, String analysisJson) {
+        return inTransaction(c -> {
+            try (PreparedStatement ps = c.prepareStatement("""
+                    UPDATE image_observations SET analysis = ?, status = 'confirmado', confirmed_at = ? WHERE id = ?""")) {
+                ps.setString(1, analysisJson);
+                ps.setObject(2, Instant.now().atOffset(java.time.ZoneOffset.UTC));
+                ps.setLong(3, id);
+                return ps.executeUpdate() > 0;
+            }
+        });
+    }
+
+    /** @return o nome do arquivo da imagem apagada, ou vazio se o id não existia */
+    public Optional<String> deleteImage(long id) {
+        Optional<Map<String, Object>> row = image(id);
+        if (row.isEmpty()) {
+            return Optional.empty();
+        }
+        exec("DELETE FROM image_observations WHERE id = " + id);
+        return Optional.of((String) row.get().get("file_name"));
+    }
+
+    /** Apaga o conjunto de dados de sensores e as análises. Imagens, pontos, anotações e conversas ficam. */
+    public void clearDataset() {
+        exec("DELETE FROM analysis_runs", "DELETE FROM daily", "DELETE FROM measurements", "DELETE FROM events",
+                "DELETE FROM stations", "DELETE FROM dataset");
     }
 
     /* ---------------- utilidades JDBC ---------------- */
