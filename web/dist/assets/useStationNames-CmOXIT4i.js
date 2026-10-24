@@ -1,0 +1,1 @@
+import{a as o}from"./motion-BRKjGmOO.js";import{J as n,r}from"./index-CDloK2wn.js";function u(){const a=n().data?.stations,e=r().data;return o.useMemo(()=>{const s=new Map;return a?.forEach(t=>s.set(t.id,t.name)),e?.forEach(t=>s.set(t.id,t.name)),s},[a,e])}export{u};

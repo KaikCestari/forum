@@ -28,10 +28,16 @@ public final class Main {
                         rule.anyHost();
                     } else {
                         corsOrigins.forEach(rule::allowHost);
+                        rule.allowCredentials = true;
                     }
                 }));
             }
         });
+        app.exception(Exception.class, (error, ctx) -> {
+            log.error("Falha ao atender {} {}", ctx.method(), ctx.path(), error);
+            ctx.status(500).json(java.util.Map.of("error", PublicErrors.INTERNAL));
+        });
+        new AuthService(db, corsOrigins).register(app);
         ApiRoutes.register(app, repo, pipeline, db, assistant, images);
         return app;
     }

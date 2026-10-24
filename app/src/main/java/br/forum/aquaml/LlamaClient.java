@@ -112,10 +112,11 @@ public class LlamaClient {
                         .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload))).build(),
                 HttpResponse.BodyHandlers.ofString());
-        JsonNode body = mapper.readTree(r.body());
         if (r.statusCode() != 200) {
-            throw new IOException("Llama respondeu HTTP " + r.statusCode() + ": " + body.path("error").asText(r.body()));
+            // O corpo do provedor pode conter credenciais ou detalhes de infraestrutura.
+            throw new IOException("O serviço do assistente respondeu HTTP " + r.statusCode());
         }
+        JsonNode body = mapper.readTree(r.body());
         return body.path("message").path("content").asText().strip();
     }
 }

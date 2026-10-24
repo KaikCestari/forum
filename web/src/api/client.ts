@@ -1,5 +1,6 @@
 import useSWR, { mutate as globalMutate, useSWRConfig } from "swr";
 import { useCallback, useEffect, useRef } from "react";
+import { REQUEST_FAILED, requestErrorMessage } from "../lib/errors";
 import type {
   AnalysisRun, AssistantMessage, DbSummary, FieldNote, ImageAnalysis, ImageObservation, ImportResult, NoteKind, Point, LlamaStatus, MonthlyRow, Overview, PipelineStatus, Series,
 } from "./types";
@@ -9,6 +10,19 @@ const BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 /** Endereço completo de um caminho da API, para usar em <img src>. */
 export const apiUrl = (path: string) => `${BASE}${path}`;
 
+let csrfToken: string | null = null;
+export function setCsrfToken(value: string | null) { csrfToken = value; }
+let apiMutate = globalMutate;
+export function setApiMutate(value: typeof globalMutate) { apiMutate = value; }
+
+async function authFetch(path: string, init?: RequestInit) {
+  const headers = new Headers(init?.headers);
+  if (csrfToken && !["GET", "HEAD"].includes(init?.method ?? "GET")) headers.set("X-CSRF-Token", csrfToken);
+  const response = await fetch(`${BASE}${path}`, { ...init, headers, credentials: "include" });
+  if (response.status === 401 && !path.startsWith("/api/auth/")) window.dispatchEvent(new Event("aquaml:session-expired"));
+  return response;
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
@@ -16,13 +30,13 @@ export class ApiError extends Error {
 }
 
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, init);
+  const res = await authFetch(path, init);
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(body.error ?? `Erro ${res.status}`, res.status);
+  if (!res.ok) throw new ApiError(requestErrorMessage(res.status, body.error), res.status);
   return body as T;
 }
 
-const swrOptions = { revalidateOnFocus: false, shouldRetryOnError: true, errorRetryInterval: 1500 };
+const swrOptions = { revalidateOnFocus: false, shouldRetryOnError: (error: ApiError) => error.status !== 401 && error.status !== 403, errorRetryInterval: 1500 };
 
 export function useOverview() {
   return useSWR<Overview>("/api/overview", fetchJson, swrOptions);
@@ -65,8 +79,8 @@ export function askLlama(question: string) {
 }
 
 export async function clearAssistantHistory() {
-  const res = await fetch(`${BASE}/api/assistant/history`, { method: "DELETE" });
-  if (!res.ok) throw new ApiError(`Erro ${res.status}`, res.status);
+  const res = await authFetch("/api/assistant/history", { method: "DELETE" });
+  if (!res.ok) throw new ApiError(REQUEST_FAILED, res.status);
 }
 
 /** Anotações do caderno de campo, de uma estação ou de todas. */
@@ -75,7 +89,7 @@ export function useNotes(stationId?: string) {
   return useSWR<FieldNote[]>(`/api/notes${query}`, fetchJson, swrOptions);
 }
 
-const refreshNotes = () => globalMutate((key) => typeof key === "string" && key.startsWith("/api/notes"));
+const refreshNotes = () => apiMutate((key) => typeof key === "string" && key.startsWith("/api/notes"));
 
 export async function addNote(note: { station_id: string; date: string; kind: NoteKind; text: string }) {
   const created = await fetchJson<FieldNote>("/api/notes", {
@@ -88,8 +102,8 @@ export async function addNote(note: { station_id: string; date: string; kind: No
 }
 
 export async function deleteNote(id: number) {
-  const res = await fetch(`${BASE}/api/notes/${id}`, { method: "DELETE" });
-  if (!res.ok && res.status !== 404) throw new ApiError(`Erro ${res.status}`, res.status);
+  const res = await authFetch(`/api/notes/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 404) throw new ApiError(REQUEST_FAILED, res.status);
   await refreshNotes();
 }
 
@@ -107,7 +121,7 @@ export function useImages(stationId?: string, status?: "pendente" | "confirmado"
   return useSWR<ImageObservation[]>(`/api/images${query ? `?${query}` : ""}`, fetchJson, swrOptions);
 }
 
-const refreshImages = () => globalMutate((key) => typeof key === "string" && (key.startsWith("/api/images") || key === "/api/points"));
+const refreshImages = () => apiMutate((key) => typeof key === "string" && (key.startsWith("/api/images") || key === "/api/points"));
 
 /** Envia a imagem; a API guarda, calcula os indicadores e pede a leitura à IA. */
 export async function uploadImage(form: FormData) {
@@ -127,17 +141,17 @@ export async function confirmImage(id: number, analysis: ImageAnalysis) {
 }
 
 export async function deleteImage(id: number) {
-  const res = await fetch(`${BASE}/api/images/${id}`, { method: "DELETE" });
-  if (!res.ok && res.status !== 404) throw new ApiError(`Erro ${res.status}`, res.status);
+  const res = await authFetch(`/api/images/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 404) throw new ApiError(REQUEST_FAILED, res.status);
   await refreshImages();
 }
 
 /** Apaga o conjunto de dados de sensores e as análises; imagens, anotações e conversas ficam. */
 export async function clearSensorData() {
-  const res = await fetch(`${BASE}/api/data`, { method: "DELETE" });
+  const res = await authFetch("/api/data", { method: "DELETE" });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(body.error ?? `Erro ${res.status}`, res.status);
-  await globalMutate((key) => typeof key === "string" && key.startsWith("/api/"), undefined, { revalidate: true });
+  if (!res.ok) throw new ApiError(requestErrorMessage(res.status, body.error), res.status);
+  await apiMutate((key) => typeof key === "string" && key.startsWith("/api/"), undefined, { revalidate: true });
 }
 
 export function useSeries(stationId: string | undefined) {

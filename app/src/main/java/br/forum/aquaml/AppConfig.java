@@ -15,7 +15,7 @@ import java.util.Map;
 public record AppConfig(Path root, int port, List<String> corsOrigins, String dbUrl, String ollamaUrl,
                         String llamaModel, String ollamaApiKey, String visionModel) {
 
-    static final String DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:4173";
+    static final String DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173";
     public static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
     public static final String DEFAULT_LLAMA_MODEL = "llama3.2";
     /** Modelo com visão usado para ler fotos e imagens de satélite. */

@@ -17,9 +17,9 @@ export default function BasinView({ data }: { data: Overview }) {
     <>
       <section className="basin" aria-labelledby="basin-title">
         <div className="basin-text">
-          <m.h1 id="basin-title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: ease.out, delay: 0.1 }}>
+          <m.h2 id="basin-title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: ease.out, delay: 0.1 }}>
             {basinHeadline(data.stations)}
-          </m.h1>
+          </m.h2>
           <m.p className="lede" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: ease.out, delay: 0.22 }}>
             {basinLede(data)}
           </m.p>

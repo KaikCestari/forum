@@ -6,6 +6,7 @@ import type { AssistantMessage, LlamaStatus } from "../api/types";
 import { Markdown } from "../components/Markdown";
 import { fmt } from "../lib/format";
 import { ease, tap } from "../motion/tokens";
+import { assistantErrorMessage } from "../lib/errors";
 
 const SUGGESTIONS = [
   { title: "Onde a água piorou", text: "Qual estação está em pior situação e por quê?" },
@@ -17,7 +18,8 @@ const SUGGESTIONS = [
 /** Pergunta em andamento ou que falhou, antes de entrar no histórico do H2. */
 interface Pending {
   question: string;
-  error?: string;
+  error?: boolean;
+  status?: number;
 }
 
 const MAX_TEXTAREA = 200;
@@ -27,6 +29,7 @@ export default function AssistantView() {
   const history = useAssistantHistory();
   const [pending, setPending] = useState<Pending | null>(null);
   const [question, setQuestion] = useState("");
+  const [clearError, setClearError] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLTextAreaElement>(null);
   const reduce = useReducedMotion();
@@ -56,7 +59,7 @@ export default function AssistantView() {
       await history.mutate((prev) => [...(prev ?? []), answer], { revalidate: false });
       setPending(null);
     } catch (err) {
-      setPending({ question: text, error: err instanceof Error ? err.message : "O Llama não respondeu." });
+      setPending({ question: text, error: true, status: err instanceof ApiError ? err.status : undefined });
       if (err instanceof ApiError && err.status === 503) status.mutate();
     }
   };
@@ -86,9 +89,12 @@ export default function AssistantView() {
 
   const clear = async () => {
     if (asking) return;
-    await clearAssistantHistory();
-    setPending(null);
-    history.mutate([], { revalidate: false });
+    setClearError(false);
+    try {
+      await clearAssistantHistory();
+      setPending(null);
+      await history.mutate([], { revalidate: false });
+    } catch { setClearError(true); }
   };
 
   const ready = !!status.data?.modelInstalled;
@@ -105,7 +111,8 @@ export default function AssistantView() {
 
       <div className="chat-scroll">
         <div className="chat-thread">
-          {status.data && !ready && <LlamaNotice status={status.data} />}
+          {(status.error || (status.data && !ready)) && <LlamaNotice />}
+          {clearError && <p className="chat-body is-error" role="alert">Não foi possível limpar a conversa. Tente novamente.</p>}
 
           {empty && (
             <div className="chat-hello">
@@ -137,7 +144,7 @@ export default function AssistantView() {
                   <div className="chat-a">
                     <Avatar />
                     {pending.error ? (
-                      <p className="chat-body is-error" role="alert">{pending.error}</p>
+                      <p className="chat-body is-error" role="alert">{assistantErrorMessage({ status: pending.status })}</p>
                     ) : (
                       <p className="chat-body is-thinking">
                         Lendo a análise
@@ -193,22 +200,21 @@ function Exchange({ msg }: { msg: AssistantMessage }) {
 
 function LlamaPill({ status }: { status?: LlamaStatus }) {
   const ok = !!status?.modelInstalled;
-  const label = !status ? "Verificando" : ok ? "Assistente pronto" : status.available ? "Modelo não baixado" : "Assistente fora do ar";
+  const label = !status ? "Verificando" : ok ? "Assistente pronto" : "Assistente indisponível";
   return (
-    <span className={`llama-pill ${!status ? "" : ok ? "is-ok" : "is-off"}`} role="status" title={status?.model}>
+    <span className={`llama-pill ${!status ? "" : ok ? "is-ok" : "is-off"}`} role="status">
       <i aria-hidden="true" />{label}
     </span>
   );
 }
 
-function LlamaNotice({ status }: { status: LlamaStatus }) {
+function LlamaNotice() {
   return (
     <div className="llama-notice" role="note">
-      <strong>{status.available ? "O assistente ainda não está pronto" : "O assistente não está disponível"}</strong>
+      <strong>O assistente está indisponível no momento</strong>
       <p>
-        Peça a quem administra o sistema para conferir o serviço do assistente (Ollama) e a chave no arquivo <code>.env</code>.
+        Tente novamente em alguns instantes. Se o problema continuar, entre em contato com a equipe responsável.
       </p>
-      {status.error && <p className="llama-detail">Detalhe técnico: {status.error}</p>}
     </div>
   );
 }

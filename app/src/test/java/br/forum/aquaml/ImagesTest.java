@@ -41,7 +41,8 @@ class ImagesTest {
 
     @TempDir Path tmp;
     private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder().cookieHandler(new java.net.CookieManager()).build();
+    private String csrf = "";
     private final AtomicReference<String> lastVisionRequest = new AtomicReference<>();
     private volatile int visionStatus = 200;
     private volatile String visionContent = GOOD_ANALYSIS;
@@ -71,6 +72,10 @@ class ImagesTest {
         ImageService images = new ImageService(db, llama, tmp.resolve("images"), "gemma4:31b");
         app = Main.createApp(repo, new PipelineService(config, repo, db), db, new AssistantService(llama, repo, db), images,
                 List.of(FRONT)).start(0);
+        var signedIn = send("POST", "/api/auth/register", """
+                {"name":"Equipe de imagens","email":"images@example.test","password":"test-password-123"}""");
+        assertEquals(201, signedIn.statusCode(), signedIn.body());
+        csrf = mapper.readTree(signedIn.body()).get("csrfToken").asText();
     }
 
     @AfterEach
@@ -107,11 +112,12 @@ class ImagesTest {
         body.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
         return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + "/api/images"))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .header("X-CSRF-Token", csrf)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray())).build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> send(String method, String path, String json) throws Exception {
-        var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path)).header("Content-Type", "application/json");
+        var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path)).header("Content-Type", "application/json").header("X-CSRF-Token", csrf);
         builder.method(method, json == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(json));
         return http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
@@ -183,13 +189,21 @@ class ImagesTest {
     void whenTheModelFailsTheImageIsStillSavedForManualReview() throws Exception {
         visionStatus = 500;
         JsonNode obs = uploadOk("foto");
-        assertTrue(obs.get("analysis_error").asText().contains("Preencha à mão"));
+        assertEquals(PublicErrors.IMAGE, obs.get("analysis_error").asText());
         assertEquals("nao_avaliavel", obs.get("analysis").get("turbidez").asText());
         assertEquals(0, obs.get("analysis").get("nivel_de_atencao").asInt());
 
         visionStatus = 200;
         visionContent = "isto não é json";
-        assertTrue(uploadOk("foto").get("analysis_error").asText().contains("legível"));
+        assertEquals(PublicErrors.IMAGE, uploadOk("foto").get("analysis_error").asText());
+    }
+
+    @Test
+    void legacyImageErrorsDoNotExposeTechnicalDetails() {
+        var images = new ImageService(db, new LlamaClient("http://localhost:9", "test"), tmp.resolve("images"), "test");
+        var result = images.view(java.util.Map.of("id", 42L, "analysis_error", "http://localhost:11434 /srv/private/.env secret-token"));
+        assertEquals(PublicErrors.IMAGE, result.get("analysis_error"));
+        assertFalse(result.toString().contains("secret-token"));
     }
 
     @Test

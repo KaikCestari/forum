@@ -38,6 +38,7 @@ import java.util.UUID;
  * o biólogo conferir e confirmar. São indícios visuais, nunca medições de laboratório.
  */
 public class ImageService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ImageService.class);
 
     public static final List<String> KINDS = List.of("foto", "satelite");
     public static final long MAX_BYTES = 12L * 1024 * 1024;
@@ -177,8 +178,8 @@ public class ImageService {
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             return new Analysis(blank, "A IA não devolveu um resultado legível. Preencha à mão ou envie de novo.");
         } catch (IOException e) {
-            return new Analysis(blank, "A IA não conseguiu analisar a imagem (" + clip(String.valueOf(e.getMessage()), 200)
-                    + "). Preencha à mão ou envie de novo.");
+            log.warn("Falha ao analisar imagem", e);
+            return new Analysis(blank, PublicErrors.IMAGE);
         }
     }
 
@@ -230,6 +231,8 @@ public class ImageService {
     Map<String, Object> view(Map<String, Object> row) {
         Map<String, Object> out = new LinkedHashMap<>(row);
         out.remove("file_name");
+        // Também protege registros antigos que guardaram mensagens técnicas no banco.
+        if (row.get("analysis_error") != null) out.put("analysis_error", PublicErrors.IMAGE);
         for (String k : List.of("metrics", "analysis")) {
             Object v = row.get(k);
             try {

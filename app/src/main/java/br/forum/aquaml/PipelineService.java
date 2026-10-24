@@ -30,6 +30,10 @@ public class PipelineService {
     public record Status(boolean running, String startedAt, String finishedAt,
                          List<Step> steps, String error) {}
 
+    private static final class MissingSensorData extends IllegalStateException {
+        MissingSensorData() { super("Não há leituras de sensores para analisar. Importe uma planilha CSV em Meus dados."); }
+    }
+
     /** Preparação dos dados que antecede o processamento. */
     @FunctionalInterface
     private interface Prepare {
@@ -58,7 +62,11 @@ public class PipelineService {
     }
 
     public Status status() {
-        return status;
+        Status current = status;
+        List<Step> steps = current.steps().stream().map(step -> new Step(
+                step.name(), step.language(), List.of(), step.status(), step.durationMs(),
+                "erro".equals(step.status()) ? PublicErrors.ANALYSIS : "")).toList();
+        return new Status(current.running(), current.startedAt(), current.finishedAt(), steps, current.error());
     }
 
     /**
@@ -68,7 +76,7 @@ public class PipelineService {
     public synchronized boolean start() {
         return launch(steps -> {
             if (db.measurementCount() == 0) {
-                throw new IllegalStateException("Não há leituras de sensores para analisar. Importe uma planilha CSV em Meus dados.");
+                throw new MissingSensorData();
             }
         });
     }
@@ -135,7 +143,7 @@ public class PipelineService {
                 return "análise nº " + id + " gravada com " + results.path("alerts").size() + " alertas";
             });
         } catch (Exception e) {
-            error = e.getMessage();
+            error = e instanceof MissingSensorData ? e.getMessage() : PublicErrors.ANALYSIS;
             log.error("Falha no pipeline", e);
         }
         status = new Status(false, status.startedAt(), Instant.now().toString(), List.copyOf(steps), error);

@@ -1,22 +1,21 @@
 /* ==========================================================================
    AquaML — tokens
-   Sistema de carta hidrográfica. Duas regras vêm da cartografia náutica:
-   tudo que é água (estações, rios, lagoas) é composto em itálico serifado e a
-   interface em sans romana; o magenta de carta marca só o que a IA achou,
-   um canal separado da severidade dos alertas, que segue a convenção da CETESB.
+   Base visual do espaço de monitoramento. A interface usa Instrument Sans;
+   nomes de água mantêm a referência cartográfica em Newsreader. O magenta
+   identifica achados da IA, separado das cores de qualidade e severidade.
    ========================================================================== */
 
 :root {
   color-scheme: light;
-  --ground: #eef4f2;      /* águas rasas */
-  --sheet: #fbfdfc;       /* papel da carta */
-  --tone-1: #e2ece9;
-  --tone-2: #d0e0dc;
-  --line: #c2d3cf;
-  --ink: #0b2536;
-  --ink-2: #38525f;
-  --muted: #52697a;
-  --accent: #0b5f80;
+  --ground: #f5f7f9;
+  --sheet: #ffffff;
+  --tone-1: #edf3f4;
+  --tone-2: #dce9e7;
+  --line: #dfe7ea;
+  --ink: #18343c;
+  --ink-2: #506570;
+  --muted: #657985;
+  --accent: #167a70;
   --accent-ink: #ffffff;
   --ai: #a8185c;          /* magenta de carta: marcas da IA */
   --water: #7fb4c8;
@@ -42,13 +41,13 @@
   --bad-ink: #a82424;
 
   --margin: clamp(16px, 2.4vw, 36px);
-  --gap-section: clamp(64px, 8vw, 120px);
+  --gap-section: clamp(36px, 5vw, 64px);
   --step-0: 1rem;
   --step-1: 1.25rem;
-  --step-2: clamp(2.1rem, 3.6vw, 3.2rem);
+  --step-2: clamp(1.7rem, 2.8vw, 2.2rem);
   --step-3: clamp(4.25rem, 9vw, 8rem);
-  --radius-sheet: 10px;
-  --radius-control: 6px;
+  --radius-sheet: 12px;
+  --radius-control: 8px;
   --sans: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
 }
@@ -100,7 +99,7 @@ body {
   overflow-x: hidden;
 }
 h1, h2, h3 { margin: 0; }
-h1, h2 { font-family: var(--serif); font-optical-sizing: auto; font-weight: 500; text-wrap: balance; }
+h1, h2 { font-family: var(--sans); font-optical-sizing: auto; font-weight: 600; text-wrap: balance; }
 h1 { font-size: var(--step-2); line-height: 1.05; letter-spacing: -0.02em; }
 h2 { font-size: 1.65rem; line-height: 1.15; letter-spacing: -0.012em; }
 h3 { font-size: var(--step-0); font-weight: 600; line-height: 1.3; margin: 36px 0 14px; }
@@ -114,7 +113,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 /* Nomes de água: estações, rios, lagoas. */
 .hn { font-family: var(--serif); font-style: italic; font-weight: 500; letter-spacing: 0; }
 
-.lede { font-family: var(--serif); font-size: 1.3rem; line-height: 1.5; color: var(--ink-2); max-width: 46ch; }
+.lede { font-size: 1rem; line-height: 1.65; color: var(--ink-2); max-width: 65ch; }
 .empty { color: var(--ink-2); padding: 14px 0; }
 .text-button {
   border: 0; background: none; padding: 12px 0; color: var(--accent); font-weight: 600; cursor: pointer;
@@ -180,7 +179,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 
 .basin { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: clamp(24px, 5vw, 80px); row-gap: 28px; align-items: end; }
 .basin-text { display: contents; }
-.basin-text h1 { max-width: 16ch; font-size: clamp(2.4rem, 5vw, 4.25rem); }
+.basin-text h2 { max-width: 23ch; font-size: clamp(2.4rem, 5vw, 4.25rem); }
 .basin-text .lede { padding-bottom: 6px; }
 .basin-figure {
   grid-column: 1 / -1; margin: 0; overflow: hidden;

@@ -53,7 +53,7 @@ class AppConfigTest {
             ex.close();
         });
         s.createContext("/api/chat", ex -> {
-            byte[] b = "{\"error\":\"unauthorized\"}".getBytes(StandardCharsets.UTF_8);
+            byte[] b = ("{\"error\":\"unauthorized " + KEY + " /srv/private/.env\"}").getBytes(StandardCharsets.UTF_8);
             ex.sendResponseHeaders(401, b.length);
             ex.getResponseBody().write(b);
             ex.close();
@@ -66,6 +66,7 @@ class AppConfigTest {
             IOException e = assertThrows(IOException.class, () -> client.chat(List.of(new LlamaClient.Message("user", "oi"))));
             assertTrue(e.getMessage().contains("401"));
             assertFalse(e.getMessage().contains(KEY));
+            assertFalse(e.getMessage().contains(".env"));
 
             var semChave = new LlamaClient("http://localhost:" + s.getAddress().getPort(), "gpt-oss:20b");
             auth.set(null);

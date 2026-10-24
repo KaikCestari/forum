@@ -18,6 +18,7 @@ import java.util.Map;
 public class AssistantService {
 
     public record Answer(long id, String question, String answer, String model, long durationMs) {}
+    public record Status(boolean available, boolean modelInstalled) {}
 
     private static final int HISTORY_TURNS = 3;
     private static final int MAX_ALERTS = 12;
@@ -54,8 +55,9 @@ public class AssistantService {
         this.db = db;
     }
 
-    public LlamaClient.Status status() {
-        return llama.status();
+    public Status status() {
+        LlamaClient.Status status = llama.status();
+        return new Status(status.available(), status.modelInstalled());
     }
 
     public Answer ask(String question) throws IOException, InterruptedException {

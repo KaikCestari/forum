@@ -38,6 +38,7 @@ cada execução exporta as leituras do banco para o Rust e grava o resultado de 
 
 | Tabela | Conteúdo |
 |--------|----------|
+| `auth_users`, `auth_sessions` | Contas, hashes de senha e sessões com expiração; o token da sessão também é armazenado como hash |
 | `dataset` | Conjunto atual: origem (`real` ou `sintetico`), nome e data da importação |
 | `stations`, `measurements`, `events` | Estações, leituras horárias e eventos conhecidos (opcionais) |
 | `analysis_runs` | Histórico de análises com resumo (IQA médio, alertas, acurácia); as 5 mais recentes guardam o `results.json` completo |
@@ -138,8 +139,11 @@ make run       # API em http://localhost:7070
 make web       # em outro terminal: painel em http://localhost:5173
 ```
 
-O painel (Vite) encaminha `/api` para a API Java. Para servir o painel de outro endereço,
-gere-o com `make web-build`, defina `VITE_API_URL` e libere a origem em `AQUAML_CORS_ORIGINS`.
+O painel (Vite) encaminha `/api` para a API Java. Em produção, prefira um proxy de `/api`
+na mesma origem do painel, para manter os cookies de sessão no mesmo site. Para outra origem
+no mesmo site, defina `VITE_API_URL` e liste a origem exata em `AQUAML_CORS_ORIGINS`.
+Autenticação com cookies não usa CORS `*`. Sirva por HTTPS e, se o TLS terminar em um proxy,
+defina `AQUAML_SECURE_COOKIES=true` no ambiente do Java para exigir cookies seguros.
 
 Variáveis (também lidas de um arquivo `.env` na raiz, que o Git ignora; veja `.env.example`):
 `OLLAMA_URL` (padrão `http://localhost:11434`), `OLLAMA_API_KEY` (só para o Ollama Cloud),
@@ -147,10 +151,27 @@ Variáveis (também lidas de um arquivo `.env` na raiz, que o Git ignora; veja `
 modelo que lê as imagens) e `AQUAML_DB_URL` (outra URL JDBC do H2). Variáveis de ambiente têm
 precedência sobre o `.env`. A chave nunca aparece em logs nem em mensagens de erro.
 
-Na primeira execução o painel abre vazio. Envie uma imagem em **Imagens** ou importe uma planilha de
+Na primeira execução, abra **Criar conta** em `/cadastro`, informe nome, e-mail e uma senha de
+12 a 128 caracteres. O cadastro entra automaticamente no painel; nas próximas visitas, use
+`/login`. Não há conta nem senha padrão. As contas têm acesso ao mesmo espaço de monitoramento
+da equipe. Não há separação de dados por usuário ou níveis de permissão nesta versão.
+No painel vazio, envie uma imagem em **Imagens** ou importe uma planilha de
 sensores em **Meus dados**; a importação dispara o pipeline completo. Em **Atualizar** (link em Meus
 dados) a análise é refeita sobre os dados guardados, e **Apagar dados de sensores** limpa o conjunto
 de sensores sem tocar em imagens, anotações e conversas.
+
+O menu lateral organiza o trabalho em **Monitoramento** (visão geral, estações, imagens e caderno
+de campo), **Inteligência** (análises da IA, assistente e relatório) e **Gestão** (dados e atualização).
+Imagens separa envio, revisão e observações confirmadas em abas; Meus dados separa fontes,
+importação e histórico. As análises também têm abas por tipo. O caderno permite selecionar estações
+ou pontos cadastrados por imagem. As abas e o ponto selecionado ficam na URL para compartilhar
+links e usar o histórico do navegador. Em celulares, o menu abre pelo botão no cabeçalho.
+
+O botão **Sair da conta**, junto ao nome no menu lateral, revoga a sessão no servidor.
+A sessão padrão expira em 12 horas e o cookie dura até o navegador fechar; **Manter conectado**
+usa um cookie persistente e uma sessão de 30 dias. Senhas usam PBKDF2-HMAC-SHA256 com salt
+individual e 600 mil iterações. As operações de alteração exigem o token CSRF da sessão.
+Ainda não há verificação de e-mail nem recuperação de senha por e-mail.
 
 Outros alvos: `make data` e `make pipeline` (gerador e etapas de dados para desenvolvimento, sem o H2), `make test` (testes Rust,
 Python, Java e do painel), `make h2` (console SQL), `make clean` (preserva o banco) e `make clean-db`
@@ -158,6 +179,24 @@ Python, Java e do painel), `make h2` (console SQL), `make clean` (preserva o ban
 `make run JAVA_HOME=/caminho/do/jdk-21`.
 
 ## API
+
+As rotas de dados, imagens e análises exigem o cookie `aquaml_session`. As rotas públicas de
+autenticação estão abaixo; login e cadastro recebem JSON. A resposta inclui `user` e
+`csrfToken`: clientes devem guardar o cookie e enviar `X-CSRF-Token` nos métodos de alteração
+(inclusive upload e logout). O navegador recebe um cookie HttpOnly, SameSite=Lax; o frontend
+não armazena senhas ou tokens de sessão no localStorage.
+
+| Rota | Descrição |
+|------|-----------|
+| `POST /api/auth/register` | Cadastra com `name`, `email`, `password` e inicia sessão |
+| `POST /api/auth/login` | Entra com `email`, `password` e `remember` opcional |
+| `GET /api/auth/session` | Consulta a conta e token CSRF da sessão, ou `user: null` |
+| `POST /api/auth/logout` | Revoga a sessão e remove o cookie; exige autenticação e CSRF |
+
+Teste de navegador com a CLI `agent-browser` da Vercel instalada: inicie API e painel locais e
+execute `cd web && npm run test:auth-browser`. O teste usa os formulários e o backend real,
+cria uma conta `qa-…@example.test` e grava capturas em um diretório temporário. Para não
+misturar dados de teste, inicie a API com `AQUAML_DB_URL` apontando para um banco H2 isolado.
 
 | Rota | Descrição |
 |------|-----------|

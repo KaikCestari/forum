@@ -15,7 +15,7 @@ export const NOTE_KIND: Record<NoteKind, string> = {
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 
 /** Caderno de campo da estação: o que a equipe viu, coletou ou fez, junto dos números. */
-export function NotesPanel({ station }: { station: Station }) {
+export function NotesPanel({ station }: { station: Pick<Station, "id" | "name"> }) {
   const notes = useNotes(station.id).data ?? [];
   const [date, setDate] = useState(today);
   const [kind, setKind] = useState<NoteKind>("observacao");
@@ -56,7 +56,7 @@ export function NotesPanel({ station }: { station: Station }) {
     <section className="notes" aria-labelledby="notes-title">
       <div className="block-head">
         <h2 id="notes-title">Caderno de campo</h2>
-        <p>Registre o que você viu, coletou ou fez nesta estação. As anotações ficam guardadas e o assistente as lê ao responder.</p>
+        <p>Registre observações de {station.name}. O assistente consulta as anotações ao responder.</p>
       </div>
       <form className="note-form" onSubmit={submit}>
         <label className="note-field">
