@@ -169,6 +169,7 @@ export function basinHeadline(stations: Station[]): string {
     const c = iqaClass(s.iqa_30d);
     return c === "Ótima" || c === "Boa";
   }).length;
+  if (stations.length === 1 && good === 1) return "Estação com água boa ou ótima";
   if (good === stations.length) return `As ${stations.length} estações com água boa ou ótima`;
   if (good === 0) return "Nenhuma estação com água boa";
   return `${good} de ${stations.length} estações com água boa ou ótima`;
@@ -180,12 +181,12 @@ export function basinLede(data: Overview): string {
   const recentCritical = data.alerts.filter((a) => a.severity === "critico" && dayDiff(a.end, end) <= 90).length;
   const worsening = data.stations.filter((s) => s.worsening_trends.length).map((s) => s.name);
   const critical = recentCritical
-    ? `${recentCritical} ${recentCritical === 1 ? "alerta crítico" : "alertas críticos"} nos últimos 90 dias`
-    : "nenhum alerta crítico nos últimos 90 dias";
+    ? `há ${recentCritical} ${recentCritical === 1 ? "alerta crítico" : "alertas críticos"} nos últimos 90 dias`
+    : "não há alertas críticos nos últimos 90 dias";
   const trend = worsening.length
     ? ` ${joinPt(worsening)} ${worsening.length === 1 ? "piora" : "pioram"} ano a ano.`
     : "";
-  return `O trecho mais pressionado é ${worst.name}, com IQA ${fmt(worst.iqa_30d)}, e há ${critical}.${trend}`;
+  return `O trecho mais pressionado é ${worst.name}, com IQA ${fmt(worst.iqa_30d)}, e ${critical}.${trend}`;
 }
 
 export function hadRecentCritical(data: Overview, stationId: string, days = 90): boolean {

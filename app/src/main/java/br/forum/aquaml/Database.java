@@ -46,6 +46,10 @@ public class Database implements AutoCloseable {
 
     public record Event(String stationId, LocalDate start, LocalDate end, String type, String description) {}
 
+    public record UserIdentity(String id, String name, String email) {}
+    public record Account(UserIdentity user, String passwordHash) {}
+    public record AuthSession(UserIdentity user, String csrfToken) {}
+
     private final JdbcConnectionPool pool;
 
     public Database(String url) {
@@ -61,6 +65,17 @@ public class Database implements AutoCloseable {
     private void migrate() {
         String params = String.join(", ", PARAMS.stream().map(p -> p + " DOUBLE").toList());
         exec("""
+                CREATE TABLE IF NOT EXISTS auth_users (
+                    id VARCHAR(36) PRIMARY KEY, name VARCHAR(100) NOT NULL,
+                    email VARCHAR(254) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL)""",
+                """
+                CREATE TABLE IF NOT EXISTS auth_sessions (
+                    token_hash CHAR(64) PRIMARY KEY, user_id VARCHAR(36) NOT NULL,
+                    csrf_token VARCHAR(64) NOT NULL, expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE)""",
+                "CREATE INDEX IF NOT EXISTS auth_sessions_expiry ON auth_sessions(expires_at)",
+                """
                 CREATE TABLE IF NOT EXISTS dataset (
                     id INT PRIMARY KEY, source VARCHAR(20) NOT NULL, name VARCHAR(255),
                     imported_at TIMESTAMP WITH TIME ZONE NOT NULL)""",
@@ -109,6 +124,67 @@ public class Database implements AutoCloseable {
                     width INT, height INT, note VARCHAR(500), metrics CLOB, analysis CLOB, analysis_error VARCHAR(500),
                     model VARCHAR(64), status VARCHAR(16) NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL,
                     confirmed_at TIMESTAMP WITH TIME ZONE)""");
+    }
+
+    /* ---------------- contas e sessões ---------------- */
+
+    public Optional<UserIdentity> createAccount(String name, String email, String passwordHash) {
+        return withConnection(c -> {
+            UserIdentity user = new UserIdentity(java.util.UUID.randomUUID().toString(), name, email);
+            try (PreparedStatement ps = c.prepareStatement("INSERT INTO auth_users VALUES (?, ?, ?, ?, ?)")) {
+                ps.setString(1, user.id());
+                ps.setString(2, name);
+                ps.setString(3, email);
+                ps.setString(4, passwordHash);
+                ps.setObject(5, Instant.now().atOffset(java.time.ZoneOffset.UTC));
+                ps.executeUpdate();
+                return Optional.of(user);
+            } catch (SQLException e) {
+                if ("23505".equals(e.getSQLState())) return Optional.empty();
+                throw e;
+            }
+        });
+    }
+
+    public Optional<Account> accountByEmail(String email) {
+        return query("SELECT id, name, email, password_hash FROM auth_users WHERE email = ?", email).stream()
+                .map(row -> new Account(new UserIdentity((String) row.get("id"), (String) row.get("name"),
+                        (String) row.get("email")), (String) row.get("password_hash"))).findFirst();
+    }
+
+    public void createAuthSession(String tokenHash, String userId, String csrfToken, Instant expiresAt) {
+        inTransaction(c -> {
+            try (PreparedStatement clean = c.prepareStatement("DELETE FROM auth_sessions WHERE expires_at <= CURRENT_TIMESTAMP")) {
+                clean.executeUpdate();
+            }
+            try (PreparedStatement ps = c.prepareStatement("INSERT INTO auth_sessions VALUES (?, ?, ?, ?)")) {
+                ps.setString(1, tokenHash);
+                ps.setString(2, userId);
+                ps.setString(3, csrfToken);
+                ps.setObject(4, expiresAt.atOffset(java.time.ZoneOffset.UTC));
+                ps.executeUpdate();
+            }
+            return null;
+        });
+    }
+
+    public Optional<AuthSession> authSession(String tokenHash) {
+        return query("""
+                SELECT u.id, u.name, u.email, s.csrf_token FROM auth_sessions s
+                JOIN auth_users u ON u.id = s.user_id
+                WHERE s.token_hash = ? AND s.expires_at > CURRENT_TIMESTAMP""", tokenHash).stream()
+                .map(row -> new AuthSession(new UserIdentity((String) row.get("id"), (String) row.get("name"),
+                        (String) row.get("email")), (String) row.get("csrf_token"))).findFirst();
+    }
+
+    public void revokeAuthSession(String tokenHash) {
+        withConnection(c -> {
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM auth_sessions WHERE token_hash = ?")) {
+                ps.setString(1, tokenHash);
+                ps.executeUpdate();
+            }
+            return null;
+        });
     }
 
     /* ---------------- conjunto de dados ---------------- */

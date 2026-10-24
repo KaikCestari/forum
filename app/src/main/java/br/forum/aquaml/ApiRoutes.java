@@ -20,6 +20,7 @@ import java.util.Set;
 
 /** Rotas HTTP da API consumida pelo front-end React. */
 public final class ApiRoutes {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ApiRoutes.class);
 
     private ApiRoutes() {}
 
@@ -165,10 +166,12 @@ public final class ApiRoutes {
             try {
                 ctx.json(assistant.ask(question));
             } catch (IOException e) {
-                LlamaClient.Status st = assistant.status();
-                ctx.status(HttpStatus.SERVICE_UNAVAILABLE).json(Map.of(
-                        "error", st.error() != null ? st.error() : "o assistente não respondeu: " + e.getMessage(),
-                        "llama", st));
+                log.warn("Falha ao consultar o assistente", e);
+                ctx.status(HttpStatus.SERVICE_UNAVAILABLE).json(Map.of("error", PublicErrors.ASSISTANT));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Consulta ao assistente interrompida", e);
+                ctx.status(HttpStatus.SERVICE_UNAVAILABLE).json(Map.of("error", PublicErrors.ASSISTANT));
             }
         });
     }

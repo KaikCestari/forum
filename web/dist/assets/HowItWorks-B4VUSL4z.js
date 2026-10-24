@@ -1,0 +1,1 @@
+import{j as s}from"./motion-BRKjGmOO.js";function e({children:o,label:r="Como funciona"}){return s.jsxs("details",{className:"how",children:[s.jsx("summary",{children:r}),s.jsx("div",{className:"how-body",children:o})]})}export{e as H};

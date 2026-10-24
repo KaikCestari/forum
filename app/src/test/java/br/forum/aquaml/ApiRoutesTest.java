@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,8 +53,10 @@ class ApiRoutesTest {
     private PipelineService pipeline;
     private HttpServer ollama;
     private final AtomicReference<String> lastLlamaRequest = new AtomicReference<>();
+    private final AtomicReference<String> upstreamFailure = new AtomicReference<>();
     private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder().cookieHandler(new java.net.CookieManager()).build();
+    private String csrf = "";
 
     @BeforeEach
     void setUp() throws Exception {
@@ -67,6 +70,10 @@ class ApiRoutesTest {
         AssistantService assistant = new AssistantService(new LlamaClient(llamaUrl, "llama3.2"), repo, db);
         ImageService images = new ImageService(db, new LlamaClient(llamaUrl, "llama3.2"), tmp.resolve("images"), "gemma4:31b");
         app = Main.createApp(repo, pipeline, db, assistant, images, List.of(FRONT)).start(0);
+        var signedIn = post("/api/auth/register", "application/json", """
+                {"name":"Equipe de teste","email":"api@example.test","password":"test-password-123"}""");
+        assertEquals(201, signedIn.statusCode(), signedIn.body());
+        csrf = mapper.readTree(signedIn.body()).get("csrfToken").asText();
     }
 
     @AfterEach
@@ -87,6 +94,13 @@ class ApiRoutesTest {
         });
         s.createContext("/api/chat", ex -> {
             lastLlamaRequest.set(new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            if (upstreamFailure.get() != null) {
+                byte[] b = mapper.writeValueAsBytes(Map.of("error", upstreamFailure.get()));
+                ex.sendResponseHeaders(500, b.length);
+                ex.getResponseBody().write(b);
+                ex.close();
+                return;
+            }
             byte[] b = "{\"message\":{\"role\":\"assistant\",\"content\":\"O Rio Teste está com IQA 81,5.\"}}"
                     .getBytes(StandardCharsets.UTF_8);
             ex.sendResponseHeaders(200, b.length);
@@ -103,13 +117,14 @@ class ApiRoutesTest {
     }
 
     private HttpResponse<String> delete(String path) throws Exception {
-        return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path)).DELETE().build(),
+        return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path)).header("X-CSRF-Token", csrf).DELETE().build(),
                 HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(String path, String contentType, String body) throws Exception {
         return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + app.port() + path))
                         .header("Content-Type", contentType)
+                        .header("X-CSRF-Token", csrf)
                         .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -194,6 +209,14 @@ class ApiRoutesTest {
         String exported = Files.readString(tmp.resolve("data/raw/measurements.csv"));
         assertTrue(exported.startsWith("timestamp,station_id,ph,do_mgl"));
         assertTrue(exported.contains("2025-03-10T05:00:00,PONTE-1,7.1000,6.5000,22.4000,,,,0.0100,"));
+        var publicStatus = get("/api/pipeline/status");
+        JsonNode status = mapper.readTree(publicStatus.body());
+        assertEquals(PublicErrors.ANALYSIS, status.get("error").asText());
+        assertFalse(publicStatus.body().contains(tmp.toString()));
+        for (JsonNode step : status.get("steps")) {
+            assertTrue(step.get("command").isEmpty());
+            assertFalse(step.get("output").asText().contains("IOException"));
+        }
     }
 
     @Test
@@ -211,6 +234,8 @@ class ApiRoutesTest {
         loadSample();
         JsonNode status = mapper.readTree(get("/api/assistant/status").body());
         assertTrue(status.get("modelInstalled").asBoolean());
+        assertEquals(2, status.size());
+        for (String field : List.of("url", "model", "models", "error")) assertFalse(status.has(field));
 
         HttpResponse<String> r = post("/api/assistant/ask", "application/json", "{\"question\":\"Como está o Rio Teste?\"}");
         assertEquals(200, r.statusCode(), r.body());
@@ -279,7 +304,27 @@ class ApiRoutesTest {
         ollama.stop(0);
         HttpResponse<String> r = post("/api/assistant/ask", "application/json", "{\"question\":\"Oi\"}");
         assertEquals(503, r.statusCode());
-        assertTrue(r.body().contains("ollama serve"));
+        assertEquals(Map.of("error", PublicErrors.ASSISTANT), mapper.readValue(r.body(), Map.class));
+        JsonNode status = mapper.readTree(get("/api/assistant/status").body());
+        assertFalse(status.get("available").asBoolean());
+        assertEquals(2, status.size());
+    }
+
+    @Test
+    void assistantNeverExposesProviderDiagnostics() throws Exception {
+        upstreamFailure.set("http://internal.example:11434 /srv/private/.env secret-token stack trace");
+        var response = post("/api/assistant/ask", "application/json", "{\"question\":\"Oi\"}");
+        assertEquals(503, response.statusCode());
+        assertEquals(Map.of("error", PublicErrors.ASSISTANT), mapper.readValue(response.body(), Map.class));
+        assertTrue(db.messages(50).isEmpty(), "falhas não devem ser gravadas como respostas do assistente");
+    }
+
+    @Test
+    void unexpectedExceptionsHaveOnlyGenericPublicMessages() throws Exception {
+        app.get("/api/test-internal-failure", ctx -> { throw new IllegalStateException("/srv/private/.env jdbc:h2 secret-token"); });
+        var response = get("/api/test-internal-failure");
+        assertEquals(500, response.statusCode());
+        assertEquals(Map.of("error", PublicErrors.INTERNAL), mapper.readValue(response.body(), Map.class));
     }
 
     @Test

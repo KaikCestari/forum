@@ -231,10 +231,6 @@ export interface ImportResult {
 export interface LlamaStatus {
   available: boolean;
   modelInstalled: boolean;
-  url: string;
-  model: string;
-  models: string[];
-  error: string | null;
 }
 
 /** Mensagem guardada no H2 (histórico) ou recém-respondida (`durationMs`). */
