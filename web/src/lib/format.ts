@@ -77,3 +77,6 @@ export function periodLength(start: string, end: string): string {
   const months = Math.max(1, Math.round(days / 30.44));
   return months === 1 ? "Um mês" : `${months} meses`;
 }
+
+/** Troca caminhos absolutos pelo último trecho, para a tela não expor pastas do servidor. */
+export const shortPaths = (text: string) => text.replace(/(?<![\w.])(?:\/[\w.-]+){3,}/g, (path) => path.slice(path.lastIndexOf("/") + 1));

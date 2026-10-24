@@ -1,16 +1,17 @@
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
-import { ApiError, askLlama, clearAssistantHistory, useAssistantHistory, useLlamaStatus, usePipeline } from "../api/client";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Link, useSearchParams } from "react-router";
+import { ApiError, askLlama, clearAssistantHistory, useAssistantHistory, useLlamaStatus } from "../api/client";
 import type { AssistantMessage, LlamaStatus } from "../api/types";
 import { Markdown } from "../components/Markdown";
 import { fmt } from "../lib/format";
-import { ease, item, list, tap } from "../motion/tokens";
+import { ease, tap } from "../motion/tokens";
 
 const SUGGESTIONS = [
-  "Qual estação está em pior situação e por quê?",
-  "Resuma os alertas críticos mais recentes.",
-  "Alguma estação está piorando com o tempo?",
-  "O que priorizar na fiscalização este mês?",
+  { title: "Onde a água piorou", text: "Qual estação está em pior situação e por quê?" },
+  { title: "Risco de eutrofização", text: "Alguma estação mostra sinais de eutrofização? Considere fósforo, nitrato e oxigênio." },
+  { title: "Alertas recentes", text: "Resuma os alertas críticos mais recentes e o que verificar em campo." },
+  { title: "Plano de coleta", text: "Onde e o que devo coletar em campo neste mês, em ordem de prioridade?" },
 ];
 
 /** Pergunta em andamento ou que falhou, antes de entrar no histórico do H2. */
@@ -19,32 +20,31 @@ interface Pending {
   error?: string;
 }
 
-type ReviewState = "idle" | "analyzing" | "review" | "accepted" | "rejected";
-
-interface ImageReview {
-  name: string;
-  preview: string;
-  confidence: number;
-  label: string;
-  detail: string;
-}
+const MAX_TEXTAREA = 200;
 
 export default function AssistantView() {
   const status = useLlamaStatus();
-  const pipeline = usePipeline();
   const history = useAssistantHistory();
   const [pending, setPending] = useState<Pending | null>(null);
   const [question, setQuestion] = useState("");
-  const [reviewState, setReviewState] = useState<ReviewState>("idle");
-  const [imageReview, setImageReview] = useState<ImageReview | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const field = useRef<HTMLTextAreaElement>(null);
   const reduce = useReducedMotion();
   const asking = !!pending && !pending.error;
   const messages = history.data ?? [];
+  const empty = messages.length === 0 && !pending;
 
   useEffect(() => {
-    end.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    end.current?.scrollIntoView({ block: "end", behavior: reduce ? "auto" : "smooth" });
   }, [messages.length, pending, reduce]);
+
+  // A caixa cresce com o texto, até um limite, como nos chats de uso geral.
+  useEffect(() => {
+    const el = field.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA)}px`;
+  }, [question]);
 
   const ask = async (q: string) => {
     const text = q.trim();
@@ -61,13 +61,24 @@ export default function AssistantView() {
     }
   };
 
+  // Quem chega de um alerta ("Perguntar ao assistente") traz a pergunta pronta na URL.
+  const [params, setParams] = useSearchParams();
+  const fromLink = useRef(false);
+  useEffect(() => {
+    const q = params.get("pergunta");
+    if (!q || fromLink.current) return;
+    fromLink.current = true;
+    setParams({}, { replace: true });
+    ask(q);
+  });
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     ask(question);
   };
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       ask(question);
     }
@@ -80,198 +91,141 @@ export default function AssistantView() {
     history.mutate([], { revalidate: false });
   };
 
-  const selectImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
-    const preview = URL.createObjectURL(file);
-    setImageReview({
-      name: file.name,
-      preview,
-      confidence: file.name.toLowerCase().includes("alga") ? 94 : 89,
-      label: file.name.toLowerCase().includes("alga") ? "Floração de algas" : "Condição ambiental anômala",
-      detail: "Padrão visual compatível com alteração na qualidade da água. A confirmação depende da leitura dos sensores.",
-    });
-    setReviewState("analyzing");
-    window.setTimeout(() => setReviewState("review"), 1300);
-  };
-
-  const acceptImage = async () => {
-    setReviewState("accepted");
-    try {
-      await pipeline.run(false, "");
-    } catch {
-      // O resultado continua aceito localmente; o status do pipeline mostra a falha se houver.
-    }
-  };
-
-  const rejectImage = () => {
-    setReviewState("rejected");
-  };
+  const ready = !!status.data?.modelInstalled;
 
   return (
-    <section className="ai" aria-labelledby="ai-title">
-      <div className="ai-side">
-        <m.h1 id="ai-title" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: ease.out }}>
-          Pergunte à bacia
-        </m.h1>
-        <m.p className="lede" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: ease.out, delay: 0.1 }}>
-          O Llama lê a última análise e consultas ao banco H2 antes de responder. Ele não inventa medições: se o dado não estiver lá, ele diz.
-        </m.p>
-        <LlamaCard status={status.data} />
-        <ImageReviewPanel state={reviewState} review={imageReview} running={!!pipeline.data?.running} onSelect={selectImage} onAccept={acceptImage} onReject={rejectImage} />
-        <m.div className="ai-suggest" variants={list} initial="hidden" animate="show">
-          {SUGGESTIONS.map((s) => (
-            <m.button key={s} type="button" variants={item} whileTap={tap} onClick={() => ask(s)} disabled={asking}>
-              {s}
-            </m.button>
-          ))}
-        </m.div>
+    <section className="chat-shell" aria-label="Assistente da bacia">
+      <header className="chat-top">
+        <h1>Assistente da bacia</h1>
+        <LlamaPill status={status.data} />
+        <button type="button" className="chat-clear" onClick={clear} disabled={asking || messages.length === 0}>
+          <ClearIcon />Limpar conversa
+        </button>
+      </header>
+
+      <div className="chat-scroll">
+        <div className="chat-thread">
+          {status.data && !ready && <LlamaNotice status={status.data} />}
+
+          {empty && (
+            <div className="chat-hello">
+              <DropMark />
+              <h2>Como posso ajudar na análise da bacia?</h2>
+              <p>
+                Respondo com base na última análise, nas imagens que você confirmou e nas anotações do caderno de campo. Se a
+                informação não estiver lá, eu aviso em vez de inventar.
+              </p>
+              <ul className="chat-prompts" aria-label="Sugestões de pergunta">
+                {SUGGESTIONS.map((s) => (
+                  <li key={s.text}>
+                    <button type="button" onClick={() => ask(s.text)} disabled={asking}>
+                      <strong>{s.title}</strong>
+                      <span>{s.text}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <ol className="chat" aria-live="polite">
+            {messages.map((msg) => <Exchange key={msg.id} msg={msg} />)}
+            <AnimatePresence>
+              {pending && (
+                <m.li key="pending" className="chat-pair" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <p className="chat-q">{pending.question}</p>
+                  <div className="chat-a">
+                    <Avatar />
+                    {pending.error ? (
+                      <p className="chat-body is-error" role="alert">{pending.error}</p>
+                    ) : (
+                      <p className="chat-body is-thinking">
+                        Lendo a análise
+                        <span className="dots" aria-hidden="true"><i /><i /><i /></span>
+                      </p>
+                    )}
+                  </div>
+                </m.li>
+              )}
+            </AnimatePresence>
+          </ol>
+
+          <div ref={end} />
+        </div>
       </div>
 
-      <div className="ai-main">
-        <ol className="chat" aria-live="polite">
-          {messages.length === 0 && !pending && (
-            <li className="chat-empty">Nenhuma pergunta ainda. Comece por uma sugestão ou escreva a sua.</li>
-          )}
-          {messages.map((msg) => <Exchange key={msg.id} msg={msg} />)}
-          <AnimatePresence>
-            {pending && (
-              <m.li key="pending" className="chat-pair" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <p className="chat-q">{pending.question}</p>
-                {pending.error ? (
-                  <p className="chat-a is-error" role="alert">{pending.error}</p>
-                ) : (
-                  <p className="chat-a is-thinking">
-                    O Llama está lendo a análise
-                    <m.span aria-hidden="true" animate={reduce ? undefined : { opacity: [0.2, 1, 0.2] }} transition={{ duration: 1.2, repeat: Infinity }}>…</m.span>
-                  </p>
-                )}
-              </m.li>
-            )}
-          </AnimatePresence>
-        </ol>
-        <div ref={end} />
-        <form className="ask" onSubmit={submit}>
+      <form className="composer" onSubmit={submit}>
+        <div className="composer-box">
+          <Link className="composer-attach" to="/imagens" title="Enviar uma foto da água ou imagem de satélite">
+            <AttachIcon />
+            <span className="visually-hidden">Enviar imagem para análise</span>
+          </Link>
           <label className="visually-hidden" htmlFor="question">Pergunta</label>
           <textarea
-            id="question" rows={2} maxLength={2000} value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={onKey}
-            placeholder="Ex.: o que mudou na qualidade da água no último mês?"
+            id="question" ref={field} rows={1} maxLength={2000} value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={onKey}
+            placeholder="Pergunte sobre a bacia"
           />
-          <div className="ask-row">
-            <button type="button" className="text-button" onClick={clear} disabled={asking || messages.length === 0}>Limpar conversa</button>
-            <m.button type="submit" className="button" disabled={asking || !question.trim()} whileTap={tap}>
-              {asking ? "Pensando…" : "Perguntar"}
-            </m.button>
-          </div>
-        </form>
-      </div>
-    </section>
-  );
-}
-
-function ImageReviewPanel({
-  state, review, running, onSelect, onAccept, onReject,
-}: {
-  state: ReviewState;
-  review: ImageReview | null;
-  running: boolean;
-  onSelect: (e: ChangeEvent<HTMLInputElement>) => void;
-  onAccept: () => void;
-  onReject: () => void;
-}) {
-  return (
-    <div className="image-review" aria-labelledby="image-review-title">
-      <div className="image-review-head">
-        <div>
-          <p className="eyebrow">Triagem visual</p>
-          <h2 id="image-review-title">Envie uma imagem</h2>
+          <m.button type="submit" className="composer-send" disabled={asking || !question.trim()} whileTap={tap} aria-label={asking ? "Aguardando resposta" : "Enviar pergunta"}>
+            <SendIcon />
+          </m.button>
         </div>
-        <span className="image-review-mark" aria-hidden="true">+</span>
-      </div>
-      <ol className="image-flow" aria-label="Fluxo da análise visual">
-        {[
-          ["Imagem", state !== "idle"],
-          ["Llama", state === "review" || state === "accepted" || state === "rejected"],
-          ["Revisão", state === "accepted" || state === "rejected"],
-          ["Dados", state === "accepted" && !running],
-        ].map(([label, done], index) => (
-          <li key={label as string} className={done ? "is-done" : index === 0 && state === "idle" ? "is-current" : undefined}>
-            <span>{index + 1}</span>{label as string}
-          </li>
-        ))}
-      </ol>
-      {!review && (
-        <label className="image-dropzone">
-          <input type="file" accept="image/*" onChange={onSelect} />
-          <strong>Solte uma foto ou escolha um arquivo</strong>
-          <span>JPG, PNG ou WEBP · até 20 MB</span>
-        </label>
-      )}
-      {review && (
-        <>
-          <div className="image-review-preview">
-            <img src={review.preview} alt={`Imagem enviada: ${review.name}`} />
-            <span className={`review-badge is-${state}`}>
-              {state === "analyzing" ? "Lendo imagem…" : state === "accepted" ? "Aceita" : state === "rejected" ? "Recusada" : "Revisão necessária"}
-            </span>
-          </div>
-          <div className="image-review-copy">
-            <strong>{state === "analyzing" ? "A Lhama está analisando" : review.label}</strong>
-            {state === "analyzing" ? <span>Comparando padrões visuais com a análise da bacia…</span> : <span>{review.detail}</span>}
-          </div>
-          {state === "review" && (
-            <div className="review-result">
-              <span>Confiança estimada</span><strong>{review.confidence}%</strong>
-            </div>
-          )}
-          {state === "review" && (
-            <div className="review-actions">
-              <button type="button" className="button" onClick={onAccept}>Aceitar resultado</button>
-              <button type="button" className="text-button" onClick={onReject}>Recusar</button>
-            </div>
-          )}
-          {state === "accepted" && <p className="review-confirm" role="status">Resultado aceito. {running ? "O pipeline está processando a análise…" : "A análise foi encaminhada para o pipeline e aparecerá em Dados."}</p>}
-          {state === "rejected" && <p className="review-confirm is-muted" role="status">Resultado recusado. A imagem não foi publicada nos dados.</p>}
-        </>
-      )}
-    </div>
+        <p className="composer-hint">Enter envia e Shift+Enter quebra a linha. Confira os valores no painel antes de decidir em campo.</p>
+      </form>
+    </section>
   );
 }
 
 function Exchange({ msg }: { msg: AssistantMessage }) {
   const ms = msg.duration_ms ?? msg.durationMs;
   return (
-    <m.li className="chat-pair" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: ease.out }}>
+    <m.li className="chat-pair" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, ease: ease.out }}>
       <p className="chat-q">{msg.question}</p>
       <div className="chat-a">
-        <Markdown text={msg.answer} />
-        <span className="chat-meta">{msg.model}{ms != null && `, ${fmt(ms / 1000, 1)} s`}</span>
+        <Avatar />
+        <div className="chat-body">
+          <Markdown text={msg.answer} />
+          {ms != null && <span className="chat-meta">Respondido em {fmt(ms / 1000, 1)} s</span>}
+        </div>
       </div>
     </m.li>
   );
 }
 
-function LlamaCard({ status }: { status?: LlamaStatus }) {
-  if (!status) return <div className="llama-card" aria-busy="true"><i /><strong>Verificando o Llama…</strong></div>;
-  if (status.modelInstalled) {
-    return (
-      <div className="llama-card is-ok">
-        <i /><strong>Llama pronto</strong>
-        <span>Modelo <code>{status.model}</code> rodando no Ollama em {status.url}.</span>
-      </div>
-    );
-  }
+function LlamaPill({ status }: { status?: LlamaStatus }) {
+  const ok = !!status?.modelInstalled;
+  const label = !status ? "Verificando" : ok ? "Assistente pronto" : status.available ? "Modelo não baixado" : "Assistente fora do ar";
   return (
-    <div className="llama-card is-off">
-      <i />
-      <strong>{status.available ? "Modelo ainda não baixado" : "Llama fora do ar"}</strong>
-      <span>
-        {status.available ? (
-          <>O Ollama está no ar. Rode <code>make llama</code> para baixar o <code>{status.model}</code>.</>
-        ) : (
-          <>Instale o Ollama (ollama.com), rode <code>ollama serve</code> e depois <code>make llama</code> para baixar o <code>{status.model}</code>.</>
-        )}
-      </span>
+    <span className={`llama-pill ${!status ? "" : ok ? "is-ok" : "is-off"}`} role="status" title={status?.model}>
+      <i aria-hidden="true" />{label}
+    </span>
+  );
+}
+
+function LlamaNotice({ status }: { status: LlamaStatus }) {
+  return (
+    <div className="llama-notice" role="note">
+      <strong>{status.available ? "O assistente ainda não está pronto" : "O assistente não está disponível"}</strong>
+      <p>
+        Peça a quem administra o sistema para conferir o serviço do assistente (Ollama) e a chave no arquivo <code>.env</code>.
+      </p>
+      {status.error && <p className="llama-detail">Detalhe técnico: {status.error}</p>}
     </div>
   );
 }
+
+const DropMark = () => (
+  <svg className="drop-mark" viewBox="0 0 32 32" width="40" height="40" aria-hidden="true">
+    <path d="M16 3 C16 3 6 14 6 20 a10 10 0 0 0 20 0 C26 14 16 3 16 3 Z" fill="currentColor" />
+  </svg>
+);
+
+const Avatar = () => (
+  <span className="chat-avatar" aria-hidden="true">
+    <svg viewBox="0 0 32 32" width="16" height="16"><path d="M16 4 C16 4 7 14 7 20 a9 9 0 0 0 18 0 C25 14 16 4 16 4 Z" fill="currentColor" /></svg>
+  </span>
+);
+
+const iconProps = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
+const SendIcon = () => <svg {...iconProps}><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></svg>;
+const AttachIcon = () => <svg {...iconProps}><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" /></svg>;
+const ClearIcon = () => <svg {...iconProps} width={16} height={16}><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" /><path d="M9 7V4h6v3" /></svg>;

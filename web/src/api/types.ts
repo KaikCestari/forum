@@ -137,6 +137,7 @@ export interface Overview {
   clusters: Clusters;
   trends: Trend[];
   timings_s: Record<string, number>;
+  insights: string[];
 }
 
 export type Series = {
@@ -245,4 +246,68 @@ export interface AssistantMessage {
   duration_ms?: number;
   durationMs?: number;
   created_at?: string;
+}
+
+// Caderno de campo: anotações da equipe por estação.
+
+export type NoteKind = "observacao" | "coleta" | "ocorrencia" | "manejo";
+
+export interface FieldNote {
+  id: number;
+  station_id: string;
+  noted_on: string;
+  kind: NoteKind;
+  text: string;
+  created_at: string;
+}
+
+// Imagens: foto da água e imagem de satélite, lidas pela IA e conferidas pelo biólogo.
+
+export type ImageKind = "foto" | "satelite";
+export type Turbidity = "baixa" | "media" | "alta" | "nao_avaliavel";
+export type Bloom = "nenhuma" | "possivel" | "provavel" | "nao_avaliavel";
+export type Vegetation = "ausente" | "pouca" | "abundante" | "nao_avaliavel";
+export type Riparian = "preservada" | "parcial" | "ausente" | "nao_avaliavel";
+
+export interface ImageAnalysis {
+  cor_da_agua: string;
+  turbidez: Turbidity;
+  floracao_algas: Bloom;
+  espuma?: boolean;
+  oleo_ou_filme?: boolean;
+  material_flutuante?: boolean;
+  vegetacao_aquatica?: Vegetation;
+  uso_do_entorno?: string;
+  vegetacao_ribeirinha?: Riparian;
+  nivel_de_atencao: 0 | 1 | 2 | 3;
+  resumo: string;
+  o_que_conferir_em_campo: string;
+  confianca: number;
+}
+
+export interface ImageObservation {
+  id: number;
+  station_id: string;
+  observed_on: string;
+  kind: ImageKind;
+  mime: string;
+  width: number;
+  height: number;
+  note: string | null;
+  metrics: Record<string, number>;
+  analysis: ImageAnalysis;
+  analysis_error: string | null;
+  model: string | null;
+  status: "pendente" | "confirmado";
+  created_at: string;
+  confirmed_at: string | null;
+  file_url: string;
+}
+
+export interface Point {
+  id: string;
+  name: string;
+  type: StationType;
+  lat: number | null;
+  lon: number | null;
 }

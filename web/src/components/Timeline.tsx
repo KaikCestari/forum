@@ -48,7 +48,7 @@ function TimelineImpl({ data }: { data: Overview }) {
   return (
     <div className="timeline" ref={boxRef}>
       {boxWidth > 0 && (
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Linha do tempo de alertas e anomalias por estação" onPointerLeave={tooltip.hide}>
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Linha do tempo de alertas e dias fora do padrão por estação" onPointerLeave={tooltip.hide}>
           {stations.map((s, r) => {
             const top = r * rowH;
             const cy = top + (narrow ? rowH - 18 : rowH / 2);
@@ -126,7 +126,7 @@ function TimelineImpl({ data }: { data: Overview }) {
                       whileHover={{ scale: 1.8 }}
                       onPointerMove={(ev) => tooltip.show(
                         <>
-                          <strong>Comportamento anormal (IA)</strong>
+                          <strong>Dia fora do padrão (IA)</strong>
                           <span>{dateRange(ep.start, ep.end)}.</span>
                           {ep.params.length > 0 && (
                             <span>Mais afetados: {ep.params.map((p) => lowerFirst(data.parameters[p]?.label ?? p)).join(", ")}.</span>
