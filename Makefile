@@ -41,9 +41,18 @@ analyze:                             ## etapa Python (IA/ML)
 
 pipeline: data process analyze       ## pipeline completo sem o servidor
 
-run:                                 ## sobe a API Java em http://localhost:$(PORT)
-	PORT=$(PORT) AQUAML_ROOT=$(ROOT) OLLAMA_URL=$(OLLAMA_URL) LLAMA_MODEL=$(LLAMA_MODEL) \
-		$(JAVA) -jar app/target/aquaml.jar
+# OLLAMA_URL e LLAMA_MODEL só vão para a API quando definidos de propósito (linha de comando ou
+# ambiente); os padrões acima não podem sobrescrever o que está no .env.
+RUN_ENV := PORT=$(PORT) AQUAML_ROOT=$(ROOT)
+ifneq ($(origin OLLAMA_URL),file)
+RUN_ENV += OLLAMA_URL=$(OLLAMA_URL)
+endif
+ifneq ($(origin LLAMA_MODEL),file)
+RUN_ENV += LLAMA_MODEL=$(LLAMA_MODEL)
+endif
+
+run:                                 ## sobe a API Java em http://localhost:$(PORT) (lê o .env da raiz)
+	$(RUN_ENV) $(JAVA) -jar app/target/aquaml.jar
 
 web/node_modules: web/package-lock.json
 	cd web && npm install

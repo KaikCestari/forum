@@ -94,11 +94,11 @@ def insights(summaries, ev, clf, trend_list, clus) -> list[str]:
         parts = [f"{names[s]} ({', '.join(v)})" for s, v in by_station.items()]
         out.append("Tendências significativas de piora: " + "; ".join(parts) + ".")
     if ev:
-        out.append(f"A detecção de anomalias identificou {sum(e['detected'] for e in ev['events'])} de "
-                   f"{len(ev['events'])} eventos ambientais conhecidos (precisão diária de "
-                   f"{ev['day_precision']:.0%}).")
-    out.append(f"O classificador reconhece a classe de qualidade da água com {clf['accuracy']:.0%} de acurácia "
-               f"em dados futuros, e {clf['accuracy_one_sensor_missing']:.0%} mesmo com um sensor ausente.")
+        out.append(f"A IA encontrou {sum(e['detected'] for e in ev['events'])} de "
+                   f"{len(ev['events'])} eventos ambientais conhecidos ({ev['day_precision']:.0%} dos dias "
+                   f"marcados coincidem com um evento).")
+    out.append(f"A IA reconhece a classe de qualidade da água com {clf['accuracy']:.0%} de acerto "
+               f"em dias que não viu, e {clf['accuracy_one_sensor_missing']:.0%} mesmo com um sensor desligado.")
     impacted = [s["name"] for s in summaries if s["cluster"] is not None and s["cluster"] == clus["k"] - 1]
     if impacted:
         out.append("Perfil atual classificado como mais impactado: " + ", ".join(impacted) + ".")

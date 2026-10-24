@@ -15,9 +15,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Orquestra as etapas do pipeline: carga dos dados no H2 (sintéticos gerados
- * pelo Python ou reais importados de CSV), processamento (Rust), análise com
- * IA/ML (Python) e gravação da análise no H2. Executa em segundo plano, uma
+ * Orquestra as etapas do pipeline: carga dos dados de sensores no H2 (importados
+ * de CSV), processamento (Rust), análise com IA/ML (Python) e gravação da análise no H2. Executa em segundo plano, uma
  * execução por vez, e expõe o andamento para o painel.
  */
 public class PipelineService {
@@ -63,16 +62,34 @@ public class PipelineService {
     }
 
     /**
-     * Inicia uma execução sobre os dados do H2. Com {@code regenerate} (ou com o
-     * banco vazio), gera um novo conjunto sintético com a semente informada e o
-     * grava no banco. Retorna false se já houver uma execução em andamento.
+     * Reexecuta a análise sobre os dados de sensores guardados no H2. Sem dados, a execução termina com uma mensagem
+     * explicando como trazê-los. Retorna false se já houver uma execução em andamento.
      */
-    public synchronized boolean start(boolean regenerate, Long seed) {
+    public synchronized boolean start() {
         return launch(steps -> {
-            if (regenerate || db.measurementCount() == 0) {
-                loadSynthetic(steps, regenerate, seed);
+            if (db.measurementCount() == 0) {
+                throw new IllegalStateException("Não há leituras de sensores para analisar. Importe uma planilha CSV em Meus dados.");
             }
         });
+    }
+
+    /** Apaga os dados de sensores e as análises. Imagens, anotações e conversas continuam. Falso se houver execução em curso. */
+    public synchronized boolean clearData() {
+        if (status.running()) {
+            return false;
+        }
+        db.clearDataset();
+        repository.clear();
+        for (Path dir : List.of(config.rawDir(), config.processedDir())) {
+            try (var files = Files.list(dir)) {
+                files.filter(f -> f.toString().endsWith(".csv")).forEach(f -> f.toFile().delete());
+            } catch (IOException ignored) {
+                // Pasta inexistente: nada a limpar.
+            }
+        }
+        config.resultsFile().toFile().delete();
+        status = new Status(false, null, null, List.of(), null);
+        return true;
     }
 
     /** Substitui os dados do H2 por dados reais e reexecuta toda a análise. */
@@ -122,45 +139,6 @@ public class PipelineService {
             log.error("Falha no pipeline", e);
         }
         status = new Status(false, status.startedAt(), Instant.now().toString(), List.copyOf(steps), error);
-    }
-
-    /**
-     * Gera dados sintéticos (ou reaproveita os CSVs de data/raw, se o banco
-     * estiver vazio) e os grava no H2.
-     */
-    private void loadSynthetic(List<Step> steps, boolean regenerate, Long seed) throws Exception {
-        Path raw = config.rawDir();
-        boolean generated = regenerate || !Files.exists(raw.resolve("measurements.csv"));
-        if (generated) {
-            List<String> cmd = new ArrayList<>(List.of(config.python().toString(), "generate_data.py",
-                    "--out", raw.toString()));
-            if (seed != null) {
-                cmd.addAll(List.of("--seed", seed.toString()));
-            }
-            execute(steps, "Geração de dados sintéticos", "Python", cmd);
-        }
-        javaStep(steps, "Carga dos dados no H2", () -> {
-            List<Database.Station> stations;
-            CsvImport.Parsed parsed;
-            List<Database.Event> events = List.of();
-            try (var r = Files.newBufferedReader(raw.resolve("stations.csv"))) {
-                stations = CsvImport.stations(r);
-            }
-            try (var r = Files.newBufferedReader(raw.resolve("measurements.csv"))) {
-                parsed = CsvImport.measurements(r);
-            }
-            if (Files.exists(raw.resolve("events.csv"))) {
-                try (var r = Files.newBufferedReader(raw.resolve("events.csv"))) {
-                    events = CsvImport.events(r);
-                }
-            }
-            // Sem events.csv, os arquivos não vieram do gerador: tratamos como dados reais.
-            boolean synthetic = generated || !events.isEmpty();
-            db.replaceDataset(synthetic ? "sintetico" : "real",
-                    synthetic ? "Bacia sintética" + (seed != null ? " (semente " + seed + ")" : "") : "Arquivos de data/raw",
-                    stations, parsed.measurements(), events);
-            return parsed.measurements().size() + " leituras de " + stations.size() + " estações gravadas no H2";
-        });
     }
 
     private void javaStep(List<Step> steps, String name, JavaWork work) throws Exception {

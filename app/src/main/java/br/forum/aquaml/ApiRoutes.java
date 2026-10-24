@@ -9,6 +9,7 @@ import io.javalin.http.UploadedFile;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -22,12 +23,20 @@ public final class ApiRoutes {
 
     private ApiRoutes() {}
 
+    private static String text(Map<?, ?> body, String key) {
+        Object v = body.get(key);
+        return v == null ? "" : v.toString().strip();
+    }
+
     /** O processador Rust só consolida dias com pelo menos 6 leituras horárias. */
     private static final double MIN_READINGS_PER_DAY = 6;
     private static final int MAX_QUESTION = 2000;
+    private static final int MAX_NOTE = 2000;
+    static final List<String> NOTE_KINDS = List.of("observacao", "coleta", "ocorrencia", "manejo");
 
     public static void register(Javalin app, ResultsRepository repo, PipelineService pipeline,
-                                Database db, AssistantService assistant) {
+                                Database db, AssistantService assistant, ImageService images) {
+        ImageRoutes.register(app, db, images);
         app.get("/", ctx -> ctx.json(Map.of(
                 "name", "AquaML API",
                 "ready", repo.isLoaded(),
@@ -38,7 +47,10 @@ public final class ApiRoutes {
                         "POST /api/pipeline/run", "POST /api/data/import", "GET /api/db/summary",
                         "GET /api/db/runs", "GET /api/db/monthly", "GET /api/assistant/status",
                         "POST /api/assistant/ask", "GET /api/assistant/history",
-                        "DELETE /api/assistant/history", "GET /api/assistant/context"))));
+                        "DELETE /api/assistant/history", "GET /api/assistant/context",
+                        "GET /api/notes", "POST /api/notes", "DELETE /api/notes/{id}",
+                        "GET /api/points", "POST /api/images", "GET /api/images", "GET /api/images/{id}/file",
+                        "POST /api/images/{id}/confirm", "DELETE /api/images/{id}", "DELETE /api/data"))));
         app.get("/api/overview", ctx -> respond(ctx, repo.overview(), pipeline));
         app.get("/api/stations", ctx -> respond(ctx, repo.get("stations"), pipeline));
         app.get("/api/stations/{id}/series", ctx -> {
@@ -71,19 +83,17 @@ public final class ApiRoutes {
 
         app.get("/api/pipeline/status", ctx -> ctx.json(pipeline.status()));
         app.post("/api/pipeline/run", ctx -> {
-            boolean regenerate = "true".equals(ctx.queryParam("regenerate"));
-            String seed = ctx.queryParam("seed");
-            Long seedValue;
-            try {
-                seedValue = seed == null || seed.isBlank() ? null : Long.parseLong(seed);
-            } catch (NumberFormatException e) {
-                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "semente inválida"));
-                return;
-            }
-            if (pipeline.start(regenerate, seedValue)) {
+            if (pipeline.start()) {
                 ctx.status(HttpStatus.ACCEPTED).json(pipeline.status());
             } else {
-                ctx.status(HttpStatus.CONFLICT).json(Map.of("error", "pipeline já em execução"));
+                ctx.status(HttpStatus.CONFLICT).json(Map.of("error", "a atualização já está em andamento"));
+            }
+        });
+        app.delete("/api/data", ctx -> {
+            if (pipeline.clearData()) {
+                ctx.status(HttpStatus.NO_CONTENT);
+            } else {
+                ctx.status(HttpStatus.CONFLICT).json(Map.of("error", "aguarde a atualização terminar para apagar os dados"));
             }
         });
 
@@ -93,6 +103,50 @@ public final class ApiRoutes {
                 .check(n -> n > 0 && n <= 500, "limite entre 1 e 500").getOrDefault(30))));
         app.get("/api/db/monthly", ctx -> ctx.json(db.monthly(ctx.queryParam("station"))));
         app.post("/api/data/import", ctx -> importData(ctx, pipeline));
+
+        // Caderno de campo: anotações dos biólogos por estação.
+        app.get("/api/notes", ctx -> {
+            int limit = Math.max(1, Math.min(500, ctx.queryParamAsClass("limit", Integer.class).getOrDefault(200)));
+            ctx.json(db.notes(ctx.queryParam("station"), limit));
+        });
+        app.post("/api/notes", ctx -> {
+            Map<?, ?> body = ctx.bodyAsClass(Map.class);
+            String station = text(body, "station_id");
+            String kind = text(body, "kind");
+            String text = text(body, "text");
+            LocalDate date;
+            try {
+                date = LocalDate.parse(text(body, "date"));
+            } catch (java.time.format.DateTimeParseException e) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "informe a data da anotação"));
+                return;
+            }
+            if (station.isEmpty() || station.length() > 64) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "escolha a estação da anotação"));
+            } else if (!NOTE_KINDS.contains(kind)) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "tipo de anotação inválido"));
+            } else if (text.isEmpty() || text.length() > MAX_NOTE) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "escreva a anotação, com até " + MAX_NOTE + " caracteres"));
+            } else if (date.isAfter(LocalDate.now().plusDays(1))) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "a data da anotação não pode estar no futuro"));
+            } else {
+                ctx.status(HttpStatus.CREATED).json(db.addNote(station, date, kind, text));
+            }
+        });
+        app.delete("/api/notes/{id}", ctx -> {
+            long id;
+            try {
+                id = Long.parseLong(ctx.pathParam("id"));
+            } catch (NumberFormatException e) {
+                ctx.status(HttpStatus.NOT_FOUND).json(Map.of("error", "anotação não encontrada"));
+                return;
+            }
+            if (db.deleteNote(id)) {
+                ctx.status(HttpStatus.NO_CONTENT);
+            } else {
+                ctx.status(HttpStatus.NOT_FOUND).json(Map.of("error", "anotação não encontrada"));
+            }
+        });
 
         // Assistente Llama.
         app.get("/api/assistant/status", ctx -> ctx.json(assistant.status()));
@@ -108,16 +162,12 @@ public final class ApiRoutes {
                 ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "escreva uma pergunta de até " + MAX_QUESTION + " caracteres"));
                 return;
             }
-            if (!repo.isLoaded()) {
-                notReady(ctx, pipeline);
-                return;
-            }
             try {
                 ctx.json(assistant.ask(question));
             } catch (IOException e) {
                 LlamaClient.Status st = assistant.status();
                 ctx.status(HttpStatus.SERVICE_UNAVAILABLE).json(Map.of(
-                        "error", st.error() != null ? st.error() : "o Llama não respondeu: " + e.getMessage(),
+                        "error", st.error() != null ? st.error() : "o assistente não respondeu: " + e.getMessage(),
                         "llama", st));
             }
         });
