@@ -213,7 +213,7 @@ export function LineChart(props: Props) {
             <span>Valor do dia: {fmt(hv, digits)}{unit && ` ${unit}`}</span>
             <span>Média de 7 dias: {fmt(hs, digits + 1)}{unit && ` ${unit}`}</span>
             {classes[hover] && <span>Classe do IQA: {classes[hover]}</span>}
-            {anomalies[hover] && <span className="chart-tip-alert">Dia marcado como anormal pela IA</span>}
+            {anomalies[hover] && <span className="chart-tip-alert">Dia fora do padrão segundo a IA</span>}
           </m.div>
         )}
       </AnimatePresence>

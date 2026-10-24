@@ -63,6 +63,12 @@ function BasinMapImpl({ data }: Props) {
 
   return (
     <svg viewBox="0 0 1000 440" className="basin-map" role="group" aria-label="Esquema da bacia com as estações de monitoramento">
+      <defs>
+        <pattern id="graticule" width={50} height={50} patternUnits="userSpaceOnUse">
+          <path d="M50,0 L0,0 L0,50" className="graticule-line" />
+        </pattern>
+      </defs>
+      <rect width={1000} height={440} fill="url(#graticule)" aria-hidden="true" />
       {schematic && terrain}
 
       {schematic && <g aria-hidden="true">
@@ -88,6 +94,14 @@ function BasinMapImpl({ data }: Props) {
 
       {(schematic ? RIVERS_SCHEMATIC : RIVERS_PLAIN).map((r) => (
         <g key={r.d} aria-hidden="true">
+          <m.path
+            d={r.d}
+            className="river-shore"
+            strokeWidth={r.width * 2.8}
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: DRAW, delay: r.delay, ease: ease.inOut }}
+          />
           <m.path
             d={r.d}
             className="river"

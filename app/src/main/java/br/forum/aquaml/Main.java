@@ -16,7 +16,7 @@ public final class Main {
     private Main() {}
 
     public static Javalin createApp(ResultsRepository repo, PipelineService pipeline, Database db,
-                                    AssistantService assistant, List<String> corsOrigins) {
+                                    AssistantService assistant, ImageService images, List<String> corsOrigins) {
         Javalin app = Javalin.create(cfg -> {
             cfg.showJavalinBanner = false;
             cfg.jetty.multipartConfig.maxFileSize(200, SizeUnit.MB);
@@ -32,7 +32,7 @@ public final class Main {
                 }));
             }
         });
-        ApiRoutes.register(app, repo, pipeline, db, assistant);
+        ApiRoutes.register(app, repo, pipeline, db, assistant, images);
         return app;
     }
 
@@ -41,21 +41,21 @@ public final class Main {
         Database db = new Database(config.dbUrl());
         ResultsRepository repo = new ResultsRepository(config.resultsFile());
         PipelineService pipeline = new PipelineService(config, repo, db);
-        LlamaClient llama = new LlamaClient(config.ollamaUrl(), config.llamaModel());
+        LlamaClient llama = new LlamaClient(config.ollamaUrl(), config.llamaModel(), config.ollamaApiKey());
         AssistantService assistant = new AssistantService(llama, repo, db);
+        ImageService images = new ImageService(db, llama, config.imagesDir(), config.visionModel());
 
         Optional<String> stored = db.latestResults();
         if (stored.isPresent()) {
             repo.load(stored.get());
             log.info("Última análise carregada do H2 ({})", config.dbUrl());
         } else {
-            log.info("Nenhuma análise no H2; executando o pipeline completo");
-            pipeline.start(false, null);
+            log.info("Nenhum dado de sensores no H2; o painel aguarda imagens ou uma planilha CSV");
         }
 
-        createApp(repo, pipeline, db, assistant, config.corsOrigins()).start(config.port());
+        createApp(repo, pipeline, db, assistant, images, config.corsOrigins()).start(config.port());
         LlamaClient.Status llamaStatus = llama.status();
-        log.info("Llama ({} em {}): {}", config.llamaModel(), config.ollamaUrl(),
+        log.info("Assistente ({} em {}): {}", llamaStatus.model(), llamaStatus.url(),
                 llamaStatus.modelInstalled() ? "disponível" : llamaStatus.error());
         log.info("API do AquaML em http://localhost:{} (raiz: {}, CORS: {})",
                 config.port(), config.root(), config.corsOrigins());

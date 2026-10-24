@@ -22,22 +22,22 @@ export const spring = {
 
 export const duration = { press: 0.14, hover: 0.18, ui: 0.24, reveal: 0.7, draw: 1.1 };
 
-/** Transição entre as vistas: entra subindo pouco, sai rápido. */
+/** Transição entre as vistas: só esmaece, para o desenho do rio ser o único movimento de destaque. */
 export const page: Variants = {
-  initial: { opacity: 0, y: 14 },
-  enter: { opacity: 1, y: 0, transition: { duration: 0.45, ease: ease.out } },
-  exit: { opacity: 0, y: -6, transition: { duration: 0.18, ease: ease.out } },
+  initial: { opacity: 0 },
+  enter: { opacity: 1, transition: { duration: 0.3, ease: ease.out } },
+  exit: { opacity: 0, transition: { duration: 0.15, ease: ease.out } },
 };
 
 /** Lista que chega item a item quando entra na tela. */
 export const list: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.055, delayChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0.03 } },
 };
 
 export const item: Variants = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: ease.out } },
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.3, ease: ease.out } },
 };
 
 export const tap = { scale: 0.97 };

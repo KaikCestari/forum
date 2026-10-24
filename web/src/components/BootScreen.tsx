@@ -1,6 +1,6 @@
 import { m } from "motion/react";
 import type { PipelineStatus } from "../api/types";
-import { lowerFirst } from "../lib/format";
+import { friendlyStep } from "../lib/stages";
 import { ease } from "../motion/tokens";
 
 interface Props {
@@ -14,16 +14,16 @@ export function BootScreen({ error, pipeline }: Props) {
   const step = pipeline?.steps.at(-1);
 
   let title = "Carregando a bacia";
-  let text = "Buscando os resultados mais recentes na API.";
+  let text = "Buscando os resultados mais recentes.";
   if (apiDown) {
-    title = "A API não respondeu";
-    text = "Inicie a API Java com make run e esta página tenta de novo sozinha.";
+    title = "O sistema não respondeu";
+    text = "Peça a quem administra para iniciar o sistema (make run). Esta página tenta de novo sozinha.";
   } else if (pipeline?.error) {
-    title = "O pipeline falhou";
+    title = "A análise falhou";
     text = pipeline.error;
   } else if (pipeline?.running) {
     title = "Preparando a primeira análise";
-    text = step ? `${step.language}: ${lowerFirst(step.name)}.` : "Iniciando o pipeline.";
+    text = step ? `${friendlyStep(step.name)}.` : "Iniciando a análise.";
   }
 
   return (

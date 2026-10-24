@@ -40,7 +40,7 @@ export const SCHEMA: Record<string, StationPos> = {
   "RIO-03": { x: 262, y: 96, label: "right" },
   "RIO-02": { x: 410, y: 256, label: "bottom" },
   "LAG-01": { x: 570, y: 196, label: "top" },
-  "RES-01": { x: 740, y: 262, label: "bottom" },
+  "RES-01": { x: 740, y: 262, label: "top" },
   "EST-01": { x: 905, y: 300, label: "top" },
 };
 
@@ -155,7 +155,7 @@ export function stationSummary(station: Station, series: Series, parameters: Ove
         (others.length ? `, assim como ${joinPt(others)}.` : "."),
     );
   } else {
-    parts.push("Todos os parâmetros ficaram dentro dos limites da CONAMA no último mês.");
+    parts.push("Todas as medidas ficaram dentro dos limites legais (CONAMA) no último mês.");
   }
   if (station.worsening_trends.length) {
     parts.push(`Piora contínua em ${joinPt(station.worsening_trends.map(lowerFirst))}.`);

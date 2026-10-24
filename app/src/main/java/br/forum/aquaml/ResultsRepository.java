@@ -34,6 +34,11 @@ public class ResultsRepository {
         return true;
     }
 
+    /** Esquece a análise atual, quando os dados de sensores são apagados. */
+    public void clear() {
+        results = null;
+    }
+
     /** Carrega o JSON de uma análise guardada no banco. */
     public void load(String json) throws IOException {
         results = mapper.readTree(json);

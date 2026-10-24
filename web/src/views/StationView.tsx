@@ -1,17 +1,22 @@
 import { AnimatePresence, m } from "motion/react";
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router";
-import { useSeries } from "../api/client";
+import { Link } from "react-router";
+import { useImages, useSeries } from "../api/client";
 import type { Overview, Series, Station } from "../api/types";
 import { AnimatedNumber } from "../components/AnimatedNumber";
 import { LineChart, type Band } from "../components/LineChart";
 import { SegmentedControl } from "../components/SegmentedControl";
+import { ObservationCard } from "../components/ImageObservationCard";
+import { NotesPanel } from "../components/NotesPanel";
 import { Sparkline } from "../components/Sparkline";
 import {
   DIGITS, IQA_COLOR, PARAM_ORDER, SEVERITY, bucketMeans, daysOutside, iqaClass, lastDays, limitFor,
   riverOrder, stationSummary, trendTone, verdictLabel,
 } from "../lib/domain";
+import { seriesToCsv, downloadText, slug } from "../lib/export";
 import { dateRange, dmy, fmt, lowerFirst, mean } from "../lib/format";
+import { PARAM_INFO } from "../lib/guide";
 import { ease, item, list, spring, tap } from "../motion/tokens";
 
 type Range = "90" | "365" | "all";
@@ -96,6 +101,10 @@ function StationDetail({ data, station, order }: { data: Overview; station: Stat
         <div className="station-body-loading" />
       )}
 
+      <StationImages station={station} />
+
+      <NotesPanel station={station} />
+
       <StationFoot data={data} station={station} />
     </>
   );
@@ -156,8 +165,8 @@ function StationBody({ data, station, series, param, setParam, range, setRange, 
           const bad = daysOutside(series[p] ?? [], lim);
           const recent = mean(lastDays(series[p] ?? []));
           const status = lim
-            ? bad ? `fora do limite em ${bad} de 30 dias` : "dentro do limite"
-            : p === "iqa" ? `classe ${lowerFirst(iqaClass(recent) ?? "—")}` : "sem limite na CONAMA";
+            ? bad ? `fora do limite em ${bad} de 30 dias` : "dentro do limite legal"
+            : p === "iqa" ? `classe ${lowerFirst(iqaClass(recent) ?? "—")}` : "sem limite legal definido";
           const selected = p === param;
           return (
             <m.button
@@ -190,7 +199,15 @@ function StationBody({ data, station, series, param, setParam, range, setRange, 
               {meta.label}{meta.unit && <span className="unit"> ({meta.unit})</span>}
             </m.h2>
           </AnimatePresence>
-          <SegmentedControl id="range" label="Período" options={RANGES} value={view.focused ? null : range} onChange={setRange} />
+          <div className="chart-tools">
+            <SegmentedControl id="range" label="Período" options={RANGES} value={view.focused ? null : range} onChange={setRange} />
+            <button
+              type="button" className="text-button"
+              onClick={() => downloadText(`${slug(station.name)}.csv`, seriesToCsv(station, series, data.parameters))}
+            >
+              Baixar dados (CSV)
+            </button>
+          </div>
         </div>
         <LineChart
           drawKey={drawKey}
@@ -210,10 +227,16 @@ function StationBody({ data, station, series, param, setParam, range, setRange, 
           <ul className="legend" aria-label="Legenda do gráfico">
             <li><i className="line" style={{ background: "var(--water)" }} />Valor diário</li>
             <li><i className="line thick" style={{ background: "var(--accent)" }} />Média de 7 dias</li>
-            <li><i className="tri" />Anomalia ({anomalyCount})</li>
-            {limit && <li><i className="dash" />Limite CONAMA, {limit.text}</li>}
+            <li><i className="tri" />Dia fora do padrão ({anomalyCount})</li>
+            {limit && <li><i className="dash" />Limite legal (CONAMA): {limit.text}</li>}
             {view.bands.some((b) => b.kind === "event") && <li><i style={{ background: "var(--water-light)" }} />Evento conhecido</li>}
           </ul>
+          {PARAM_INFO[param] && (
+            <div className="param-note">
+              <strong>O que é: {meta.label}</strong>
+              <p>{PARAM_INFO[param].what} {PARAM_INFO[param].why}</p>
+            </div>
+          )}
           {view.focused && (
             <p className="focus-note">
               Mostrando 45 dias antes e depois de {dmy(focus!)}.{" "}
@@ -222,6 +245,26 @@ function StationBody({ data, station, series, param, setParam, range, setRange, 
           )}
         </div>
       </div>
+    </section>
+  );
+}
+
+/** Observações por imagem confirmadas para esta estação, ao lado dos números dos sensores. */
+function StationImages({ station }: { station: Station }) {
+  const images = useImages(station.id, "confirmado").data ?? [];
+  return (
+    <section className="station-images" aria-labelledby="station-images-title">
+      <div className="block-head">
+        <h2 id="station-images-title">Imagens desta estação</h2>
+        <Link className="inline-link" to={`/imagens?ponto=${encodeURIComponent(station.id)}`}>Enviar imagem</Link>
+      </div>
+      {images.length ? (
+        <div className="obs-grid">
+          {images.slice(0, 6).map((o) => <ObservationCard key={o.id} obs={o} pointName={station.name} />)}
+        </div>
+      ) : (
+        <p className="empty">Nenhuma imagem confirmada para esta estação. Foto da água ou imagem de satélite ajudam a explicar os números.</p>
+      )}
     </section>
   );
 }
@@ -256,6 +299,12 @@ function StationFoot({ data, station }: { data: Overview; station: Station }) {
                     <strong>{a.title}</strong>
                     <p>{a.message}</p>
                     <p className="alert-rec">{a.recommendation}</p>
+                    <Link
+                      className="inline-link"
+                      to={`/assistente?pergunta=${encodeURIComponent(`Explique o alerta "${a.title}" em ${a.station_name} (${dateRange(a.start, a.end)}) e o que devo verificar em campo.`)}`}
+                    >
+                      Perguntar ao assistente
+                    </Link>
                   </div>
                 </m.li>
               ))}
@@ -278,7 +327,7 @@ function StationFoot({ data, station }: { data: Overview; station: Station }) {
               <li key={t.parameter} style={{ ["--tone" as string]: trendTone(t) }}>
                 <span className="trend-name">{t.label}</span>
                 <span className="trend-value">{t.pct_per_year > 0 ? "+" : ""}{fmt(t.pct_per_year)}% ao ano</span>
-                <span className="trend-desc">{verdictLabel(t)} estatisticamente significativa (p = {fmt(t.p_value, 3)}).</span>
+                <span className="trend-desc" title={`p = ${fmt(t.p_value, 3)}`}>{verdictLabel(t)} confirmada estatisticamente.</span>
               </li>
             ))}
           </ul>

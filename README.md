@@ -1,17 +1,19 @@
 # AquaML: análise de ecossistemas aquáticos com IA
 
-Protótipo de uma aplicação que usa **algoritmos e machine learning** para analisar dados
-de qualidade da água. Ela identifica padrões, reconhece a condição ambiental, detecta
-alterações e apoia a tomada de decisão no monitoramento de ecossistemas aquáticos.
+Aplicação que usa **algoritmos e machine learning** para apoiar biólogos e técnicos no
+monitoramento de ecossistemas aquáticos. Os dados entram por **imagens** (foto da água ou
+imagem de satélite, lidas por uma IA com visão e conferidas pelo biólogo) ou por **planilhas
+de sensores** (que geram o IQA, os gráficos, as tendências e os alertas). Não há dados de
+demonstração embutidos: o painel começa vazio e orienta o primeiro uso.
 
 | Linguagem | Papel | Onde |
 |-----------|-------|------|
-| **Java 21** | Estrutura principal: orquestra o pipeline e expõe a API REST | `app/` |
-| **React + Vite** | Painel web: bacia, estações, modelos, pipeline, dados e assistente | `web/` |
+| **Java 21** | Estrutura principal: orquestra o pipeline, analisa imagens e expõe a API REST | `app/` |
+| **React + Vite** | Painel web em português para biólogos: visão geral, imagens, estações, análises da IA, relatório, dados, assistente e guia | `web/` |
 | **Rust** | Processamento de alto desempenho: limpeza, interpolação, agregação diária e cálculo do IQA | `processor/` |
 | **Python** | IA/ML: detecção de anomalias, classificação, agrupamento, tendências e alertas | `ml/` |
-| **H2** | Banco de dados: leituras (reais ou sintéticas), histórico de análises, alertas, série diária e conversas | `data/db/` |
-| **Llama** (via Ollama) | Assistente que responde perguntas sobre a bacia com base na análise e em consultas SQL ao H2 | `app/…/AssistantService.java` |
+| **H2** | Banco de dados: leituras de sensores, imagens e pontos, anotações de campo, histórico de análises, alertas, série diária e conversas | `data/db/` |
+| **Ollama** (local ou nuvem) | Assistente que responde com base na análise, nas imagens confirmadas e nas anotações; modelo com visão que lê as imagens | `app/…/AssistantService.java`, `ImageService.java` |
 
 ## Arquitetura
 
@@ -65,21 +67,40 @@ O processador só consolida dias com **pelo menos 6 leituras**, então os dados 
 vir de sensores contínuos (por exemplo, de hora em hora). Coletas mensais de laboratório não
 bastam; a importação avisa quando a média de leituras por dia é baixa.
 
-### Assistente (Llama)
-A vista **Assistente** conversa com um Llama rodando localmente no [Ollama](https://ollama.com).
+### Imagens (foto da água e imagem de satélite)
+Na vista **Imagens**, o biólogo envia uma imagem JPG ou PNG (até 12 MB), informa a data e o
+ponto de monitoramento (existente ou novo, com nome, tipo e coordenadas opcionais) e espera de
+10 a 40 segundos:
+
+1. o Java calcula **indicadores de cor** dos pixels (verde, vermelho, azul, brilho, índice
+   verde-vermelho, fração esverdeada), de forma reprodutível;
+2. um modelo com visão (`VISION_MODEL`, padrão `gemma4:31b` no Ollama Cloud) descreve só o que
+   enxerga: cor da água, turbidez, floração de algas, espuma, óleo, material flutuante (foto) ou
+   uso do entorno e mata ciliar (satélite), com nível de atenção de 0 a 3;
+3. o resultado fica **pendente**: o biólogo confere, corrige cada campo e confirma. Se a IA falhar,
+   a imagem é guardada e ele preenche à mão.
+
+Só observações **confirmadas** entram no relatório e no contexto do assistente. São indícios
+visuais, não medições de laboratório: cor e turbidez aparentes variam com a luz e o reflexo do
+céu, e uma imagem comum (RGB) não mede clorofila.
+
+### Caderno de campo
+Anotações por estação ou ponto (observação, coleta, ocorrência, manejo), guardadas no H2 e
+incluídas no contexto do assistente.
+
+### Assistente
+A vista **Assistente** conversa com um modelo servido pelo [Ollama](https://ollama.com), local ou na
+nuvem (`OLLAMA_URL=https://ollama.com` com `OLLAMA_API_KEY`). O modelo é fixo e vem de `LLAMA_MODEL`.
 A cada pergunta, o Java monta um contexto com as estações, conclusões, alertas recentes,
-tendências e o IQA mensal consultado no H2, e instrui o modelo a usar apenas esses dados.
+tendências, o IQA mensal consultado no H2, as observações por imagem confirmadas e as anotações
+de campo, e instrui o modelo a usar apenas esses dados, em linguagem de biólogo.
 As conversas ficam no H2, e as três últimas trocas vão junto para permitir perguntas de
 seguimento. O texto exato enviado ao modelo pode ser visto em `GET /api/assistant/context`.
 
-### Dados (sintéticos)
-`ml/generate_data.py` gera 2 anos de leituras horárias de 6 estações (rios, lagoa,
-reservatório e estuário) com pH, oxigênio dissolvido, temperatura, turbidez,
-condutividade, nitrato, fósforo e coliformes. Os dados incluem sazonalidade, ciclo
-diário, chuvas, falhas de sensor (valores ausentes e impossíveis), tendências graduais
-e **7 eventos ambientais rotulados** (esgoto, floração de algas, hipóxia, descarga
-industrial e escoamento agrícola). Os rótulos servem para avaliar se a IA detecta os
-eventos.
+### Gerador de dados para desenvolvimento
+`ml/generate_data.py` gera 2 anos de leituras horárias de 6 estações sintéticas, com 7 eventos
+rotulados, e serve só para testar o pipeline e os modelos (`make data`). **O aplicativo não gera
+nem carrega esses dados**: o conjunto de sensores vem da importação de uma planilha.
 
 ### Processamento (Rust)
 - descarta valores fora da faixa física e interpola lacunas de até 6 h;
@@ -97,14 +118,15 @@ eventos.
 | Mann-Kendall sazonal + declive de Sen | Identificar tendências de piora ou melhora de longo prazo |
 | Regras CONAMA 357/2005 | Gerar alertas em linguagem simples, com recomendações |
 
-Resultados com a semente padrão: **7/7 eventos detectados**, cerca de **94% de acurácia**
+Nos dados do gerador (semente padrão): **7/7 eventos detectados**, cerca de **94% de acurácia**
 do classificador em dados futuros (91% com um sensor ausente) e tendências de
 eutrofização identificadas no reservatório.
 
 ## Como executar
 
-Pré-requisitos: **JDK 21**, Maven, Rust (cargo) e Python 3.11 ou superior. Para o
-assistente, o [Ollama](https://ollama.com) (opcional: sem ele, o resto do painel funciona normalmente).
+Pré-requisitos: **JDK 21**, Maven, Rust (cargo) e Python 3.11 ou superior. Para o assistente e a
+leitura de imagens, o [Ollama](https://ollama.com) local ou uma chave do Ollama Cloud (opcional: sem
+eles, o resto do painel funciona normalmente, e as imagens podem ser preenchidas à mão).
 
 Para o painel, também **Node.js 20** ou superior.
 
@@ -119,14 +141,18 @@ make web       # em outro terminal: painel em http://localhost:5173
 O painel (Vite) encaminha `/api` para a API Java. Para servir o painel de outro endereço,
 gere-o com `make web-build`, defina `VITE_API_URL` e libere a origem em `AQUAML_CORS_ORIGINS`.
 
-Variáveis: `OLLAMA_URL` (padrão `http://localhost:11434`), `LLAMA_MODEL` (padrão `llama3.2`)
-e `AQUAML_DB_URL` (outra URL JDBC do H2).
+Variáveis (também lidas de um arquivo `.env` na raiz, que o Git ignora; veja `.env.example`):
+`OLLAMA_URL` (padrão `http://localhost:11434`), `OLLAMA_API_KEY` (só para o Ollama Cloud),
+`LLAMA_MODEL` (padrão `llama3.2`, modelo fixo do assistente), `VISION_MODEL` (padrão `gemma4:31b`,
+modelo que lê as imagens) e `AQUAML_DB_URL` (outra URL JDBC do H2). Variáveis de ambiente têm
+precedência sobre o `.env`. A chave nunca aparece em logs nem em mensagens de erro.
 
-Na primeira execução, com o banco vazio, o Java roda o pipeline completo sozinho. Na vista
-**Pipeline** do painel, **Executar pipeline** refaz o processo; marque *gerar novos dados* e
-informe uma semente para criar outro cenário sintético.
+Na primeira execução o painel abre vazio. Envie uma imagem em **Imagens** ou importe uma planilha de
+sensores em **Meus dados**; a importação dispara o pipeline completo. Em **Atualizar** (link em Meus
+dados) a análise é refeita sobre os dados guardados, e **Apagar dados de sensores** limpa o conjunto
+de sensores sem tocar em imagens, anotações e conversas.
 
-Outros alvos: `make pipeline` (só as etapas de dados, sem o H2), `make test` (testes Rust,
+Outros alvos: `make data` e `make pipeline` (gerador e etapas de dados para desenvolvimento, sem o H2), `make test` (testes Rust,
 Python, Java e do painel), `make h2` (console SQL), `make clean` (preserva o banco) e `make clean-db`
 (apaga o banco, inclusive dados reais importados). Se o JDK 21 não estiver em `~/.local/opt/jdk-21`, use
 `make run JAVA_HOME=/caminho/do/jdk-21`.
@@ -140,17 +166,25 @@ Python, Java e do painel), `make h2` (console SQL), `make clean` (preserva o ban
 | `GET /api/stations/{id}/series` | Série diária completa da estação |
 | `GET /api/alerts?station=&severity=` | Alertas (crítico, alto, atenção, recorrente) |
 | `GET /api/anomalies` · `/api/classification` · `/api/clusters` · `/api/trends?significant=true` | Resultados de cada modelo |
-| `GET /api/pipeline/status` · `POST /api/pipeline/run?regenerate=&seed=` | Execução do pipeline (`regenerate` substitui os dados do H2 por novos sintéticos) |
+| `GET /api/pipeline/status` · `POST /api/pipeline/run` | Andamento e nova execução do pipeline sobre os dados de sensores guardados |
+| `DELETE /api/data` | Apaga o conjunto de sensores e as análises (imagens, anotações e conversas ficam) |
+| `POST /api/images` (multipart: `image`, `kind`=`foto`\|`satelite`, `date`, `station_id` ou `point_name`+`point_type`+`point_lat`+`point_lon`, `note`) | Envia e analisa uma imagem; fica pendente até a confirmação |
+| `GET /api/images?station=&status=` · `GET /api/images/{id}/file` | Observações por imagem e o arquivo da imagem |
+| `POST /api/images/{id}/confirm` (JSON com os campos revisados) · `DELETE /api/images/{id}` | Confirma com a revisão do biólogo; apaga |
+| `GET /api/points` | Pontos de monitoramento criados a partir de imagens |
+| `GET /api/notes?station=` · `POST /api/notes` · `DELETE /api/notes/{id}` | Caderno de campo |
 | `POST /api/data/import` (multipart: `measurements`, `stations`, `events`, `name`) | Importa dados reais para o H2 e refaz a análise |
 | `GET /api/db/summary` · `/api/db/runs?limit=` · `/api/db/monthly?station=` | Conjunto atual, histórico de análises e IQA mensal (SQL) |
-| `GET /api/assistant/status` · `POST /api/assistant/ask` `{"question": "…"}` | Estado do Llama e perguntas ao assistente |
+| `GET /api/assistant/status` · `POST /api/assistant/ask` `{"question": "…"}` | Estado do modelo e perguntas ao assistente |
 | `GET` · `DELETE /api/assistant/history` · `GET /api/assistant/context` | Conversa guardada no H2 e contexto enviado ao modelo |
 
 ## Limitações
-- Sem importação, os dados são sintéticos. Dados reais entram pela vista Dados (veja acima)
-  e precisam de leituras contínuas.
-- O Llama roda localmente e responde a partir do contexto montado pelo Java; modelos pequenos
-  como o `llama3.2` (3B) podem errar contas ou simplificar demais, então confira os números no painel.
+- Sem importação de planilha, não há IQA, gráficos nem tendências: só imagens, anotações e assistente.
+  Os dados de sensores precisam de leituras contínuas.
+- A leitura de imagens é um indício visual feito por uma IA que pode errar, e o resultado varia entre
+  execuções. Por isso nada vale até o biólogo confirmar. Não substitui medição e coleta em campo.
+- O assistente responde a partir do contexto montado pelo Java; modelos pequenos podem errar contas
+  ou simplificar demais, então confira os números no painel.
 - O IQA é uma aproximação: DBO e sólidos totais não são medidos, e os pesos são renormalizados.
 - Com 2 anos de dados, o teste de tendência tem pouco poder estatístico, e tendências
   fracas podem surgir por acaso.

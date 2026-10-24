@@ -151,10 +151,10 @@ def anomaly_alerts(episodes: list[dict], stations: dict[str, dict]) -> list[dict
         alerts.append({
             "station_id": ep["station_id"], "category": "anomalia",
             "severity": "alto" if ep["days"] >= 3 else "atencao", "parameter": None,
-            "title": "Comportamento anômalo detectado pela IA",
+            "title": "Dia fora do padrão detectado pela IA",
             "start": ep["start"], "end": ep["end"], "days": ep["days"], "peak": ep["max_score"],
-            "message": (f"O modelo Isolation Forest identificou {ep['days']} dia(s) de comportamento "
-                        f"atípico em {st['name']}, principalmente em: {params}."),
+            "message": (f"A IA identificou {ep['days']} dia(s) fora do padrão de {st['name']}, "
+                        f"principalmente em: {params}."),
             "recommendation": "Conferir sensores e realizar coleta de campo para confirmar a alteração.",
             "params": ep["params"],
         })
