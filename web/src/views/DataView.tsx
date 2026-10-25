@@ -23,6 +23,7 @@ import { useTooltip } from "../components/Tooltip";
 import { IQA_COLOR, iqaClass, riverOrder } from "../lib/domain";
 import {
   READINGS_TEMPLATE,
+  STATIONS_TEMPLATE,
   downloadText,
 } from "../lib/export";
 import { STATION_TYPE_LABEL } from "../lib/guide";
@@ -272,6 +273,7 @@ function SensorCard({ pipeline }: { pipeline: Pipeline }) {
 
 function ImportPanel({ pipeline }: { pipeline: Pipeline }) {
   const input = useRef<HTMLInputElement>(null);
+  const extras = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -285,6 +287,12 @@ function ImportPanel({ pipeline }: { pipeline: Pipeline }) {
     if (!file) return;
     const fd = new FormData();
     fd.set("measurements", file);
+    // Campos opcionais (estações, eventos conhecidos e nome do conjunto).
+    for (const el of extras.current?.querySelectorAll<HTMLInputElement>("input") ?? []) {
+      if (el.type === "file" ? el.files?.[0] : el.value.trim()) {
+        fd.set(el.name, el.type === "file" ? el.files![0] : el.value.trim());
+      }
+    }
     setSending(true);
     setError(null);
     setResult(null);
@@ -335,6 +343,30 @@ function ImportPanel({ pipeline }: { pipeline: Pipeline }) {
             ? "Analisando…"
             : "Escolher planilha"}
       </m.button>
+      <details className="import-extras">
+        <summary>Enviar também estações, eventos ou nome do conjunto (opcional)</summary>
+        <div ref={extras} className="import-form">
+          <label className="file-field">
+            <span>
+              Estações <em>código, nome, tipo, latitude e longitude</em>
+            </span>
+            <input type="file" name="stations" accept=".csv,text/csv" />
+          </label>
+          <label className="file-field">
+            <span>
+              Eventos conhecidos <em>ocorrências já registradas, para avaliar a IA</em>
+            </span>
+            <input type="file" name="events" accept=".csv,text/csv" />
+          </label>
+          <label className="file-field">
+            <span>
+              Nome do conjunto <em>ex.: Rede municipal, 2025</em>
+            </span>
+            <input type="text" name="name" placeholder="Nome para identificar estes dados" />
+          </label>
+          <p>Preencha antes de clicar em “Escolher planilha”: tudo vai junto.</p>
+        </div>
+      </details>
       <HowItWorks label="Como preparar a planilha">
         <p>
           Uma linha por medição, com data e hora, o código da estação e as
@@ -352,7 +384,14 @@ function ImportPanel({ pipeline }: { pipeline: Pipeline }) {
           className="text-button"
           onClick={() => downloadText("modelo-leituras.csv", READINGS_TEMPLATE)}
         >
-          Baixar planilha modelo
+          Baixar planilha modelo de leituras
+        </button>
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => downloadText("modelo-estacoes.csv", STATIONS_TEMPLATE)}
+        >
+          Baixar planilha modelo de estações
         </button>
       </HowItWorks>
       <AnimatePresence mode="wait">
