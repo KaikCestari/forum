@@ -3,7 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
+  type ChangeEvent,
   type PointerEvent,
 } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -23,7 +23,6 @@ import { useTooltip } from "../components/Tooltip";
 import { IQA_COLOR, iqaClass, riverOrder } from "../lib/domain";
 import {
   READINGS_TEMPLATE,
-  STATIONS_TEMPLATE,
   downloadText,
 } from "../lib/export";
 import { STATION_TYPE_LABEL } from "../lib/guide";
@@ -272,7 +271,7 @@ function SensorCard({ pipeline }: { pipeline: Pipeline }) {
 }
 
 function ImportPanel({ pipeline }: { pipeline: Pipeline }) {
-  const form = useRef<HTMLFormElement>(null);
+  const input = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -280,178 +279,122 @@ function ImportPanel({ pipeline }: { pipeline: Pipeline }) {
   // A importação só falha depois, no pipeline (ex.: poucas leituras por dia).
   const pipelineError = result && !running ? pipeline.data?.error : null;
 
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    for (const k of ["stations", "events"]) {
-      if (!(fd.get(k) as File | null)?.size) fd.delete(k);
-    }
+  // Escolher a planilha já envia e analisa, sem passo extra.
+  const pick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.set("measurements", file);
     setSending(true);
     setError(null);
     setResult(null);
     try {
       const r = await importData(fd);
       setResult(r);
-      form.current?.reset();
       await pipeline.follow(r.pipeline);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Não foi possível importar os arquivos.",
+          : "Não foi possível importar a planilha.",
       );
     } finally {
+      if (input.current) input.current.value = "";
       setSending(false);
     }
   };
 
   return (
     <m.section
-      className="import-panel"
+      className="import-panel import-simple"
       aria-labelledby="import-title"
       {...reveal}
     >
-      <div>
-        <h2 id="import-title">Importar planilha de sensores</h2>
+      <h2 id="import-title">Importar planilha</h2>
+      <p>
+        Escolha a planilha CSV com as leituras dos seus sensores. Ela substitui
+        o conjunto atual e a análise é feita sozinha.
+      </p>
+      <input
+        ref={input}
+        type="file"
+        accept=".csv,text/csv"
+        hidden
+        onChange={pick}
+      />
+      <m.button
+        type="button"
+        className="button"
+        disabled={sending || running}
+        whileTap={tap}
+        onClick={() => input.current?.click()}
+      >
+        {sending
+          ? "Enviando…"
+          : running
+            ? "Analisando…"
+            : "Escolher planilha"}
+      </m.button>
+      <HowItWorks label="Como preparar a planilha">
         <p>
-          Envie uma planilha CSV com as leituras dos seus sensores. Ela
-          substitui o conjunto atual e a análise é refeita sozinha.
+          Uma linha por medição, com data e hora, o código da estação e as
+          medidas que você tiver. Cada dia precisa de pelo menos 6 leituras,
+          como as de sensores contínuos. Colunas obrigatórias:{" "}
+          <code>timestamp</code> e <code>station_id</code>. Medidas:{" "}
+          <code>ph</code>, <code>do_mgl</code>, <code>temp_c</code>,{" "}
+          <code>turbidity_ntu</code>, <code>conductivity_uscm</code>,{" "}
+          <code>nitrate_mgl</code>, <code>phosphorus_mgl</code>,{" "}
+          <code>coliforms_nmp</code>. Cabeçalhos como “Data/Hora” ou “OD
+          (mg/L)” também são reconhecidos.
         </p>
-        <ul className="format">
-          <li>
-            <strong>Leituras (obrigatória):</strong> uma linha por medição, com
-            data e hora, o código da estação e as medidas que você tiver.
-          </li>
-          <li>
-            Funciona com planilhas do Excel salvas como CSV, com separador ponto
-            e vírgula, vírgula decimal e datas como 31/12/2025 14:30.
-          </li>
-          <li>
-            Cada dia precisa de pelo menos 6 leituras, como as de sensores
-            contínuos. Coletas mensais de laboratório não bastam.
-          </li>
-        </ul>
-        <div className="template-links">
-          <button
-            type="button"
-            className="text-button"
-            onClick={() =>
-              downloadText("modelo-leituras.csv", READINGS_TEMPLATE)
-            }
-          >
-            Baixar planilha modelo de leituras
-          </button>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() =>
-              downloadText("modelo-estacoes.csv", STATIONS_TEMPLATE)
-            }
-          >
-            Baixar planilha modelo de estações
-          </button>
-        </div>
-        <HowItWorks label="Nomes das colunas">
-          <p>
-            Obrigatórias: <code>timestamp</code> e <code>station_id</code>.
-            Medidas: <code>ph</code>, <code>do_mgl</code>, <code>temp_c</code>,{" "}
-            <code>turbidity_ntu</code>, <code>conductivity_uscm</code>,{" "}
-            <code>nitrate_mgl</code>, <code>phosphorus_mgl</code>,{" "}
-            <code>coliforms_nmp</code>. Cabeçalhos como “Data/Hora”, “Estação”,
-            “OD (mg/L)” ou “Fósforo total” também são reconhecidos, e valores
-            abaixo do limite de detecção (por exemplo, <code>&lt;0,02</code>)
-            entram como metade do limite.
-          </p>
-        </HowItWorks>
-      </div>
-      <form ref={form} className="import-form" onSubmit={submit}>
-        <label className="file-field">
-          <span>
-            Leituras <em>obrigatório</em>
-          </span>
-          <input
-            type="file"
-            name="measurements"
-            accept=".csv,text/csv"
-            required
-          />
-        </label>
-        <label className="file-field">
-          <span>
-            Estações <em>opcional: código, nome, tipo, latitude e longitude</em>
-          </span>
-          <input type="file" name="stations" accept=".csv,text/csv" />
-        </label>
-        <label className="file-field">
-          <span>
-            Eventos conhecidos{" "}
-            <em>opcional: ocorrências já registradas, para avaliar a IA</em>
-          </span>
-          <input type="file" name="events" accept=".csv,text/csv" />
-        </label>
-        <label className="file-field">
-          <span>
-            Nome do conjunto <em>ex.: Rede municipal, 2025</em>
-          </span>
-          <input
-            type="text"
-            name="name"
-            placeholder="Nome para identificar estes dados"
-          />
-        </label>
-        <m.button
-          type="submit"
-          className="button"
-          disabled={sending || running}
-          whileTap={tap}
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => downloadText("modelo-leituras.csv", READINGS_TEMPLATE)}
         >
-          {sending
-            ? "Enviando…"
-            : running
-              ? "Analisando…"
-              : "Importar e analisar"}
-        </m.button>
-        <AnimatePresence mode="wait">
-          {(error || pipelineError) && (
-            <m.p
-              key="error"
-              className="form-error"
-              role="alert"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              {error ?? `A análise falhou: ${pipelineError}`}
-            </m.p>
-          )}
-          {result && !pipelineError && (
-            <m.div
-              key="ok"
-              className="form-ok"
-              role="status"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <p>
-                {plural(result.measurements, "leitura", "leituras")} de{" "}
-                {plural(result.stations, "estação", "estações")} recebidas (
-                {fmt(result.readingsPerDay, 1)} por dia).{" "}
-                {running
-                  ? "A análise está rodando e o painel se atualiza sozinho."
-                  : "Análise concluída."}
-              </p>
-              {result.warnings.length > 0 && (
-                <ul>
-                  {result.warnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              )}
-            </m.div>
-          )}
-        </AnimatePresence>
-      </form>
+          Baixar planilha modelo
+        </button>
+      </HowItWorks>
+      <AnimatePresence mode="wait">
+        {(error || pipelineError) && (
+          <m.p
+            key="error"
+            className="form-error"
+            role="alert"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            {error ?? `A análise falhou: ${pipelineError}`}
+          </m.p>
+        )}
+        {result && !pipelineError && (
+          <m.div
+            key="ok"
+            className="form-ok"
+            role="status"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <p>
+              {plural(result.measurements, "leitura", "leituras")} de{" "}
+              {plural(result.stations, "estação", "estações")} recebidas (
+              {fmt(result.readingsPerDay, 1)} por dia).{" "}
+              {running
+                ? "A análise está rodando e o painel se atualiza sozinho."
+                : "Análise concluída."}
+            </p>
+            {result.warnings.length > 0 && (
+              <ul>
+                {result.warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
+            )}
+          </m.div>
+        )}
+      </AnimatePresence>
     </m.section>
   );
 }
