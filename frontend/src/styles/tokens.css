@@ -1,58 +1,62 @@
 /*
- * Tema "Matrix Green" (21st.dev, @serafimcloud): fundo preto, fósforo verde #00FF41,
- * cantos retos, brilho verde no lugar de sombras e a fonte VT323 com letras espaçadas.
+ * Tema "Red Vivid" (21st.dev, @krisztt2003), modo claro: brutalista. Fundo branco, texto preto,
+ * vermelho vivo para ações, cantos retos e sombras duras de 3px sem desfoque. Fonte Inter.
  * As cores oficiais do IQA (CETESB) continuam só nos dados, porque carregam significado.
  */
-@import '@fontsource/vt323';
+@import '@fontsource-variable/inter';
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* Tokens do tema */
-  --background: #000000;
-  --foreground: #00ff41;
-  --card: #050505;
-  --primary: #00ff41;
-  --primary-foreground: #000000;
-  --secondary: #003b00;
-  --muted: #001a00;
-  --muted-foreground: #008f11;
-  --border: #003b00;
-  --ring: #00ff41;
-  --destructive: #ff0000;
-  --brilho: 0 0 10px 1px rgb(0 255 65 / 0.2);
-  --brilho-forte: 0 0 15px 2px rgb(0 255 65 / 0.4);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 0%, 0%);
+  --card: hsl(0, 0%, 100%);
+  --primary: hsl(0, 100%, 43%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(0, 0%, 0%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(0, 100%, 50%);
+  --muted: hsl(0, 0%, 96%);
+  --muted-foreground: hsl(0, 0%, 40%);
+  --border: hsl(0, 0%, 0%);
+  --ring: hsl(0, 100%, 45%);
+  --destructive: hsl(0, 100%, 40%);
+  --sidebar: hsl(0, 0%, 98%);
+  --sidebar-accent: hsl(0, 0%, 90%);
+  --sombra-dura: 3px 3px 0 0 hsl(0, 0%, 0%);
+  --sombra-dura-g: 6px 6px 0 0 hsl(0, 0%, 0%);
 
   /* Nomes usados pelos componentes do AquaML, apontando para o tema */
-  --abismo: var(--card);
-  --abismo-2: var(--muted);
+  --abismo: var(--sidebar);
+  --abismo-2: var(--sidebar-accent);
   --leito: var(--foreground);
   --leito-suave: var(--muted-foreground);
   --lamina: var(--background);
   --margem: var(--card);
-  --sedimento: var(--border);
-  --sedimento-forte: #006b14;
+  --sedimento: hsl(0, 0%, 88%);
+  --sedimento-forte: var(--border);
   --correnteza: var(--primary);
-  --correnteza-escura: #00c932;
-  --correnteza-clara: var(--muted);
+  --correnteza-escura: hsl(0, 100%, 35%);
+  --correnteza-clara: hsl(0, 100%, 96%);
   --aqua: var(--primary);
   --texto-sobre-primaria: var(--primary-foreground);
 
-  /* Escala do IQA (CETESB), clareada para ler sobre o preto */
-  --iqa-otima: #3d8bff;
-  --iqa-boa: #3fbf5a;
-  --iqa-regular: #f0c040;
-  --iqa-ruim: #ff5a32;
-  --iqa-pessima: #8a5a8a;
+  /* Escala do IQA (CETESB) */
+  --iqa-otima: #2f6db5;
+  --iqa-boa: #3b9b4f;
+  --iqa-regular: #e3b23c;
+  --iqa-ruim: #d1502f;
+  --iqa-pessima: #3d2b3d;
 
   /* Estados */
   --critico: var(--destructive);
-  --atencao: #ffd000;
+  --atencao: #8a5a00;
 
   --raio-p: 0;
   --raio: 0;
   --raio-g: 0;
-  --sombra: var(--brilho);
+  --sombra: var(--sombra-dura);
 
   --azul: var(--leito);
   --azul-claro: var(--muted);
@@ -61,16 +65,16 @@
   --verde-claro: var(--muted);
   --texto: var(--leito);
   --apoio: var(--leito-suave);
-  --linha: var(--border);
+  --linha: var(--sedimento);
   --fundo: var(--background);
   --branco: var(--card);
 
   /* Tipografia */
-  --fonte: 'VT323', 'Courier New', monospace;
+  --fonte: 'Inter Variable', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --fonte-estreita: var(--fonte);
 
   font-family: var(--fonte);
-  letter-spacing: 0.05em;
+  letter-spacing: -0.02em;
   color: var(--foreground);
   background: var(--background);
   font-synthesis: none;

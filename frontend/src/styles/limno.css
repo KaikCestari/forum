@@ -20,7 +20,7 @@
 }
 .chat-titulo h1 {
   font-size: 1.05rem;
-  letter-spacing: 0.1em;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 .chat-status {
@@ -84,7 +84,7 @@
 }
 .chat-inicio h2 {
   font-size: clamp(1.8rem, 3.2vw, 2.4rem);
-  letter-spacing: 0.1em;
+  letter-spacing: -0.04em;
   font-weight: 700;
   margin: 18px 0 8px;
 }

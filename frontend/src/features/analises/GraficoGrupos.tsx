@@ -2,7 +2,7 @@
 import type { PerfilGrupo, PontoGrupo } from '../../api/tipos';
 import { data, numero } from '../../components/formatacao';
 import { ListaProgressiva } from '../../components/ListaProgressiva';
-const cores = ['#00ff41', '#3d8bff', '#f0c040', '#ff5ad1', '#9fe8ff'];
+const cores = ['#000000', '#db0000', '#e3a400', '#4a7a4a', '#8a5a3a'];
 const corGrupo = (id: number) => cores[Math.abs(id) % cores.length];
 export function GraficoGrupos({
   pontos,
