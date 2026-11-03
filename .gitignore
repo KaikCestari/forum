@@ -24,3 +24,10 @@ app/target/
 .env
 .env.*
 !.env.example
+
+# Nova estrutura
+backend/target/
+ml-service/.venv/
+ml-service/samples/
+frontend/node_modules/
+frontend/dist/

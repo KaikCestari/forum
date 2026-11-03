@@ -1,0 +1,22 @@
+/* Define a paleta aquática, a tipografia e as medidas compartilhadas. */
+:root {
+  font-family: 'Segoe UI', 'Frutiger', 'Helvetica Neue', Arial, sans-serif;
+  color: #203c47;
+  background: #f3f7f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --azul: #123e50;
+  --azul-claro: #dcebf1;
+  --verde: #176b62;
+  --verde-escuro: #11564f;
+  --verde-claro: #e7f3ef;
+  --texto: #203c47;
+  --apoio: #536b76;
+  --linha: #ccdce2;
+  --fundo: #f3f7f8;
+  --branco: #ffffff;
+  --critico: #a52c32;
+  --atencao: #80500a;
+  --raio: 10px;
+}

@@ -1,0 +1,11 @@
+package br.forum.aquaml.analysis.domain;
+
+import br.forum.aquaml.monitoring.domain.Measurement;
+import br.forum.aquaml.monitoring.domain.MonitoringEvent;
+import br.forum.aquaml.monitoring.domain.Station;
+
+import java.util.List;
+
+/** Os dados do monitoramento que vão para o serviço de machine learning. */
+public record AnalysisInput(List<Station> stations, List<Measurement> measurements, List<MonitoringEvent> events) {
+}

@@ -1,0 +1,6 @@
+# Dependências e saídas locais do frontend.
+node_modules/
+dist/
+*.tsbuildinfo
+.env.local
+coverage/

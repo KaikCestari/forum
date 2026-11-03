@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-11-02T12:00:00Z",
+  "period": {"start": "2026-01-01", "end": "2026-01-01"},
+  "parameters": {"ph": {"label": "pH", "unit": ""}, "doMgl": {"label": "Oxigênio dissolvido", "unit": "mg/L"}},
+  "processing": {"rawReadings": 6, "validReadings": 6, "days": 1, "discardedDays": 0},
+  "stations": [
+    {"stationId": "rio-a", "name": "Rio A", "type": "rio",
+     "latest": {"date": "2026-01-01", "iqa": 45.0, "iqaClass": "Regular"},
+     "iqaPeriod": 45.0, "predictedClass": "Regular", "cluster": 1, "clusterLabel": "Água com pouco oxigênio",
+     "worseningTrends": ["phosphorusMgl"], "alertsTotal": 2, "alertsRecent": 2, "criticalTotal": 1}
+  ],
+  "insights": ["O Rio A está com oxigênio baixo."],
+  "alerts": [
+    {"stationId": "rio-a", "date": "2026-01-01", "parameter": "doMgl", "value": 3.9, "unit": "mg/L",
+     "severity": "atencao", "message": "Oxigênio abaixo de 5 mg/L"},
+    {"stationId": "rio-a", "date": "2026-01-01", "parameter": "coliformsNmp", "value": 5000, "unit": "NMP/100mL",
+     "severity": "critico", "message": "Coliformes acima de 1.000"}
+  ],
+  "anomalies": {"method": "Isolation Forest + z-score (30 dias)", "episodes": [], "evaluation": null},
+  "classification": {"method": "Random Forest", "accuracy": 0.91, "featureImportance": [], "current": {"rio-a": "Regular"}},
+  "clusters": {"method": "K-Means + PCA", "points": [], "profiles": []},
+  "trends": [{"stationId": "rio-a", "parameter": "phosphorusMgl", "direction": "piora", "slopePerYear": 0.01, "pValue": 0.03}],
+  "series": {"rio-a": {"dates": ["2026-01-01"], "iqa": [45.0], "iqaClass": ["Regular"], "anomaly": [false],
+                       "anomalyScore": [0.12], "params": {"ph": [7.1], "doMgl": [3.9]}}}
+}
