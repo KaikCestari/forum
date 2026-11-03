@@ -5,52 +5,22 @@
   grid-template-columns: 1.05fr 1fr;
 }
 .login-apresentacao {
-  background: var(--azul);
-  color: white;
+  background: var(--leito);
+  color: var(--margem);
   padding: clamp(32px, 5vw, 80px);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 70px;
-  overflow: hidden;
-  position: relative;
-}
-.login-apresentacao::after {
-  content: '';
-  width: 650px;
-  height: 650px;
-  border: 1px solid #346373;
-  border-radius: 42%;
-  position: absolute;
-  right: -390px;
-  bottom: -330px;
-  box-shadow:
-    0 0 0 40px #ffffff04,
-    0 0 0 80px #ffffff04,
-    0 0 0 120px #ffffff04;
-  pointer-events: none;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 40px 44px;
 }
 .login-apresentacao h1 {
-  font-size: clamp(2.1rem, 3.6vw, 3.8rem);
-  max-width: 13ch;
-  font-weight: 550;
-  line-height: 1.13;
-  margin: 28px 0;
+  font-size: clamp(2.2rem, 3.4vw, 3.2rem);
+  max-width: 14ch;
+  margin: 0 0 20px;
 }
 .login-apresentacao p {
-  color: #c6dde6;
-  max-width: 42ch;
-  position: relative;
-  z-index: 1;
-}
-.login-apresentacao > p {
-  font-size: 0.8rem;
-  margin: 0;
-}
-.linha-agua {
-  color: #93c6bc;
-  font-size: 4rem;
-  line-height: 0.5;
+  color: #c9dadb;
+  max-width: 44ch;
 }
 .login-formulario {
   padding: 50px;
@@ -441,10 +411,6 @@ blockquote p {
     max-width: 24ch;
     font-size: 2rem;
     margin: 0 0 18px;
-  }
-  .login-apresentacao .linha-agua,
-  .login-apresentacao > p {
-    display: none;
   }
   .login-apresentacao p {
     margin: 0;

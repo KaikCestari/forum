@@ -1,170 +1,116 @@
-/* Distribui navegação, cabeçalho e conteúdo com adaptação para telas pequenas. */
+/* Estrutura da aplicação: barra superior com a navegação, conteúdo alinhado à esquerda e rodapé. */
 .aplicacao {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-}
-.coluna-lateral {
-  min-width: 0;
-  background: var(--azul);
-}
-.lateral {
-  background: var(--azul);
-  color: white;
-  padding: 34px 20px 26px;
   display: flex;
   flex-direction: column;
+}
+.barra-superior {
+  background: var(--margem);
+  border-bottom: 1px solid var(--sedimento);
   position: sticky;
   top: 0;
-  height: 100vh;
-  height: 100dvh;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
+  z-index: 10;
 }
-.lateral > * {
-  flex-shrink: 0;
+.barra-superior-interna {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: stretch;
+  gap: 36px;
+  min-height: 64px;
 }
 .link-marca {
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  color: white;
-  margin: 0 12px 48px;
+  color: var(--leito);
 }
 .link-marca:hover {
-  color: white;
+  color: var(--leito);
 }
 .marca {
   display: inline-flex;
   align-items: center;
-  font-size: 1.8rem;
-  font-weight: 650;
-  letter-spacing: -0.045em;
+  gap: 10px;
+  font-family: var(--fonte-estreita);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
-.marca > span:last-child {
-  font-weight: 350;
+.marca svg {
+  display: block;
 }
-.marca-simbolo {
-  display: inline-grid;
-  place-content: center;
-  background: #d4efea;
-  color: var(--azul);
-  width: 37px;
-  height: 37px;
-  border-radius: 50% 50% 50% 8px;
-  margin-right: 10px;
-  font-size: 2rem;
-  font-weight: 500;
-}
-.lateral nav {
-  display: grid;
-  gap: 7px;
-}
-.lateral nav a {
-  color: #d5e6ed;
-  padding: 12px;
-  border-radius: 6px;
-  text-decoration: none;
+.navegacao {
   display: flex;
-  gap: 12px;
-  align-items: center;
-  font-size: 0.91rem;
-}
-.lateral nav a > span {
-  font-size: 1.2rem;
-  width: 22px;
-  text-align: center;
-  line-height: 1;
-}
-.lateral nav a:hover {
-  background: #1c4e61;
-  color: white;
-}
-.lateral nav a.active {
-  background: #d4efea;
-  color: #143e39;
-  font-weight: 650;
-}
-.menu-admin {
-  border-top: 1px solid #436573;
-  padding-top: 20px;
-  margin-top: 18px;
-}
-.menu-admin > p {
-  color: #b7d0da;
-  font-size: 0.76rem;
-  padding-left: 12px;
-  margin-bottom: 8px;
-}
-.lateral-rodape {
-  font-size: 0.78rem;
-  color: #b7d0da;
-  padding: 38px 12px 0;
-  margin-top: auto;
-  margin-bottom: 0;
-  line-height: 1.7;
-}
-.area-principal {
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
   min-width: 0;
 }
-.barra-topo {
-  min-height: 88px;
-  background: white;
-  border-bottom: 1px solid var(--linha);
+.navegacao a {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 42px;
+  padding: 0 12px;
+  color: var(--leito-suave);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
 }
-.contexto-topo {
-  color: var(--apoio);
-  font-size: 0.9rem;
+.navegacao a:hover {
+  color: var(--leito);
+}
+.navegacao a.active {
+  color: var(--leito);
+  border-bottom-color: var(--correnteza);
+}
+.navegacao .separador {
+  width: 1px;
+  background: var(--sedimento);
+  margin: 18px 10px;
 }
 .identidade {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  margin-left: auto;
 }
 .identidade strong {
   display: block;
-  font-size: 0.87rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 .identidade > div > span {
   display: block;
-  color: var(--apoio);
-  font-size: 0.75rem;
+  color: var(--leito-suave);
+  font-size: 0.8rem;
 }
-.avatar {
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-content: center;
-  background: var(--azul-claro);
-  color: var(--azul);
-  font-weight: 650;
+.area-principal {
+  flex: 1;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 36px 32px 64px;
 }
-.identidade .botao {
-  margin-left: 10px;
-}
-.area-principal main {
-  max-width: 1480px;
-  padding: 40px 42px 60px;
-  margin: auto;
-  min-height: calc(100vh - 160px);
-}
-.area-principal main:focus {
+.area-principal:focus {
   outline: none;
 }
 .cabecalho-pagina {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: 24px;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
+}
+.cabecalho-pagina h1 {
+  margin-bottom: 6px;
 }
 .cabecalho-pagina p {
-  color: var(--apoio);
-  font-size: 0.95rem;
+  color: var(--leito-suave);
+  font-size: 1rem;
   margin-bottom: 0;
 }
 .cabecalho-pagina > .acoes {
@@ -185,21 +131,21 @@
   min-width: 220px;
 }
 .rodape {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 18px 42px;
-  color: var(--apoio);
-  font-size: 0.75rem;
-  border-top: 1px solid var(--linha);
+  border-top: 1px solid var(--sedimento);
+  color: var(--leito-suave);
+  font-size: 0.85rem;
+}
+.rodape p {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 18px 32px;
 }
 .pular {
   position: fixed;
   left: 20px;
   top: -100px;
   background: white;
-  color: var(--azul);
+  color: var(--leito);
   padding: 16px;
   z-index: 20;
 }
@@ -214,94 +160,58 @@
   padding: 40px 24px;
   margin: auto;
 }
-@media (min-width: 1600px) {
-  .area-principal main {
-    padding-top: 52px;
-  }
-}
 @media (max-width: 1100px) {
-  .aplicacao {
-    grid-template-columns: 205px minmax(0, 1fr);
+  .barra-superior-interna {
+    flex-wrap: wrap;
+    gap: 0 24px;
+    padding: 0 20px;
   }
-  .lateral {
-    padding: 28px 12px;
+  .navegacao {
+    order: 3;
+    flex-basis: 100%;
+    overflow-x: auto;
+    min-height: 48px;
   }
-  .area-principal main {
-    padding: 30px 24px 48px;
-  }
-  .barra-topo {
-    padding: 18px 24px;
+  .area-principal {
+    padding: 28px 20px 48px;
   }
   .cabecalho-pagina {
     align-items: flex-start;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
   }
 }
 @media (max-width: 760px) {
-  .aplicacao {
-    display: block;
-  }
-  .lateral {
-    position: static;
-    height: auto;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    padding: 14px 20px;
-    overflow: visible;
-  }
-  .link-marca {
-    margin: 0;
-  }
-  .marca {
-    font-size: 1.6rem;
-  }
-  .marca-simbolo {
-    width: 32px;
-    height: 32px;
+  .identidade > div {
+    display: none;
   }
   .menu-movel {
     display: inline-flex;
-    background: #245a6e;
   }
-  .lateral nav {
-    display: none;
-    grid-column: 1 / -1;
-    margin-top: 20px;
-  }
-  .lateral nav.aberto {
-    display: grid;
-  }
-  .lateral-rodape {
+  .navegacao {
     display: none;
   }
-  .barra-topo {
-    min-height: 76px;
-    padding: 14px 20px;
+  .navegacao.aberto {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 12px;
   }
-  .contexto-topo {
+  .navegacao.aberto a {
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--sedimento);
+  }
+  .navegacao.aberto a.active {
+    border-bottom: 3px solid var(--correnteza);
+  }
+  .navegacao .separador {
     display: none;
-  }
-  .identidade {
-    width: 100%;
-  }
-  .identidade > div {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .identidade .botao {
-    margin-left: auto;
-  }
-  .area-principal main {
-    padding: 28px 18px 40px;
   }
   .cabecalho-lista {
     align-items: stretch;
     flex-direction: column;
     gap: 14px;
   }
-  .rodape {
-    padding: 18px;
+  .rodape p {
+    padding: 18px 20px;
   }
 }

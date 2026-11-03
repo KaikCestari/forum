@@ -22,7 +22,7 @@ export function ListaAlertas({
             </Selo>
           </div>
           <p>
-            {nomes[a.stationId] ?? a.stationId} · {data(a.date)} · {numero(a.value)} {a.unit}
+            {nomes[a.stationId] ?? a.stationId}, em {data(a.date)}: pior valor {numero(a.value)} {a.unit}
           </p>
         </li>
       ))}

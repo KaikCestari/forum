@@ -31,7 +31,7 @@ export function DetalheEstacao() {
       titulo={estacao?.name ?? 'Detalhe da estação'}
       descricao={
         estacao
-          ? `${tiposEstacao[estacao.type]} · Acompanhe as mudanças ao longo do tempo.`
+          ? `${tiposEstacao[estacao.type]}. Acompanhe as mudanças ao longo do tempo.`
           : 'Histórico do ponto de monitoramento.'
       }
       acoes={

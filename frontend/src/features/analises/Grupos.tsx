@@ -32,7 +32,7 @@ export function Grupos({
                 <li key={perfil.cluster}>
                   <h3>{perfil.label}</h3>
                   <p>
-                    Grupo {perfil.cluster} · {numero(perfil.size, 0)} observações
+                    {numero(perfil.size, 0)} dias neste grupo
                   </p>
                   <dl className="medidas">
                     {Object.entries(perfil.means).map(([p, valor]) => (

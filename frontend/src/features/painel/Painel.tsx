@@ -1,22 +1,55 @@
-// Resume os dados reais do monitoramento e orienta o primeiro uso.
+// Painel: a régua do IQA com todas as estações, a evolução de cada uma, os alertas e o que os dados mostram.
 import { Link } from 'react-router';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';
+import type { ResultadoAnalise } from '../../api/tipos';
 import { useAuth } from '../../auth/AuthContext';
 import { Carregando, Erro, Vazio } from '../../components/Estados';
-import { Bloco, Pagina, ComoFunciona } from '../../components/Pagina';
+import { Pagina, ComoFunciona } from '../../components/Pagina';
 import { ListaAlertas } from '../../components/ListaAlertas';
-import { data, numero } from '../../components/formatacao';
+import { data, nomeParametro, numero } from '../../components/formatacao';
+import { ReguaIqa, type MarcaRegua } from '../../components/graficos/ReguaIqa';
+import { SerieMiniatura } from '../../components/graficos/SerieMiniatura';
+import { BarrasHorizontais } from '../../components/graficos/BarrasHorizontais';
+import { corIqa, mediasSemanais, pisoIqa, valorDiasAntes } from '../../components/graficos/iqa';
+
+/** Monta as marcas da régua a partir da última análise: valor atual e valor de 30 dias antes. */
+function marcasDaRegua(analise: ResultadoAnalise): MarcaRegua[] {
+  return analise.stations
+    .filter((s) => s.latest?.iqa != null)
+    .map((s) => ({
+      id: s.stationId,
+      nome: s.name,
+      iqa: s.latest!.iqa!,
+      anterior: valorDiasAntes(analise.series[s.stationId]?.iqa ?? [], 30),
+    }));
+}
+
+/** Conta os alertas por parâmetro, do mais frequente para o menos frequente. */
+function alertasPorParametro(analise: ResultadoAnalise) {
+  const contagem = new Map<string, number>();
+  analise.alerts.forEach((a) => contagem.set(a.parameter, (contagem.get(a.parameter) ?? 0) + 1));
+  return [...contagem.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([parametro, valor]) => ({ rotulo: nomeParametro(parametro), valor }));
+}
+
 export function Painel() {
   const consulta = useConsulta(api.painel);
-  const estacoes = useConsulta(api.estacoes);
-  const nomes = Object.fromEntries((estacoes.dados ?? []).map((e) => [e.id, e.name]));
+  const analise = useConsulta(api.analise);
   const { usuario } = useAuth();
   const painel = consulta.dados;
+  const resultado = analise.dados;
+  const nomes = Object.fromEntries((resultado?.stations ?? []).map((s) => [s.stationId, s.name]));
+
   return (
     <Pagina
-      titulo="Um olhar sobre a água"
-      descricao="Acompanhe as condições dos seus pontos de monitoramento."
+      titulo="Painel"
+      descricao={
+        painel?.summary.firstReading
+          ? `${painel.summary.datasetName ?? 'Leituras'} de ${data(painel.summary.firstReading)} a ${data(painel.summary.lastReading)}.`
+          : 'Acompanhe a qualidade da água dos seus pontos de monitoramento.'
+      }
       acoes={
         <Link className="botao" to="/imagens">
           Registrar imagem
@@ -25,108 +58,116 @@ export function Painel() {
     >
       <Erro erro={consulta.erro} tentar={consulta.recarregar} />
       {consulta.carregando && <Carregando />}
-      {painel && (
-        <>
-          <div className="faixa-periodo">
-            <span>{painel.summary.datasetName || 'Seu observatório'}</span>
-            <span>
-              {painel.summary.firstReading
-                ? `${data(painel.summary.firstReading)} a ${data(painel.summary.lastReading)}`
-                : 'Aguardando leituras de sensores'}
-            </span>
-          </div>
-          <div className="indicadores">
-            <div>
-              <span>IQA médio</span>
-              <strong>{numero(painel.iqaMean)}</strong>
-              <small>Qualidade da água · 0 a 100</small>
-            </div>
-            <div>
-              <span>Estações em risco</span>
-              <strong>{numero(painel.stationsAtRisk, 0)}</strong>
-              <small>Precisam de acompanhamento</small>
-            </div>
-            <Link to="/imagens">
-              <span>Imagens pendentes</span>
-              <strong>{numero(painel.imagesPending, 0)}</strong>
-              <small>Aguardam sua revisão</small>
+
+      {painel && !painel.hasData && (
+        <Vazio titulo="Seu monitoramento começa aqui">
+          <p>
+            Registre uma foto da água ou uma imagem de satélite e confira a leitura da IA. Para ver o
+            IQA, os gráficos e os alertas, importe uma planilha de sensores com pelo menos seis leituras
+            por dia.
+          </p>
+          <div className="acoes">
+            <Link className="botao" to="/imagens">
+              Enviar primeira imagem
             </Link>
-            <div>
-              <span>Imagens confirmadas</span>
-              <strong>{numero(painel.imagesConfirmed, 0)}</strong>
-              <small>Observações revisadas</small>
-            </div>
-          </div>
-          {!painel.hasData && (
-            <Vazio titulo="Seu monitoramento começa aqui">
-              <p>
-                Registre uma foto da água ou uma imagem de satélite e confira a leitura da IA. As
-                observações confirmadas ficam disponíveis para sua equipe e para o assistente.
-              </p>
-              <p>
-                O IQA e as análises de sensores aparecem após importar uma planilha com pelo menos
-                seis leituras por dia.
-              </p>
-              <div className="acoes">
-                <Link className="botao" to="/imagens">
-                  Enviar primeira imagem
-                </Link>
-                {usuario?.role === 'ADMIN' ? (
-                  <Link className="botao secundario" to="/dados">
-                    Importar planilha
-                  </Link>
-                ) : (
-                  <Link className="botao secundario" to="/estacoes">
-                    Ver pontos de monitoramento
-                  </Link>
-                )}
-              </div>
-              {usuario?.role !== 'ADMIN' && (
-                <p className="texto-apoio">
-                  Peça ao administrador para cadastrar os pontos e importar as leituras.
-                </p>
-              )}
-            </Vazio>
-          )}
-          <div className="duas-colunas">
-            <Bloco titulo="Alertas recentes">
-              <ListaAlertas alertas={painel.recentAlerts} nomes={nomes} />
-              <Link className="link-texto" to="/analises">
-                Ver todas as análises
+            {usuario?.role === 'ADMIN' ? (
+              <Link className="botao secundario" to="/dados">
+                Importar planilha
               </Link>
-            </Bloco>
-            <Bloco titulo="O que os dados mostram">
-              {painel.insights.length ? (
-                <ul className="lista-insights">
-                  {painel.insights.map((texto, i) => (
-                    <li key={i}>{texto}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="texto-apoio">
-                  As principais observações aparecerão aqui após a primeira análise.
-                </p>
-              )}
-              <ComoFunciona algoritmo="IQA CETESB/NSF">
-                O Índice de Qualidade da Água reúne parâmetros em uma escala de 0 a 100. Quanto
-                maior, melhor a qualidade: ótima a partir de 80, boa a partir de 52, regular a
-                partir de 37, ruim a partir de 20 e péssima abaixo de 20.
-              </ComoFunciona>
-            </Bloco>
+            ) : (
+              <span className="texto-apoio">Peça ao administrador para importar as leituras.</span>
+            )}
           </div>
-          {painel.lastRun && (
+        </Vazio>
+      )}
+
+      {painel?.hasData && resultado && (
+        <>
+          <section className="secao-regua" aria-labelledby="titulo-regua">
+            <h2 id="titulo-regua">Como está a água em cada estação</h2>
             <p className="texto-apoio">
-              Última execução: {data(painel.lastRun.startedAt)} ·{' '}
-              {painel.lastRun.status === 'CONCLUIDA'
-                ? 'Concluída'
-                : painel.lastRun.status === 'FALHOU'
-                  ? 'Não concluída'
-                  : 'Em andamento'}
-              {painel.lastRun.error && ` — ${painel.lastRun.error}`}
+              IQA do último dia medido. A marca curta abaixo da régua mostra onde cada estação estava 30 dias antes.
             </p>
-          )}
+            <ReguaIqa marcas={marcasDaRegua(resultado)} />
+            <dl className="fatos">
+              <div>
+                <dt>IQA médio</dt>
+                <dd style={{ color: corIqa(painel.iqaMean) }}>{numero(painel.iqaMean)}</dd>
+              </div>
+              <div>
+                <dt>Estações abaixo de Boa</dt>
+                <dd>{numero(painel.stationsAtRisk, 0)}</dd>
+              </div>
+              <div>
+                <dt>Alertas na última análise</dt>
+                <dd>{numero(resultado.alerts.length, 0)}</dd>
+              </div>
+              <div>
+                <dt>
+                  <Link to="/imagens">Imagens para revisar</Link>
+                </dt>
+                <dd>{numero(painel.imagesPending, 0)}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section aria-labelledby="titulo-evolucao">
+            <h2 id="titulo-evolucao">IQA nos últimos 12 meses</h2>
+            <ul className="grade-miniaturas">
+              {resultado.stations.map((s) => {
+                const serie = resultado.series[s.stationId];
+                const pontos = serie ? mediasSemanais(serie.dates, serie.iqa) : [];
+                return (
+                  <li key={s.stationId}>
+                    <Link to={`/estacoes/${encodeURIComponent(s.stationId)}`} className="miniatura-titulo">
+                      <span>{s.name}</span>
+                      <strong style={{ color: corIqa(s.latest?.iqa) }}>{numero(s.latest?.iqa, 0)}</strong>
+                    </Link>
+                    <SerieMiniatura
+                      titulo={`IQA de ${s.name}`}
+                      pontos={pontos}
+                      minimo={pisoIqa(pontos.map((p) => p.valor))}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <div className="duas-colunas">
+            <section className="bloco" aria-labelledby="titulo-parametros">
+              <h2 id="titulo-parametros">O que mais gerou alertas</h2>
+              <BarrasHorizontais
+                titulo="Quantidade de alertas por parâmetro"
+                itens={alertasPorParametro(resultado)}
+                cor="var(--iqa-ruim)"
+              />
+              <p className="texto-apoio">Limites da Resolução CONAMA 357 para rios de classe 2.</p>
+            </section>
+            <section className="bloco" aria-labelledby="titulo-alertas">
+              <h2 id="titulo-alertas">Alertas recentes</h2>
+              <ListaAlertas alertas={painel.recentAlerts.slice(0, 5)} nomes={nomes} />
+              <Link className="link-texto" to="/analises">
+                Ver todos os alertas
+              </Link>
+            </section>
+          </div>
+
+          <section className="bloco" aria-labelledby="titulo-insights">
+            <h2 id="titulo-insights">O que os dados mostram</h2>
+            <ul className="lista-insights">
+              {painel.insights.map((texto, i) => (
+                <li key={i}>{texto}</li>
+              ))}
+            </ul>
+            <ComoFunciona algoritmo="IQA CETESB/NSF">
+              O Índice de Qualidade da Água reúne nove parâmetros em uma nota de 0 a 100. Ótima a partir
+              de 80, boa a partir de 52, regular a partir de 37, ruim a partir de 20 e péssima abaixo de 20.
+            </ComoFunciona>
+          </section>
         </>
       )}
+      {painel?.hasData && analise.carregando && <Carregando texto="Carregando os gráficos…" />}
     </Pagina>
   );
 }

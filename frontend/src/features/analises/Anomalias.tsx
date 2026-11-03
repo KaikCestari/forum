@@ -24,7 +24,7 @@ export function Anomalias({
                 <li key={i}>
                   <strong>{nomes[episodio.stationId] ?? episodio.stationId}</strong>
                   <p>
-                    {data(episodio.start)} a {data(episodio.end)} · {episodio.days} dia(s)
+                    {data(episodio.start)} a {data(episodio.end)}, {episodio.days} dia(s)
                   </p>
                   <p>
                     Parâmetros:{' '}

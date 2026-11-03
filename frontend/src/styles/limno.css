@@ -1,0 +1,211 @@
+/* Limno, a IA especialista em ecossistemas aquáticos. */
+.limno-cabecalho {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--sedimento);
+}
+.limno-simbolo {
+  display: grid;
+  place-content: center;
+  width: 64px;
+  height: 64px;
+  background: var(--margem);
+  border: 1px solid var(--sedimento);
+}
+.limno-cabecalho h1 {
+  margin-bottom: 2px;
+}
+.limno-cabecalho p {
+  margin: 0;
+  color: var(--leito-suave);
+}
+.limno-status {
+  font-family: var(--fonte-estreita);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--critico);
+  text-align: right;
+}
+.limno-status.pronta {
+  color: var(--iqa-boa);
+}
+.limno-status small {
+  display: block;
+  font-family: var(--fonte);
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--leito-suave);
+}
+.limno-grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  align-items: start;
+}
+.limno-conversa {
+  background: var(--margem);
+  border-top: 3px solid var(--leito);
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+.limno-conversa .conversa {
+  flex: 1;
+  max-height: 64vh;
+  margin: 0;
+  padding: 24px 28px;
+}
+.limno-boas-vindas {
+  max-width: 60ch;
+  color: var(--leito-suave);
+}
+.troca {
+  margin-bottom: 28px;
+}
+.fala-pessoa {
+  margin: 0 0 12px auto;
+  width: fit-content;
+  max-width: 70%;
+  padding: 10px 14px;
+  background: var(--correnteza-clara);
+  white-space: pre-wrap;
+}
+.fala-limno {
+  border-left: 3px solid var(--correnteza);
+  padding: 2px 0 2px 16px;
+  max-width: 72ch;
+}
+.fala-limno p,
+.fala-limno ul {
+  margin: 0 0 10px;
+}
+.fala-limno ul {
+  padding-left: 20px;
+}
+.fala-limno small {
+  color: var(--leito-suave);
+}
+.fala-limno.pensando {
+  color: var(--leito-suave);
+  animation: pulsar 1.6s ease-in-out infinite;
+}
+@keyframes pulsar {
+  50% {
+    opacity: 0.45;
+  }
+}
+.graficos-resposta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 14px 0 10px;
+}
+.grafico-resposta {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--sedimento);
+  background: var(--lamina);
+}
+.grafico-resposta figcaption {
+  display: grid;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+.grafico-resposta figcaption a {
+  font-weight: 600;
+  color: var(--leito);
+}
+.grafico-resposta figcaption strong {
+  font-family: var(--fonte-estreita);
+  font-size: 1.05rem;
+}
+.carregando-grafico {
+  min-height: 150px;
+  animation: pulsar 1.6s ease-in-out infinite;
+}
+.limno-compositor {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--sedimento);
+}
+.limno-compositor textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 52px;
+}
+.limno-lateral h2 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+.limno-lateral > section {
+  margin-bottom: 28px;
+}
+.limno-fontes {
+  margin: 0;
+}
+.limno-fontes dt {
+  font-size: 0.85rem;
+  color: var(--leito-suave);
+}
+.limno-fontes dd {
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.limno-sugestoes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.limno-sugestoes li {
+  border-top: 1px solid var(--sedimento);
+}
+.limno-sugestoes li:last-child {
+  border-bottom: 1px solid var(--sedimento);
+}
+.limno-sugestoes button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 10px 0;
+  color: var(--correnteza);
+  font-weight: 500;
+}
+.limno-sugestoes button:hover:not(:disabled) {
+  color: var(--correnteza-escura);
+  text-decoration: underline;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fala-limno.pensando,
+  .carregando-grafico {
+    animation: none;
+  }
+}
+@media (max-width: 1000px) {
+  .limno-grade {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .limno-cabecalho {
+    grid-template-columns: auto 1fr;
+  }
+  .limno-status {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .limno-conversa .conversa,
+  .limno-compositor {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .fala-pessoa {
+    max-width: 90%;
+  }
+}

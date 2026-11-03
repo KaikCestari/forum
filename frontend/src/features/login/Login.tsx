@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useAcao } from '../../api/useAcao';
 import { Carregando, Erro } from '../../components/Estados';
 import { Marca } from '../../components/Layout';
+import { faixasIqa } from '../../components/graficos/iqa';
 export function Login() {
   const auth = useAuth();
   const local = useLocation();
@@ -32,17 +33,21 @@ export function Login() {
     <main className="login">
       <section className="login-apresentacao">
         <Marca />
-        <div>
-          <span className="linha-agua" aria-hidden="true">
-            ≈
-          </span>
-          <h1>Cada observação ajuda a entender a água.</h1>
+        <div className="login-regua" aria-hidden="true">
+          {faixasIqa.map((f) => (
+            <span key={f.classe} style={{ flexGrow: f.ate - f.de, background: f.cor }}>
+              <em>{f.classe}</em>
+              <b>{f.de}</b>
+            </span>
+          ))}
+        </div>
+        <div className="login-texto">
+          <h1>Qualidade da água, estação por estação.</h1>
           <p>
-            Reúna registros de campo, acompanhe mudanças e transforme dados em conhecimento sobre os
-            ecossistemas aquáticos.
+            Leituras de sensores, fotos e imagens de satélite analisadas por algoritmos e aprendizado de
+            máquina, no IQA da CETESB e nos limites da CONAMA 357.
           </p>
         </div>
-        <p>Monitoramento ambiental com AquaML</p>
       </section>
       <section className="login-formulario">
         <div>

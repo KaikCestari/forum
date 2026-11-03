@@ -87,8 +87,8 @@ export function ImportarDados({
         <div className="resultado-importacao">
           <Sucesso>Dados importados: {resultado.name}.</Sucesso>
           <p>
-            {numero(resultado.measurements, 0)} leituras · {numero(resultado.stations, 0)} estações
-            · {numero(resultado.events, 0)} eventos · {numero(resultado.readingsPerDay)} leituras
+            {numero(resultado.measurements, 0)} leituras, {numero(resultado.stations, 0)} estações,
+            {numero(resultado.events, 0)} eventos e {numero(resultado.readingsPerDay)} leituras
             por dia
           </p>
           {resultado.warnings.length > 0 && (

@@ -69,7 +69,7 @@ export function Anotacoes() {
             <Selo>{tiposAnotacao[nota.kind]}</Selo>
           </div>
           <p className="texto-apoio">
-            {data(nota.notedOn)} · {nota.author}
+            {data(nota.notedOn)}, por {nota.author}
           </p>
           <p className="texto-preservado">{nota.text}</p>
           {(usuario?.role === 'ADMIN' || usuario?.name === nota.author) && (

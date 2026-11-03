@@ -74,7 +74,8 @@ public class AssistantContextBuilder {
                 .append(" a ").append(root.path("period").path("end").asText("?")).append(")\n");
         for (JsonNode s : root.path("stations")) {
             JsonNode latest = s.path("latest");
-            sb.append("- ").append(s.path("name").asText(s.path("stationId").asText())).append(" (")
+            sb.append("- ").append(s.path("name").asText(s.path("stationId").asText()))
+                    .append(" [código ").append(s.path("stationId").asText()).append("] (")
                     .append(s.path("type").asText()).append("): IQA mais recente ").append(num(latest.path("iqa"), 0))
                     .append(" (").append(latest.path("iqaClass").asText("n/d")).append(") em ")
                     .append(latest.path("date").asText("?")).append(", média do período ")
@@ -93,6 +94,7 @@ public class AssistantContextBuilder {
             sb.append(" Alertas: ").append(s.path("alertsTotal").asInt()).append(" no período (")
                     .append(s.path("alertsRecent").asInt()).append(" recentes, ")
                     .append(s.path("criticalTotal").asInt()).append(" críticos).\n");
+            appendParameterMeans(sb, root.path("series").path(s.path("stationId").asText()));
         }
         sb.append("\n## Conclusões\n");
         r.insights().forEach(i -> sb.append("- ").append(i).append('\n'));
@@ -108,7 +110,18 @@ public class AssistantContextBuilder {
 
         sb.append("\n## Dias fora do padrão (episódios)\n");
         JsonNode episodes = root.path("anomalies").path("episodes");
-        sb.append("- ").append(episodes.size()).append(" episódios encontrados.\n");
+        sb.append("- ").append(episodes.size()).append(" episódios encontrados. Os mais recentes:\n");
+        List<JsonNode> eps = new ArrayList<>();
+        episodes.forEach(eps::add);
+        eps.sort((a, b) -> b.path("end").asText().compareTo(a.path("end").asText()));
+        eps.stream().limit(MAX_ALERTS).forEach(e -> {
+            List<String> params = new ArrayList<>();
+            e.path("parameters").forEach(x -> params.add(PARAM_LABELS.getOrDefault(x.asText(), x.asText())));
+            sb.append("  - ").append(names.getOrDefault(e.path("stationId").asText(), e.path("stationId").asText()))
+                    .append(", ").append(e.path("start").asText()).append(" a ").append(e.path("end").asText())
+                    .append(" (").append(e.path("days").asInt()).append(" dias)")
+                    .append(params.isEmpty() ? "" : ", parâmetros envolvidos: " + String.join(", ", params)).append('\n');
+        });
         for (JsonNode t : root.path("trends")) {
             if (!"estavel".equals(t.path("direction").asText())) {
                 sb.append("- Tendência em ").append(names.getOrDefault(t.path("stationId").asText(), t.path("stationId").asText()))
@@ -121,6 +134,57 @@ public class AssistantContextBuilder {
             sb.append("\nO modelo de classificação acertou ").append(num(accuracy * 100, 0))
                     .append("% em dados que não viu no treino.\n");
         }
+    }
+
+    /** Nome e unidade de cada parâmetro medido, na ordem em que a Limno os apresenta. */
+    private static final Map<String, String> PARAM_LABELS = new java.util.LinkedHashMap<>();
+    private static final Map<String, String> PARAM_UNITS = Map.of(
+            "ph", "", "doMgl", " mg/L", "tempC", " °C", "turbidityNtu", " NTU", "conductivityUscm", " µS/cm",
+            "nitrateMgl", " mg/L", "phosphorusMgl", " mg/L", "coliformsNmp", " NMP/100mL");
+    static {
+        PARAM_LABELS.put("ph", "pH");
+        PARAM_LABELS.put("doMgl", "oxigênio dissolvido");
+        PARAM_LABELS.put("tempC", "temperatura");
+        PARAM_LABELS.put("turbidityNtu", "turbidez");
+        PARAM_LABELS.put("conductivityUscm", "condutividade");
+        PARAM_LABELS.put("nitrateMgl", "nitrato");
+        PARAM_LABELS.put("phosphorusMgl", "fósforo total");
+        PARAM_LABELS.put("coliformsNmp", "coliformes");
+    }
+
+    /** Médias de cada parâmetro nos últimos 30 dias com dado, e nos 30 dias anteriores, para comparar. */
+    private static void appendParameterMeans(StringBuilder sb, JsonNode series) {
+        JsonNode params = series.path("params");
+        if (params.isMissingNode()) return;
+        List<String> parts = new ArrayList<>();
+        PARAM_LABELS.forEach((key, label) -> {
+            JsonNode values = params.path(key);
+            Double recent = mean(values, 0, 30);
+            if (recent == null) return;
+            Double before = mean(values, 30, 60);
+            String unit = PARAM_UNITS.get(key);
+            parts.add(label + " " + num(recent, 2) + unit
+                    + (before == null ? "" : " (antes " + num(before, 2) + unit + ")"));
+        });
+        if (!parts.isEmpty()) {
+            sb.append("  Médias dos últimos 30 dias (e dos 30 dias anteriores): ").append(String.join("; ", parts))
+                    .append(".\n");
+        }
+    }
+
+    /** Média dos valores entre {@code fromEnd} e {@code toEnd} posições contadas a partir do fim da série. */
+    private static Double mean(JsonNode values, int fromEnd, int toEnd) {
+        int n = values.size();
+        double sum = 0;
+        int count = 0;
+        for (int i = Math.max(0, n - toEnd); i < n - fromEnd; i++) {
+            JsonNode v = values.get(i);
+            if (v != null && v.isNumber()) {
+                sum += v.asDouble();
+                count++;
+            }
+        }
+        return count == 0 ? null : sum / count;
     }
 
     private void appendImages(StringBuilder sb, Map<String, String> names) {

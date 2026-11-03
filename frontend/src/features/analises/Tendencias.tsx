@@ -38,7 +38,7 @@ export function Tendencias({
                 <li key={i}>
                   <div className="linha">
                     <strong>
-                      {nomes[t.stationId] ?? t.stationId} · {parametro(t.parameter)}
+                      {parametro(t.parameter)} em {nomes[t.stationId] ?? t.stationId}
                     </strong>
                     <Selo
                       tom={

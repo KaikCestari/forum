@@ -37,7 +37,7 @@ button:disabled {
   opacity: 0.6;
 }
 :focus-visible {
-  outline: 3px solid #2678ba;
+  outline: 3px solid var(--iqa-otima);
   outline-offset: 4px;
 }
 h1,
@@ -47,16 +47,18 @@ p {
   margin-top: 0;
 }
 h1 {
-  font-size: clamp(1.8rem, 2.6vw, 2.6rem);
-  letter-spacing: -0.035em;
-  line-height: 1.18;
-  font-weight: 650;
+  font-family: var(--fonte-estreita);
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  font-weight: 600;
   margin-bottom: 12px;
 }
 h2 {
-  font-size: 1.25rem;
-  line-height: 1.3;
-  font-weight: 650;
+  font-family: var(--fonte-estreita);
+  font-size: 1.4rem;
+  line-height: 1.25;
+  font-weight: 600;
   margin-bottom: 16px;
 }
 h3 {
@@ -145,9 +147,9 @@ fieldset:disabled {
   width: fit-content;
   gap: 8px;
   padding: 10px 17px;
-  border-radius: 6px;
+  border-radius: 3px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   line-height: 1.5;
   min-height: 44px;
   text-decoration: none;
@@ -194,9 +196,8 @@ fieldset:disabled {
 }
 .bloco {
   background: var(--branco);
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  padding: 26px;
+  border-top: 3px solid var(--leito);
+  padding: 22px 24px 24px;
   margin-bottom: 24px;
   min-width: 0;
 }

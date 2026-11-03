@@ -86,7 +86,7 @@ describe('etapas do ML', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('Rio A')).toBeInTheDocument();
-    expect(screen.getByText('01/11/2026 a 03/11/2026 · 3 dia(s)')).toBeInTheDocument();
+    expect(screen.getByText('01/11/2026 a 03/11/2026, 3 dia(s)')).toBeInTheDocument();
     expect(screen.getByText('Parâmetros: Oxigênio dissolvido')).toBeInTheDocument();
   });
 

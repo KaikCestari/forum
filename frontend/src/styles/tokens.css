@@ -1,22 +1,58 @@
-/* Define a paleta aquática, a tipografia e as medidas compartilhadas. */
+/*
+ * Identidade visual do AquaML: a "régua linimétrica" das estações hidrométricas.
+ * Cores de base frias (água e sedimento) e a escala oficial de cores do IQA da CETESB,
+ * usada somente para dados. Tipografia Barlow, de origem na sinalização de estradas.
+ */
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow/700.css';
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
+
 :root {
-  font-family: 'Segoe UI', 'Frutiger', 'Helvetica Neue', Arial, sans-serif;
-  color: #203c47;
-  background: #f3f7f8;
+  /* Base */
+  --leito: #12343b;       /* texto e tinta principal */
+  --leito-suave: #4a6468; /* texto de apoio */
+  --lamina: #f2f5f4;      /* fundo */
+  --margem: #ffffff;      /* superfícies */
+  --sedimento: #d5dedc;   /* linhas e divisões */
+  --correnteza: #1f6f8b;  /* ações e links */
+  --correnteza-escura: #165468;
+  --correnteza-clara: #e2eef2;
+
+  /* Escala do IQA (CETESB) */
+  --iqa-otima: #2f6db5;
+  --iqa-boa: #3b9b4f;
+  --iqa-regular: #e3b23c;
+  --iqa-ruim: #d1502f;
+  --iqa-pessima: #3d2b3d;
+
+  /* Estados */
+  --critico: #b13a1f;
+  --atencao: #8a5a00;
+
+  /* Nomes antigos mantidos para os componentes existentes */
+  --azul: var(--leito);
+  --azul-claro: var(--correnteza-clara);
+  --verde: var(--correnteza);
+  --verde-escuro: var(--correnteza-escura);
+  --verde-claro: #e3f1e6;
+  --texto: var(--leito);
+  --apoio: var(--leito-suave);
+  --linha: var(--sedimento);
+  --fundo: var(--lamina);
+  --branco: var(--margem);
+  --raio: 4px;
+
+  /* Tipografia */
+  --fonte: 'Barlow', system-ui, sans-serif;
+  --fonte-estreita: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+
+  font-family: var(--fonte);
+  color: var(--leito);
+  background: var(--lamina);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --azul: #123e50;
-  --azul-claro: #dcebf1;
-  --verde: #176b62;
-  --verde-escuro: #11564f;
-  --verde-claro: #e7f3ef;
-  --texto: #203c47;
-  --apoio: #536b76;
-  --linha: #ccdce2;
-  --fundo: #f3f7f8;
-  --branco: #ffffff;
-  --critico: #a52c32;
-  --atencao: #80500a;
-  --raio: 10px;
 }

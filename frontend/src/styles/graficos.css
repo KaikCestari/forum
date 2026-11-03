@@ -1,0 +1,328 @@
+/* Gráficos do AquaML: régua do IQA, miniaturas por estação e barras. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Régua linimétrica do IQA */
+.secao-regua {
+  background: var(--margem);
+  border-top: 3px solid var(--leito);
+  padding: 24px 28px 8px;
+  margin-bottom: 40px;
+}
+.secao-regua h2 {
+  font-size: 1.75rem;
+  margin-bottom: 4px;
+}
+.regua {
+  margin: 28px 0 8px;
+}
+.regua-escala {
+  position: relative;
+  display: flex;
+  height: 44px;
+}
+.regua-faixa {
+  display: flex;
+  align-items: flex-end;
+  padding: 0 8px 6px;
+  color: var(--margem);
+  font-family: var(--fonte-estreita);
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow: hidden;
+  /* marcas de graduação a cada 2 pontos, como numa régua de rio */
+  background-image: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.35) 0 1px, transparent 1px 2%);
+  background-blend-mode: normal;
+}
+.regua-faixa:nth-child(3) {
+  color: var(--leito);
+}
+.regua-ponteiro,
+.regua-anterior {
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  width: 4px;
+  margin-left: -2px;
+  background: var(--leito);
+  box-shadow: 0 0 0 2px var(--margem);
+}
+.regua-anterior {
+  width: 2px;
+  margin-left: -1px;
+  top: 0;
+  bottom: 0;
+  background: var(--margem);
+  box-shadow: none;
+  opacity: 0.85;
+}
+.regua-graduacao {
+  position: relative;
+  height: 26px;
+  font-family: var(--fonte-estreita);
+  font-size: 0.85rem;
+  color: var(--leito-suave);
+}
+.regua-graduacao span {
+  position: absolute;
+  top: 12px;
+  transform: translateX(-50%);
+}
+.regua-graduacao span:first-child {
+  transform: none;
+}
+.regua-graduacao span:last-child {
+  transform: translateX(-100%);
+}
+.regua-nomes {
+  position: relative;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.regua-nomes li {
+  position: absolute;
+  padding-left: 10px;
+  border-left: 1px solid var(--leito);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.regua-nomes li.a-esquerda {
+  transform: translateX(-100%);
+  padding: 0 10px 0 0;
+  border-left: 0;
+  border-right: 1px solid var(--leito);
+  text-align: right;
+}
+.regua-nomes a {
+  color: var(--leito);
+  text-decoration: none;
+  font-weight: 500;
+}
+.regua-nomes a:hover {
+  text-decoration: underline;
+}
+.regua-nomes strong {
+  font-family: var(--fonte-estreita);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.regua-nomes small {
+  display: block;
+  color: var(--leito-suave);
+  font-size: 0.8rem;
+}
+.fatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 48px;
+  margin: 16px -28px 0;
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--sedimento);
+}
+.fatos dt {
+  font-size: 0.85rem;
+  color: var(--leito-suave);
+}
+.fatos dd {
+  margin: 0;
+  font-family: var(--fonte-estreita);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* Miniaturas por estação */
+.grade-miniaturas {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 28px 32px;
+}
+.miniatura-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--leito);
+  text-decoration: none;
+  border-bottom: 1px solid var(--sedimento);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.miniatura-titulo span {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.miniatura-titulo strong {
+  font-family: var(--fonte-estreita);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.miniatura-titulo:hover span {
+  text-decoration: underline;
+}
+.serie-miniatura {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Barras */
+.barras {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+.barras th {
+  text-align: left;
+  font-weight: 500;
+  padding: 6px 16px 6px 0;
+  white-space: nowrap;
+  width: 1%;
+  border: 0;
+}
+.barras td {
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+}
+.barra {
+  display: block;
+  height: 14px;
+  min-width: 2px;
+}
+.barra-valor {
+  font-family: var(--fonte-estreita);
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .secao-regua {
+    padding: 20px 18px 4px;
+  }
+  .fatos {
+    margin: 16px -18px 0;
+    padding: 16px 18px;
+    gap: 8px 28px;
+  }
+  .regua-faixa span {
+    display: none;
+  }
+  .regua-nomes {
+    height: auto !important;
+  }
+  .regua-nomes li,
+  .regua-nomes li.a-esquerda {
+    position: static;
+    transform: none;
+    text-align: left;
+    border: 0;
+    border-left: 1px solid var(--leito);
+    padding: 0 0 0 10px;
+    margin-bottom: 10px;
+  }
+}
+
+/* Ajustes: nomes acima e abaixo da régua, traço de 30 dias antes como marca sob a escala */
+.regua-nomes.acima {
+  margin: 0 0 8px;
+}
+.regua-nomes.acima li {
+  padding-bottom: 2px;
+}
+.regua-anterior {
+  top: auto;
+  bottom: -9px;
+  height: 7px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--leito-suave);
+  opacity: 1;
+}
+.regua-graduacao span {
+  top: 10px;
+}
+.barras th {
+  background: none;
+}
+.barra {
+  max-width: calc(100% - 44px);
+}
+.duas-colunas {
+  align-items: start;
+}
+.regua-faixa:last-child {
+  justify-content: flex-end;
+}
+
+/* Login: régua vertical do IQA ao lado do texto */
+.login-apresentacao > .marca {
+  grid-column: 1 / -1;
+}
+.login-apresentacao .marca rect[fill='var(--leito)'] {
+  fill: var(--margem);
+}
+.login-regua {
+  display: flex;
+  flex-direction: column-reverse;
+  min-height: 420px;
+  align-self: stretch;
+}
+.login-regua span {
+  position: relative;
+  background-image: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.3) 0 1px, transparent 1px 10px);
+}
+.login-regua em {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-style: normal;
+  font-family: var(--fonte-estreita);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--margem);
+}
+.login-regua span:nth-child(3) em {
+  color: var(--leito);
+}
+.login-regua b {
+  position: absolute;
+  right: -30px;
+  bottom: -9px;
+  font-family: var(--fonte-estreita);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 0.7);
+}
+.login-texto {
+  align-self: end;
+}
+@media (max-width: 900px) {
+  .login-apresentacao {
+    grid-template-columns: 1fr;
+  }
+  .login-regua {
+    display: none;
+  }
+}
+.login-apresentacao .marca rect[fill='var(--margem)'] {
+  fill: var(--leito);
+}
