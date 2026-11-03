@@ -448,3 +448,39 @@ blockquote p {
     font-size: 2.3rem;
   }
 }
+
+/* Imagens de exemplo no formulário de envio */
+.exemplos-imagem {
+  margin-bottom: 20px;
+}
+.exemplos-imagem ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.exemplos-imagem button {
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--sedimento);
+  background: var(--margem);
+  text-align: left;
+  color: var(--leito);
+}
+.exemplos-imagem button:hover:not(:disabled) {
+  border-color: var(--correnteza);
+}
+.exemplos-imagem img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.exemplos-imagem span {
+  display: block;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}

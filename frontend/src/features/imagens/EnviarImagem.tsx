@@ -1,5 +1,5 @@
 // Envia JPG ou PNG para uma estação, com validação local e feedback da leitura visual.
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import type { Estacao, ImagemAgua } from '../../api/tipos';
 import { api } from '../../api/recursos';
 import { useAcao } from '../../api/useAcao';
@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { Erro } from '../../components/Estados';
 import { Espera } from '../../components/Espera';
 import { hoje, tiposEstacao } from '../../components/formatacao';
+import { arquivoDoExemplo, imagensExemplo, type ImagemExemplo } from './exemplos';
 export function EnviarImagem({
   estacoes,
   aoEnviar,
@@ -18,6 +19,27 @@ export function EnviarImagem({
   const acao = useAcao();
   const [novaEstacao, setNovaEstacao] = useState(false);
   const [erroArquivo, setErroArquivo] = useState('');
+  const [exemploEscolhido, setExemploEscolhido] = useState('');
+  const formularioRef = useRef<HTMLFormElement>(null);
+
+  /** Preenche o formulário com uma imagem de exemplo: arquivo, tipo e estação sugerida. */
+  async function usarExemplo(exemplo: ImagemExemplo) {
+    const form = formularioRef.current;
+    if (!form) return;
+    setErroArquivo('');
+    try {
+      const arquivo = await arquivoDoExemplo(exemplo);
+      const lista = new DataTransfer();
+      lista.items.add(arquivo);
+      (form.elements.namedItem('file') as HTMLInputElement).files = lista.files;
+      (form.elements.namedItem('kind') as HTMLSelectElement).value = exemplo.tipo;
+      const estacao = form.elements.namedItem('stationId') as HTMLSelectElement | null;
+      if (estacao && estacoes.some((e) => e.id === exemplo.estacaoSugerida)) estacao.value = exemplo.estacaoSugerida;
+      setExemploEscolhido(exemplo.titulo);
+    } catch (e) {
+      setErroArquivo(e instanceof Error ? e.message : 'Não foi possível abrir a imagem de exemplo.');
+    }
+  }
   async function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formulario = e.currentTarget;
@@ -40,6 +62,7 @@ export function EnviarImagem({
     if (resposta) {
       formulario.reset();
       setNovaEstacao(false);
+      setExemploEscolhido('');
       aoEnviar(resposta.valor);
     }
   }
@@ -50,8 +73,26 @@ export function EnviarImagem({
         Envie uma foto da água ou uma imagem de satélite. Você poderá corrigir a leitura antes de
         confirmar.
       </p>
+      <details className="exemplos-imagem">
+        <summary>Usar uma imagem de exemplo</summary>
+        <ul>
+          {imagensExemplo.map((ex) => (
+            <li key={ex.arquivo}>
+              <button type="button" onClick={() => void usarExemplo(ex)} disabled={acao.executando}>
+                <img src={`/exemplos/${ex.arquivo}`} alt="" loading="lazy" />
+                <span>{ex.titulo}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {exemploEscolhido && (
+          <p className="texto-apoio" role="status">
+            Imagem escolhida: {exemploEscolhido}. Confira a estação e envie para leitura.
+          </p>
+        )}
+      </details>
       <Erro erro={erroArquivo || acao.erro} />
-      <form onSubmit={enviar}>
+      <form onSubmit={enviar} ref={formularioRef}>
         <fieldset disabled={acao.executando}>
           <div className="form-grid">
             <label className="campo-arquivo">
