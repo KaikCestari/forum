@@ -1,4 +1,3 @@
-// Permite editar nome, papel e situação de uma conta, respeitando a proibição de autoexclusão.
 import { useState, type FormEvent } from 'react';
 import type { Papel, Usuario } from '../../api/tipos';
 import { api } from '../../api/recursos';

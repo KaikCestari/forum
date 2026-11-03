@@ -12,7 +12,6 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-/** Entidade Mensagem do assistente: uma pergunta de um usuário e a resposta do modelo. */
 @Entity
 @Table(name = "chat_messages", indexes = @Index(name = "idx_chat_user", columnList = "userId"))
 public class ChatMessage {
@@ -50,7 +49,6 @@ public class ChatMessage {
         this.createdAt = Instant.now();
     }
 
-    /** Regra: pergunta não vazia e com até 2000 caracteres. */
     public static String validQuestion(String question) {
         if (question == null || question.isBlank()) {
             throw new BusinessRuleException("Escreva uma pergunta.");
@@ -64,10 +62,6 @@ public class ChatMessage {
 
     public Long getId() {
         return id;
-    }
-
-    public Long getUserId() {
-        return userId;
     }
 
     public String getQuestion() {

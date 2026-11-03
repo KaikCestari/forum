@@ -1,4 +1,3 @@
-// Apresenta mudanças ao longo do tempo e explica o método usado na análise.
 import { Bloco, ComoFunciona, Selo } from '../../components/Pagina';
 import { numero } from '../../components/formatacao';
 import type { ResultadoAnalise } from '../../api/tipos';

@@ -1,4 +1,3 @@
-// Registra observações, coletas e eventos associados a uma estação.
 import type { FormEvent } from 'react';
 import type { Estacao, TipoAnotacao } from '../../api/tipos';
 import { api } from '../../api/recursos';

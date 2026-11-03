@@ -1,4 +1,3 @@
-// Organiza os resultados do ML em explicações ambientais e detalhes técnicos recolhíveis.
 import { Link } from 'react-router';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';

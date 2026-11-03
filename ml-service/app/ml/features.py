@@ -1,11 +1,3 @@
-"""Preparação dos dados para os algoritmos de machine learning.
-
-Parâmetros como coliformes ou turbidez variam em ordens de grandeza
-(10, 100, 10.000...). Para os algoritmos não darem importância exagerada
-aos valores gigantes, eles são analisados em escala logarítmica (log10),
-como os biólogos já fazem em gráficos de coliformes.
-"""
-
 from __future__ import annotations
 
 import numpy as np

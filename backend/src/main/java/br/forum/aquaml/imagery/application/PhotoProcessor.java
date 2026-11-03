@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 
-/**
- * Lê e prepara a imagem enviada: confere se é JPG/PNG de até 12 MB, reduz o tamanho para calcular os indicadores
- * de cor e gera um JPEG menor para mandar ao modelo com visão. Java puro (javax.imageio), sem serviços externos.
- */
 public final class PhotoProcessor {
 
     public static final long MAX_BYTES = 12L * 1024 * 1024;
@@ -32,7 +28,6 @@ public final class PhotoProcessor {
     public static final int VISION_MAX_SIDE = 1024;
     public static final int METRICS_MAX_SIDE = 512;
 
-    /** Imagem decodificada, com o formato original ({@code jpeg} ou {@code png}). */
     public record Photo(BufferedImage image, String format) {
 
         public String mimeType() {
@@ -47,7 +42,6 @@ public final class PhotoProcessor {
     private PhotoProcessor() {
     }
 
-    /** @throws BusinessRuleException se o arquivo não for uma imagem JPG ou PNG aceitável */
     public static Photo decode(byte[] data) {
         if (data == null || data.length == 0) {
             throw new BusinessRuleException("Envie o arquivo da imagem no campo file.");
@@ -89,7 +83,6 @@ public final class PhotoProcessor {
         }
     }
 
-    /** Reduz para caber em {@code maxSide} pixels no maior lado, sobre fundo branco (PNG com transparência). */
     public static BufferedImage resize(BufferedImage src, int maxSide) {
         double scale = Math.min(1.0, (double) maxSide / Math.max(src.getWidth(), src.getHeight()));
         int w = Math.max(1, (int) Math.round(src.getWidth() * scale));

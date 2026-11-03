@@ -1,4 +1,3 @@
-// Diferencia uma etapa não executada de uma análise concluída sem resultados encontrados.
 import type { ReactNode } from 'react';
 import { Bloco } from '../../components/Pagina';
 

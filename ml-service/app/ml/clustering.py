@@ -1,23 +1,3 @@
-"""Agrupamento de perfis de água (K-Means + PCA).
-
-Para o biólogo: sem dizer ao algoritmo o que é água boa ou ruim, ele junta
-os dias que "se parecem" (mesmo nível de oxigênio, nutrientes, coliformes...)
-em 3 grupos. Depois damos nome aos grupos pela qualidade média (IQA): o grupo
-de maior IQA vira "Água limpa e oxigenada", e assim por diante. Isso mostra,
-por exemplo, que uma estação que era do grupo limpo passou para o impactado.
-
-Técnicas:
-- K-Means: escolhe 3 "centros" e coloca cada dia no grupo do centro mais
-  próximo, ajustando os centros até estabilizar.
-- PCA (análise de componentes principais): resume os vários parâmetros em
-  2 eixos (x, y) para desenhar os dias num gráfico de pontos, mantendo o
-  máximo possível das diferenças entre eles.
-
-Temperatura e condutividade ficam de fora: separariam os dias pela estação
-do ano ou pela salinidade do estuário, e não pelo grau de impacto ambiental.
-Cada ponto do gráfico é um dia de uma estação.
-"""
-
 from __future__ import annotations
 
 import pandas as pd
@@ -45,8 +25,7 @@ def skipped(reason: str) -> dict:
 
 
 def _order_clusters(days: pd.DataFrame, raw_labels) -> dict[int, int]:
-    """Renumera os grupos do mais preservado (0) ao mais impactado,
-    pelo IQA médio (ou pela saturação de oxigênio, se não houver IQA)."""
+    """Renumera os grupos do mais preservado (0) ao mais impactado, pelo IQA médio (ou pela saturação de oxigênio, se não houver IQA)."""
     by = "iqa" if days["iqa"].notna().any() else "doSatPct"
     means = days.assign(raw=raw_labels).groupby("raw")[by].mean()
     if means.isna().all():

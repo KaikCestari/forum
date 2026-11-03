@@ -1,0 +1,30 @@
+$kind: http-request
+description: Substitui todas as leituras e roda a análise. Os arquivos estão em docs/postman/dados.
+url: "{{baseUrl}}/api/data/import"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: measurements
+      src: /home/kaikdev/orca/forum/docs/postman/dados/leituras.csv
+    - type: file
+      key: stations
+      src: /home/kaikdev/orca/forum/docs/postman/dados/estacoes.csv
+    - type: file
+      key: events
+      src: /home/kaikdev/orca/forum/docs/postman/dados/eventos.csv
+    - type: text
+      key: name
+      value: Dados de exemplo (6 estações, 2 anos)
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Análise concluída", () => pm.expect(pm.response.json().analysis.status).to.eql("CONCLUIDA"));
+    language: text/javascript
+order: 1000

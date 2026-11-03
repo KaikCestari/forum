@@ -1,0 +1,5 @@
+$kind: collection
+description: |-
+  API do AquaML (Java Spring + JWT). Rode as pastas em ordem: o login salva o token sozinho.
+  Pasta 1 entra como ADMIN e como FUNCIONARIO. A pasta 10 mostra as permissões (403).
+  Contrato completo em docs/CONTRATO-API.md.

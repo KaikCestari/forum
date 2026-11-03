@@ -1,4 +1,3 @@
-// Informa o tempo decorrido em operações longas sem inventar uma porcentagem de progresso.
 import { useEffect, useState } from 'react';
 export function Espera({ texto, imagem = false }: { texto: string; imagem?: boolean }) {
   const [segundos, setSegundos] = useState(0);

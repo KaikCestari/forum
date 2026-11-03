@@ -1,4 +1,3 @@
-// Filtra registros por estação sem recalcular a avaliação dos modelos ou os perfis globais.
 import type { ResultadoAnalise } from '../../api/tipos';
 
 export function filtrarAnalise(analise: ResultadoAnalise, estacao: string): ResultadoAnalise {

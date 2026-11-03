@@ -18,11 +18,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Monta o texto de CONTEXTO que vai junto com cada pergunta ao assistente: dados atuais, última análise de
- * machine learning, imagens confirmadas pelo biólogo e anotações de campo. Assim o modelo responde com os números
- * reais do monitoramento, e não de memória.
- */
 @Component
 public class AssistantContextBuilder {
 
@@ -136,7 +131,6 @@ public class AssistantContextBuilder {
         }
     }
 
-    /** Nome e unidade de cada parâmetro medido, na ordem em que a Limno os apresenta. */
     private static final Map<String, String> PARAM_LABELS = new java.util.LinkedHashMap<>();
     private static final Map<String, String> PARAM_UNITS = Map.of(
             "ph", "", "doMgl", " mg/L", "tempC", " °C", "turbidityNtu", " NTU", "conductivityUscm", " µS/cm",
@@ -152,7 +146,6 @@ public class AssistantContextBuilder {
         PARAM_LABELS.put("coliformsNmp", "coliformes");
     }
 
-    /** Médias de cada parâmetro nos últimos 30 dias com dado, e nos 30 dias anteriores, para comparar. */
     private static void appendParameterMeans(StringBuilder sb, JsonNode series) {
         JsonNode params = series.path("params");
         if (params.isMissingNode()) return;
@@ -172,7 +165,6 @@ public class AssistantContextBuilder {
         }
     }
 
-    /** Média dos valores entre {@code fromEnd} e {@code toEnd} posições contadas a partir do fim da série. */
     private static Double mean(JsonNode values, int fromEnd, int toEnd) {
         int n = values.size();
         double sum = 0;

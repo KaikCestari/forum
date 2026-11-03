@@ -1,4 +1,3 @@
-// Mostra listas em blocos de dez sem alterar os dados carregados da API.
 import { useState, type ReactNode } from 'react';
 
 export function ListaProgressiva<T>({

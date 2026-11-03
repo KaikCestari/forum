@@ -1,4 +1,4 @@
-# Dados gerados
+# Dados locais
 data/raw/*
 data/processed/*
 data/results/*
@@ -6,16 +6,9 @@ data/db/*
 data/images/*
 !data/**/.gitkeep
 
-# Rust
-processor/target/
-
 # Python
-ml/.venv/
 __pycache__/
 .pytest_cache/
-
-# Java
-app/target/
 
 # Inspeções de design (taste-skill)
 .taste-skill/
@@ -25,9 +18,11 @@ app/target/
 .env.*
 !.env.example
 
-# Nova estrutura
 backend/target/
 ml-service/.venv/
 ml-service/samples/
 frontend/node_modules/
 frontend/dist/
+
+# Postman (configuração local do app)
+.postman/

@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Envio, confirmação, arquivo e exclusão de imagens, com o modelo com visão trocado por um dublê. */
 class ImageApiTest extends ApiTestSupport {
 
     private static byte[] png() throws Exception {
@@ -61,7 +60,6 @@ class ImageApiTest extends ApiTestSupport {
         long id = read(body).get("id").asLong();
         String fileUrl = read(body).get("fileUrl").asText();
 
-        // A tag <img> não manda cabeçalho: a rota do arquivo aceita ?token=.
         mvc.perform(get(fileUrl).param("token", token))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.IMAGE_PNG));

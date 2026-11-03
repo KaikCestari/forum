@@ -1,4 +1,3 @@
-// Apresenta estados compartilhados de carregamento, erro, sucesso e ausência de dados.
 import type { ReactNode } from 'react';
 export function Carregando({ texto = 'Carregando informações…' }: { texto?: string }) {
   return (

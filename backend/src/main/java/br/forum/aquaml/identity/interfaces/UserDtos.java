@@ -4,7 +4,6 @@ import br.forum.aquaml.identity.domain.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-/** DTOs (formatos JSON) da gestão de usuários. */
 public final class UserDtos {
 
     private UserDtos() {
@@ -16,7 +15,6 @@ public final class UserDtos {
                                     @NotNull(message = "informe o papel (ADMIN ou FUNCIONARIO)") Role role) {
     }
 
-    /** Todos os campos são opcionais: só o que vier preenchido é alterado. */
     public record UpdateUserRequest(Role role, Boolean active, String name) {
     }
 }

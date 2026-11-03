@@ -1,19 +1,3 @@
-"""Caso de uso "analisar dados": do pedido recebido ao resultado completo.
-
-Passo a passo (cada passo está num módulo próprio):
-  1. Limpeza e resumo diário ............ app/domain/cleaning.py
-  2. IQA de cada dia .................... app/domain/iqa.py
-  3. Dias fora do padrão (anomalias) .... app/ml/anomaly.py
-  4. Classe de qualidade (Random Forest)  app/ml/classification.py
-  5. Grupos de perfis (K-Means + PCA) ... app/ml/clustering.py
-  6. Tendências (Mann-Kendall) .......... app/ml/trends.py
-  7. Alertas CONAMA 357 ................. app/domain/alerts.py
-  8. Resumo por estação, frases-resumo e séries para os gráficos (aqui).
-
-Nenhum passo pode derrubar a análise por falta de dados: se não houver dias
-suficientes para um algoritmo, ele devolve listas vazias e explica o motivo.
-"""
-
 from __future__ import annotations
 
 import math
@@ -77,8 +61,6 @@ def analyze(request: AnalyzeRequest) -> AnalysisResult:
     }
     return AnalysisResult.model_validate(sanitize(result))
 
-
-# ---------------------------------------------------------------- auxiliares
 
 def _station_catalog(request: AnalyzeRequest) -> dict[str, dict]:
     return {s.id: {"name": s.name or s.id, "type": s.type or "rio"} for s in request.stations}

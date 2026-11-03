@@ -19,13 +19,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
-/**
- * Emite e confere tokens JWT (HS256, validade de 8 horas). Claims: {@code sub} = id do usuário,
- * {@code email} e {@code role}.
- *
- * <p>O segredo vem de {@code JWT_SECRET}. Se não existir, é gerado um aleatório no início
- * (os tokens deixam de valer quando o servidor reinicia) e um aviso vai para o log, sem mostrar o segredo.
- */
 @Component
 public class JwtService implements TokenIssuer {
 
@@ -67,7 +60,6 @@ public class JwtService implements TokenIssuer {
         return new IssuedToken(token, expiresAt);
     }
 
-    /** Id do usuário dono do token, ou vazio se o token for inválido ou estiver vencido. */
     public Optional<Long> userIdFrom(String token) {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();

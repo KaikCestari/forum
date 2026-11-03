@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Login com JWT e a rota /api/auth/me. */
 class AuthApiTest extends ApiTestSupport {
 
     @Test
@@ -66,7 +65,6 @@ class AuthApiTest extends ApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(false));
 
-        // O token antigo para de valer na hora e o login é recusado.
         mvc.perform(get("/api/auth/me").header("Authorization", bearer(token)))
                 .andExpect(status().isUnauthorized());
         mvc.perform(post("/api/auth/login")

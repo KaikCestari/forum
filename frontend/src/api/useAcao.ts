@@ -1,4 +1,3 @@
-// Compartilha o controle de envio e a apresentação de erros das ações do usuário.
 import { useRef, useState } from 'react';
 export function useAcao() {
   const ocupado = useRef(false);

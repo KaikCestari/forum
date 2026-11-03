@@ -32,19 +32,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Caso de uso "importar planilha": lê os CSVs, troca as leituras e eventos atuais pelos novos, cadastra as
- * estações e roda a análise. Se a análise falhar (ex.: serviço de ML fora), a importação continua valendo e a
- * execução volta com status FALHOU.
- */
 @Service
 public class DataImportService {
 
     private static final Logger log = LoggerFactory.getLogger(DataImportService.class);
-    /** O serviço de ML só usa dias com pelo menos 6 leituras (contrato). */
     private static final double MIN_READINGS_PER_DAY = 6;
 
-    /** Arquivos recebidos; {@code stations} e {@code events} podem ser null. */
     public record ImportCommand(InputStream measurements, String measurementsFileName, InputStream stations,
                                 InputStream events, String name) {
     }
@@ -75,7 +68,6 @@ public class DataImportService {
         if (cmd.measurements() == null) {
             throw new BusinessRuleException("Envie o CSV de leituras no campo measurements.");
         }
-        // 1. Ler e validar tudo antes de mexer no banco.
         ParsedMeasurements parsed = CsvSpreadsheetParser.measurements(new StringReader(text(cmd.measurements())));
         List<Station> csvStations = cmd.stations() == null ? List.of()
                 : CsvSpreadsheetParser.stations(new StringReader(text(cmd.stations())));
@@ -85,7 +77,6 @@ public class DataImportService {
                 : cmd.measurementsFileName() != null && !cmd.measurementsFileName().isBlank()
                 ? cmd.measurementsFileName() : "Planilha importada";
 
-        // 2. Gravar numa transação só: ou entra tudo, ou nada.
         int stationCount = tx.execute(status -> {
             List<Station> stations = mergeStations(csvStations, parsed);
             stationRepo.saveAll(stations);
@@ -97,17 +88,12 @@ public class DataImportService {
             return stations.size();
         });
 
-        // 3. Rodar a análise; uma falha aqui não desfaz a importação.
         AnalysisRun run = analysis.run();
         log.info("Planilha '{}' importada: {} leituras, análise {}", name, parsed.measurements().size(), run.getStatus());
         return new ImportResult(name, parsed.measurements().size(), stationCount, events.size(),
                 Math.round(parsed.readingsPerDay() * 10) / 10.0, warnings(parsed), run);
     }
 
-    /**
-     * Estações da planilha atualizam o cadastro; códigos que aparecem só nas leituras viram estações novas
-     * (nome = código, tipo rio), sem sobrescrever uma estação já cadastrada.
-     */
     private List<Station> mergeStations(List<Station> fromCsv, ParsedMeasurements parsed) {
         Map<String, Station> result = new LinkedHashMap<>();
         for (Station s : fromCsv) {
@@ -144,7 +130,6 @@ public class DataImportService {
         return warnings;
     }
 
-    /** Lê o arquivo como UTF-8; se não for, tenta Windows-1252 (padrão do Excel em português). */
     static String text(InputStream in) {
         try (in) {
             byte[] bytes = in.readAllBytes();

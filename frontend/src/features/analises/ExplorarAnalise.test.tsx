@@ -1,4 +1,3 @@
-// Verifica seções isoladas, filtros persistentes, paginação e dispersão com milhares de pontos.
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';

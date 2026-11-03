@@ -1,5 +1,13 @@
 package br.forum.aquaml.monitoring.interfaces;
 
+import br.forum.aquaml.shared.docs.ApiExamples;
+import br.forum.aquaml.shared.interfaces.ApiError;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.analysis.interfaces.AnalysisRunResponse;
 import br.forum.aquaml.monitoring.application.DataImportService;
@@ -8,6 +16,7 @@ import br.forum.aquaml.monitoring.application.DataService;
 import br.forum.aquaml.monitoring.application.DataSummary;
 import br.forum.aquaml.shared.domain.BusinessRuleException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,13 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-/** Rotas do conjunto de dados ({@code /api/data}): resumo, importar planilha (ADMIN) e apagar (ADMIN). */
 @RestController
 @RequestMapping("/api/data")
 @Tag(name = "4. Dados", description = "Importar planilhas CSV, resumo e apagar dados")
 public class DataController {
 
-    /** Resposta da importação, no formato do contrato. */
     public record ImportResponse(String name, int measurements, int stations, int events, double readingsPerDay,
                                  List<String> warnings, AnalysisRunResponse analysis) {
     }
@@ -41,15 +48,38 @@ public class DataController {
     }
 
     @GetMapping("/summary")
+    @Operation(summary = "Resumo dos dados importados", description = "Campos de texto e data vêm null quando não há dados.",
+            responses = @ApiResponse(responseCode = "200", description = "Resumo",
+                    content = @Content(schema = @Schema(implementation = DataSummary.class), examples = {
+                            @ExampleObject(name = "Com dados", value = ApiExamples.DATA_SUMMARY),
+                            @ExampleObject(name = "Vazio", value = ApiExamples.DATA_SUMMARY_EMPTY)})))
     public DataSummary summary() {
         return data.summary();
     }
 
-    @PostMapping("/import")
-    public ImportResponse importData(@RequestParam(value = "measurements", required = false) MultipartFile measurements,
-                                     @RequestParam(value = "stations", required = false) MultipartFile stations,
-                                     @RequestParam(value = "events", required = false) MultipartFile events,
-                                     @RequestParam(value = "name", required = false) String name) throws IOException {
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Importar planilhas CSV (substitui os dados)",
+            description = "Só ADMIN. Formulário multipart. **Apaga as leituras atuais** e roda a análise de ML em "
+                    + "seguida. Arquivos de exemplo em `docs/postman/dados/` (leituras.csv, estacoes.csv, eventos.csv).",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Importado e analisado",
+                            content = @Content(schema = @Schema(implementation = ImportResponse.class),
+                                    examples = @ExampleObject(value = ApiExamples.IMPORT_RESPONSE))),
+                    @ApiResponse(responseCode = "400", description = "CSV ausente ou com colunas erradas",
+                            content = @Content(schema = @Schema(implementation = ApiError.class),
+                                    examples = @ExampleObject(value = ApiExamples.ERR_400_CSV))),
+                    @ApiResponse(responseCode = "403", description = "Só ADMIN",
+                            content = @Content(schema = @Schema(implementation = ApiError.class),
+                                    examples = @ExampleObject(value = ApiExamples.ERR_403)))})
+    public ImportResponse importData(
+            @Parameter(description = "CSV de leituras dos sensores (obrigatório)")
+            @RequestParam(value = "measurements", required = false) MultipartFile measurements,
+            @Parameter(description = "CSV das estações (opcional)")
+            @RequestParam(value = "stations", required = false) MultipartFile stations,
+            @Parameter(description = "CSV de eventos conhecidos, ex.: despejos (opcional)")
+            @RequestParam(value = "events", required = false) MultipartFile events,
+            @Parameter(description = "Nome do conjunto de dados", example = "Rede de exemplo")
+            @RequestParam(value = "name", required = false) String name) throws IOException {
         if (measurements == null || measurements.isEmpty()) {
             throw new BusinessRuleException("Envie o CSV de leituras no campo measurements.");
         }
@@ -60,6 +90,11 @@ public class DataController {
     }
 
     @DeleteMapping
+    @Operation(summary = "Apagar todos os dados", description = "Só ADMIN. Apaga leituras, eventos e análises. "
+            + "Não tem volta.",
+            responses = {@ApiResponse(responseCode = "204", description = "Dados apagados"), @ApiResponse(responseCode = "403", description = "Só ADMIN",
+                            content = @Content(schema = @Schema(implementation = ApiError.class),
+                                    examples = @ExampleObject(value = ApiExamples.ERR_403)))})
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAll() {
         data.deleteAll();

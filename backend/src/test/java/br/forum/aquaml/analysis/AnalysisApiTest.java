@@ -22,10 +22,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Importação de planilha + análise com o serviço de ML trocado por um dublê (Mockito).
- * Os testes rodam em sequência sobre o mesmo banco, por isso cada um começa apagando os dados.
- */
 class AnalysisApiTest extends ApiTestSupport {
 
     private static final String CSV = """
@@ -89,7 +85,6 @@ class AnalysisApiTest extends ApiTestSupport {
                 .andExpect(jsonPath("$.analysis.accuracy").value(0.91))
                 .andExpect(jsonPath("$.analysis.error").isEmpty());
 
-        // O serviço de ML recebeu os dados do banco no formato do contrato.
         ArgumentCaptor<AnalysisInput> input = ArgumentCaptor.forClass(AnalysisInput.class);
         verify(mlService).analyze(input.capture());
         assertEquals(6, input.getValue().measurements().size());

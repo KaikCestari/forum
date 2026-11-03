@@ -1,4 +1,3 @@
-// Verifica sensores ausentes, seleção de leituras válidas e preservação de lacunas no gráfico.
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { criarSerieSemSensores } from '../../test/analiseParcial';

@@ -1,4 +1,3 @@
-// Cadastra um ponto de monitoramento com coordenadas opcionais.
 import type { FormEvent } from 'react';
 import { api } from '../../api/recursos';
 import type { TipoEstacao } from '../../api/tipos';

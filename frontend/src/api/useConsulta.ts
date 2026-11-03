@@ -1,4 +1,3 @@
-// Carrega recursos com cancelamento, estado de erro e atualização explícita.
 import { useCallback, useEffect, useState } from 'react';
 export function useConsulta<T>(carregar: (signal: AbortSignal) => Promise<T>) {
   const [dados, setDados] = useState<T>();

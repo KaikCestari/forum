@@ -1,4 +1,3 @@
-// Oferece navegação entre seções com suporte a teclado e identificação da aba ativa.
 import type { KeyboardEvent } from 'react';
 
 const abas = [

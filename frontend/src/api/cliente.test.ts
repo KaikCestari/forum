@@ -1,4 +1,3 @@
-// Verifica autenticação, serialização, erros e arquivos no único cliente HTTP.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErroApi, EVENTO_SESSAO_EXPIRADA, requisicao, sessao, urlImagem } from './cliente';
 import { api } from './recursos';

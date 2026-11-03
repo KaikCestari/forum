@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -22,10 +23,6 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/**
- * Traduz as exceções do domínio e do Spring para o corpo de erro do contrato ({@link ApiError}).
- * Assim os controllers ficam limpos: eles só lançam exceções com mensagem em português.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -100,6 +97,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     ResponseEntity<ApiError> method(HttpRequestMethodNotSupportedException e) {
         return error(HttpStatus.METHOD_NOT_ALLOWED, "Método não permitido nesta rota.");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    ResponseEntity<ApiError> mediaType(HttpMediaTypeNotSupportedException e) {
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "Formato do corpo não aceito nesta rota (use JSON, ou formulário multipart para envio de arquivos).");
     }
 
     @ExceptionHandler(Exception.class)

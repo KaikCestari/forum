@@ -10,10 +10,6 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 
-/**
- * Entidade Alerta: um parâmetro fora do limite da Resolução CONAMA 357 numa estação e data.
- * Pertence a uma execução da análise ({@code runId}). Severidade: {@code atencao} ou {@code critico}.
- */
 @Entity
 @Table(name = "alerts", indexes = @Index(name = "idx_alert_run", columnList = "runId"))
 public class Alert {
@@ -59,16 +55,8 @@ public class Alert {
         this.message = message;
     }
 
-    public boolean isCritical() {
-        return "critico".equals(severity);
-    }
-
     public Long getId() {
         return id;
-    }
-
-    public Long getRunId() {
-        return runId;
     }
 
     public String getStationId() {

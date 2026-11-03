@@ -1,4 +1,3 @@
-// Barras horizontais simples (rótulo, valor) com o número escrito ao lado de cada barra.
 import { numero } from '../formatacao';
 
 export function BarrasHorizontais({

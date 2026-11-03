@@ -16,13 +16,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Set;
 
-/**
- * Agregado Imagem da água: uma foto de campo ou imagem de satélite de uma estação.
- *
- * <p>Ciclo de vida: ao chegar, recebe os indicadores de cor e a leitura da IA ({@link #recordVisionReading}) ou
- * fica com erro ({@link #markAnalysisFailed}). Depois o biólogo confere e confirma ({@link #confirm}); só imagens
- * confirmadas entram no contexto do assistente.
- */
 @Entity
 @Table(name = "water_images")
 public class WaterImage {
@@ -101,24 +94,18 @@ public class WaterImage {
         this.status = ImageStatus.PENDENTE;
     }
 
-    /** A IA leu a imagem: fica pendente até o biólogo conferir. */
     public void recordVisionReading(VisionReading reading) {
         this.vision = reading;
         this.analysisError = null;
         this.status = ImageStatus.PENDENTE;
     }
 
-    /** A IA não conseguiu ler: a imagem fica guardada e o biólogo preenche à mão ao confirmar. */
     public void markAnalysisFailed(String reason) {
         this.vision = null;
         this.analysisError = reason;
         this.status = ImageStatus.ERRO_ANALISE;
     }
 
-    /**
-     * O biólogo conferiu a imagem. As correções dele vão por cima da leitura da IA (o que ele não informou fica
-     * como a IA leu). Pode ser chamado de novo para corrigir uma imagem já confirmada.
-     */
     public void confirm(ImageCorrections corrections) {
         ImageCorrections c = corrections == null ? ImageCorrections.none() : corrections;
         VisionReading base = vision != null ? vision : VisionReading.empty();
@@ -132,7 +119,6 @@ public class WaterImage {
         this.confirmedAt = Instant.now();
     }
 
-    /** Regra: só quem enviou ou um ADMIN pode apagar a imagem. */
     public void checkCanBeDeletedBy(Long userId, boolean isAdmin) {
         if (!isAdmin && !userId.equals(uploadedById)) {
             throw new ForbiddenException("Só quem enviou a imagem ou um administrador pode apagá-la.");
@@ -161,10 +147,6 @@ public class WaterImage {
 
     public Instant getUploadedAt() {
         return uploadedAt;
-    }
-
-    public Long getUploadedById() {
-        return uploadedById;
     }
 
     public String getUploadedByName() {
@@ -197,9 +179,5 @@ public class WaterImage {
 
     public String getReviewNotes() {
         return reviewNotes;
-    }
-
-    public Instant getConfirmedAt() {
-        return confirmedAt;
     }
 }

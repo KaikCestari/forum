@@ -1,4 +1,3 @@
-// Importa os CSVs previstos no contrato e apresenta contagens, avisos e resultado da análise.
 import { useState, type FormEvent } from 'react';
 import { api } from '../../api/recursos';
 import type { Importacao } from '../../api/tipos';

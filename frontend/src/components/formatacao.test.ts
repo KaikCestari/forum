@@ -1,4 +1,3 @@
-// Garante números legíveis, datas sem mudança de dia e campos ausentes explícitos.
 import { describe, expect, it, vi } from 'vitest';
 import { data, hoje, nomeParametro, numero, percentual } from './formatacao';
 describe('formatação em português', () => {

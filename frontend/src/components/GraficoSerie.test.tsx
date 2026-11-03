@@ -1,4 +1,3 @@
-// Garante que ausência de medição não vire zero nem uma linha que atravesse lacunas.
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GraficoSerie } from './GraficoSerie';

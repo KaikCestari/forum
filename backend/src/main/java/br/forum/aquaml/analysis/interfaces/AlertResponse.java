@@ -4,7 +4,6 @@ import br.forum.aquaml.analysis.domain.Alert;
 
 import java.time.LocalDate;
 
-/** JSON {@code Alert} do contrato (o mesmo formato do item {@code alerts[]} do AnalysisResult). */
 public record AlertResponse(String stationId, LocalDate date, String parameter, Double value, String unit,
                             String severity, String message) {
 

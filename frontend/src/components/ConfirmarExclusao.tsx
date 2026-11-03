@@ -1,4 +1,3 @@
-// Solicita confirmação junto ao item antes de executar uma exclusão definitiva.
 import { useState } from 'react';
 export function ConfirmarExclusao({
   descricao,

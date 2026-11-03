@@ -9,10 +9,6 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 
-/**
- * Entidade Evento conhecido (despejo, chuva forte, obra...). É opcional e serve para o serviço de ML medir
- * se a detecção de anomalias encontrou os eventos reais.
- */
 @Entity
 @Table(name = "monitoring_events")
 public class MonitoringEvent {
@@ -40,7 +36,6 @@ public class MonitoringEvent {
         // exigido pelo JPA
     }
 
-    /** Se o fim não for informado, o evento dura um dia; fim antes do início é corrigido para o início. */
     public MonitoringEvent(String stationId, LocalDate start, LocalDate end, String type, String description) {
         this.stationId = stationId;
         this.startDate = start;

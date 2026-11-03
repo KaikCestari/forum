@@ -1,0 +1,26 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/users"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Ana Bióloga",
+      "email": "{{funcEmail}}",
+      "password": "{{funcPassword}}",
+      "role": "FUNCIONARIO"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Criada (201) ou já existia (400)", () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));
+      if (pm.response.code === 201) pm.environment.set("userId", pm.response.json().id);
+    language: text/javascript
+order: 1000

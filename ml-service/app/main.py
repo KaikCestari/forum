@@ -1,14 +1,3 @@
-"""Serviço de machine learning do AquaML (FastAPI).
-
-Só as rotas HTTP ficam aqui; toda a lógica está em `app/pipeline.py`.
-
-  GET  /health   → {"status": "ok"}
-  POST /analyze  → recebe AnalyzeRequest, devolve AnalysisResult
-                   (dados inutilizáveis: 422 {"detail": "mensagem em português"})
-
-Rodar: uvicorn app.main:app --port 8000
-"""
-
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
@@ -29,7 +18,7 @@ def health() -> dict[str, str]:
 
 @app.post("/analyze", response_model=AnalysisResult, response_model_by_alias=True)
 def run_analysis(request: AnalyzeRequest) -> AnalysisResult:
-    # Função síncrona: o FastAPI a executa numa thread, sem travar o servidor.
+    # síncrona de propósito: o FastAPI roda numa thread e não trava o servidor
     return analyze(request)
 
 

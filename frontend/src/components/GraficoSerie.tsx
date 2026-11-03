@@ -1,4 +1,3 @@
-// Desenha uma série temporal em SVG e oferece os mesmos valores em uma tabela acessível.
 import { data, numero } from './formatacao';
 interface Props {
   titulo: string;

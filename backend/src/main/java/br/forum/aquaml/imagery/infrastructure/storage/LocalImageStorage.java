@@ -12,10 +12,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.UUID;
 
-/**
- * Adaptador da porta {@link ImageStorage} que grava os arquivos numa pasta do disco
- * (padrão: {@code data/images} na raiz do repositório). Os nomes são UUIDs, nunca o nome enviado.
- */
 @Component
 public class LocalImageStorage implements ImageStorage {
 
@@ -53,11 +49,10 @@ public class LocalImageStorage implements ImageStorage {
         try {
             Files.deleteIfExists(resolve(fileName));
         } catch (IOException ignored) {
-            // O registro já foi apagado; um arquivo órfão não atrapalha.
+            // o registro já foi apagado; arquivo órfão não atrapalha
         }
     }
 
-    /** Impede que um nome de arquivo aponte para fora da pasta de imagens. */
     private Path resolve(String fileName) {
         Path p = dir.resolve(fileName).normalize();
         if (!p.startsWith(dir)) {

@@ -1,4 +1,3 @@
-// Lista as contas da equipe e conecta criação, atualização e exclusão.
 import { useState } from 'react';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';

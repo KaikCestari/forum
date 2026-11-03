@@ -1,8 +1,3 @@
-/*
- * Tema "Red Vivid" (21st.dev, @krisztt2003), modo claro: brutalista. Fundo branco, texto preto,
- * vermelho vivo para ações, cantos retos e sombras duras de 3px sem desfoque. Fonte Inter.
- * As cores oficiais do IQA (CETESB) continuam só nos dados, porque carregam significado.
- */
 @import '@fontsource-variable/inter';
 
 :root {
@@ -27,7 +22,7 @@
   --sombra-dura: 3px 3px 0 0 hsl(0, 0%, 0%);
   --sombra-dura-g: 6px 6px 0 0 hsl(0, 0%, 0%);
 
-  /* Nomes usados pelos componentes do AquaML, apontando para o tema */
+  /* Apelidos usados pelos componentes */
   --abismo: var(--sidebar);
   --abismo-2: var(--sidebar-accent);
   --leito: var(--foreground);

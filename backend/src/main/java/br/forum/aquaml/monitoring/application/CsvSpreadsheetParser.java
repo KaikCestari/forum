@@ -26,24 +26,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Lê as planilhas CSV que os biólogos exportam do Excel/LibreOffice (leituras, estações e eventos).
- *
- * <p>Entende o jeito brasileiro: separador {@code ;} com vírgula decimal ({@code 6,8}), datas {@code dd/mm/aaaa},
- * nomes de coluna em português com unidade entre parênteses ({@code "OD (mg/L)"}) e valores abaixo do limite de
- * detecção ({@code "<0,02"} vira metade do limite, prática comum em qualidade da água). Também aceita vírgula ou
- * tabulação como separador e datas ISO.
- *
- * <p>É Java puro, sem banco nem Spring: fácil de testar.
- */
 public final class CsvSpreadsheetParser {
 
-    /** Resultado da leitura das medições, com o que for útil para avisar quem importou. */
     public record ParsedMeasurements(List<Measurement> measurements, Set<String> stationIds,
                                      List<String> missingParams, int skippedRows, double readingsPerDay) {
     }
 
-    /** Nomes canônicos dos parâmetros nas colunas da planilha, na ordem de {@link WaterParameters#NAMES}. */
     public static final List<String> PARAMS = List.of("ph", "do_mgl", "temp_c", "turbidity_ntu",
             "conductivity_uscm", "nitrate_mgl", "phosphorus_mgl", "coliforms_nmp");
 
@@ -92,7 +80,6 @@ public final class CsvSpreadsheetParser {
     private CsvSpreadsheetParser() {
     }
 
-    /** Leituras: exige data/hora e estação; parâmetros ausentes ficam vazios. */
     public static ParsedMeasurements measurements(Reader in) {
         Table t = read(in);
         int ts = t.require("timestamp", "data/hora (timestamp)");
@@ -132,7 +119,6 @@ public final class CsvSpreadsheetParser {
         return new ParsedMeasurements(out, days.keySet(), missing, skipped, (double) out.size() / Math.max(1, dayCount));
     }
 
-    /** Estações; tipos desconhecidos viram "rio" (limites CONAMA de água doce). */
     public static List<Station> stations(Reader in) {
         Table t = read(in);
         int id = t.index("id") >= 0 ? t.index("id") : t.require("station_id", "id da estação");
@@ -152,7 +138,6 @@ public final class CsvSpreadsheetParser {
         return out;
     }
 
-    /** Eventos conhecidos (opcionais), usados só para avaliar a detecção de anomalias. */
     public static List<MonitoringEvent> events(Reader in) {
         Table t = read(in);
         int st = t.require("station_id", "estação (station_id)");
@@ -184,12 +169,11 @@ public final class CsvSpreadsheetParser {
         }
     }
 
-    /** Número no formato brasileiro ou internacional; "&lt;x" vira x/2 (abaixo do limite de detecção). */
     static Double number(String s, boolean decimalComma) {
         if (s.isEmpty()) {
             return null;
         }
-        // Com vírgula decimal, o ponto é separador de milhar ("1.234,5"); sem vírgula, vale o ponto.
+        // "1.234,5": com vírgula decimal, o ponto é milhar
         String v = decimalComma && s.contains(",") ? s.replace(".", "").replace(',', '.') : s;
         if (v.startsWith("<")) {
             Double limit = number(v.substring(1).trim(), false);
@@ -202,8 +186,6 @@ public final class CsvSpreadsheetParser {
             return null;
         }
     }
-
-    /* ---------------- leitura genérica de CSV ---------------- */
 
     private record Table(Map<String, Integer> columns, List<String[]> rows, boolean decimalComma) {
         int index(String canonical) {
@@ -251,7 +233,6 @@ public final class CsvSpreadsheetParser {
         }
     }
 
-    /** Minúsculas, sem acentos, sem unidades entre parênteses: "Fósforo (mg/L)" vira "fosforo". */
     static String normalize(String s) {
         String n = Normalizer.normalize(s.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")

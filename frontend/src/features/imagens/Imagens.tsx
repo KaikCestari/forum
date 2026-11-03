@@ -1,4 +1,3 @@
-// Integra envio, filtro por estado e revisão das imagens de monitoramento.
 import { useState } from 'react';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';

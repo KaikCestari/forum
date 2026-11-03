@@ -1,5 +1,3 @@
-// Imagens de exemplo para testar e apresentar a leitura por IA (ficam em public/exemplos).
-// Créditos e licenças em docs/IMAGENS-EXEMPLO.md. A estação sugerida é a dos dados de exemplo.
 export interface ImagemExemplo {
   arquivo: string;
   titulo: string;
@@ -17,7 +15,6 @@ export const imagensExemplo: ImagemExemplo[] = [
   { arquivo: 'satelite-rio-doce-lama.jpg', titulo: 'Satélite: lama no Rio Doce', tipo: 'satelite', estacaoSugerida: 'EST-01' },
 ];
 
-/** Baixa a imagem de exemplo e devolve como arquivo, como se a pessoa tivesse escolhido no computador. */
 export async function arquivoDoExemplo(exemplo: ImagemExemplo): Promise<File> {
   const resposta = await fetch(`/exemplos/${exemplo.arquivo}`);
   if (!resposta.ok) throw new Error('Não foi possível abrir a imagem de exemplo.');

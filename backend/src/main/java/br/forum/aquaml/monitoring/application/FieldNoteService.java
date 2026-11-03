@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Casos de uso do caderno de campo: listar, escrever e apagar anotações. */
 @Service
 public class FieldNoteService {
 
@@ -38,7 +37,6 @@ public class FieldNoteService {
         return notes.save(new FieldNote(stationId, notedOn, kind, text, author.id(), author.name()));
     }
 
-    /** Só o autor ou um ADMIN pode apagar (a regra está na entidade). */
     @Transactional
     public void delete(Long id, CurrentUser user) {
         FieldNote note = notes.findById(id).orElseThrow(() -> new NotFoundException("Anotação não encontrada."));

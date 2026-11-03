@@ -1,5 +1,3 @@
-"""Testes ponta a ponta da API (FastAPI TestClient) com dados sintéticos."""
-
 import json
 import math
 
@@ -139,8 +137,6 @@ def test_deterministic():
     a.pop("generatedAt"), b.pop("generatedAt")
     assert a == b
 
-
-# ------------------------------------------------------------------ casos difíceis
 
 def test_single_station_few_days_skips_ml_gracefully():
     payload = build_request(seed=1, days=10, station_ids=["RIO-01"])

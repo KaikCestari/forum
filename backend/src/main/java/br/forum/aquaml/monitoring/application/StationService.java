@@ -16,11 +16,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/** Casos de uso das estações: listar (com o que a última análise disse de cada uma), criar e ver a série. */
 @Service
 public class StationService {
 
-    /** Estação junto com o resumo dela na última análise (null se ainda não foi analisada). */
     public record StationOverview(Station station, JsonNode analysis) {
     }
 
@@ -39,7 +37,6 @@ public class StationService {
                 .toList();
     }
 
-    /** Cria uma estação. Sem código, ele é gerado do nome (e fica único). Código repetido é recusado. */
     @Transactional
     public StationOverview create(String id, String name, String type, Double lat, Double lon) {
         StationType stationType = StationType.fromCode(type);
@@ -55,13 +52,11 @@ public class StationService {
         return new StationOverview(stations.save(new Station(code, name, stationType, lat, lon)), null);
     }
 
-    /** Usado no envio de imagem com "nova estação": sempre cria, com código único. */
     @Transactional
     public Station createFromName(String name, String type, Double lat, Double lon) {
         return create(null, name, type, lat, lon).station();
     }
 
-    /** Mapa código → nome, para mostrar o nome da estação em imagens e anotações. */
     public Map<String, String> names() {
         return stations.findAllByOrderByNameAsc().stream()
                 .collect(Collectors.toMap(Station::getId, Station::getName, (a, b) -> a));
@@ -71,7 +66,6 @@ public class StationService {
         return stations.findById(id).orElseThrow(() -> new NotFoundException("Estação não encontrada."));
     }
 
-    /** Série diária da estação na última análise (404 se não houver). */
     public JsonNode series(String id) {
         return analysis.latestResult()
                 .flatMap(r -> r.series(id))

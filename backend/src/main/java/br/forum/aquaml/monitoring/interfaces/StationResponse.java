@@ -7,12 +7,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 
-/** JSON {@code Station} do contrato: cadastro + o que a última análise disse da estação. */
 public record StationResponse(String id, String name, String type, Double lat, Double lon, Latest latest,
                               String predictedClass, String clusterLabel, int alertsRecent,
                               List<String> worseningTrends) {
 
-    /** Última leitura diária consolidada: {@code {date, iqa, iqaClass}}. */
     public record Latest(String date, Double iqa, String iqaClass) {
     }
 

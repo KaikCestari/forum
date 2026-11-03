@@ -1,4 +1,3 @@
-// Formata números, datas e nomes de domínio para leitura em português.
 import type { Papel, TipoEstacao } from '../api/tipos';
 export function numero(valor: number | null | undefined, casas = 1): string {
   return valor == null || !Number.isFinite(valor)

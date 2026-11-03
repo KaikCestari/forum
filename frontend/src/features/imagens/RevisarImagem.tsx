@@ -1,4 +1,3 @@
-// Permite revisar os indícios visuais, mantendo campos desconhecidos sem afirmação automática.
 import type { FormEvent } from 'react';
 import type { ConfirmacaoImagem, ImagemAgua, Turbidez } from '../../api/tipos';
 import { api } from '../../api/recursos';

@@ -14,12 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Cliente HTTP do Ollama ({@code /api/chat} e {@code /api/tags}), local ou no Ollama Cloud.
- * No Cloud a chave vai no cabeçalho {@code Authorization: Bearer}. A chave nunca aparece em logs nem em erros.
- *
- * <p>Fica em {@code shared} porque é usado por dois contextos: o assistente (texto) e as imagens (visão).
- */
 @Component
 public class OllamaClient {
 
@@ -34,17 +28,14 @@ public class OllamaClient {
         this.mapper = mapper;
     }
 
-    /** Modelo do assistente (fixo, vem do .env). */
     public String chatModel() {
         return props.model();
     }
 
-    /** Modelo com visão usado para ler as imagens. */
     public String visionModel() {
         return props.visionModel();
     }
 
-    /** O Ollama responde? Usa {@code /api/tags}, que é rápido. */
     public boolean isAvailable() {
         try {
             HttpResponse<Void> r = http.send(request("/api/tags").timeout(Duration.ofSeconds(8)).GET().build(),
@@ -58,12 +49,6 @@ public class OllamaClient {
         }
     }
 
-    /**
-     * Envia a conversa e devolve o texto da resposta (sem streaming).
-     *
-     * @param json quando verdadeiro, pede ao Ollama que responda só com um objeto JSON
-     * @throws ServiceUnavailableException se o Ollama estiver fora ou responder com erro
-     */
     public String chat(List<OllamaMessage> messages, String model, boolean json) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
@@ -81,7 +66,7 @@ public class OllamaClient {
                     .build();
             HttpResponse<String> r = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (r.statusCode() != 200) {
-                // O corpo da resposta do provedor pode ter detalhes internos: não repassamos.
+                // não repassa o corpo do erro: pode ter detalhes internos do provedor
                 throw new ServiceUnavailableException("O Ollama respondeu com erro (HTTP " + r.statusCode() + ").");
             }
             return mapper.readTree(r.body()).path("message").path("content").asText("").strip();

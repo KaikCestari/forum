@@ -1,4 +1,3 @@
-// Lista pontos de monitoramento e suas condições mais recentes.
 import { Link } from 'react-router';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';

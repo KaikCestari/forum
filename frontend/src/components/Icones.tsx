@@ -1,4 +1,3 @@
-// Ícones de traço usados no menu lateral e no chat da Limno (SVG inline, sem dependências).
 import type { ReactNode } from 'react';
 
 function Icone({ children, tamanho = 18 }: { children: ReactNode; tamanho?: number }) {

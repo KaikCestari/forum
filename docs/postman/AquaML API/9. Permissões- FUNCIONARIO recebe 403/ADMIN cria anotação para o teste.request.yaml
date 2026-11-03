@@ -1,0 +1,26 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/notes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "stationId": "{{stationId}}",
+      "notedOn": "2026-11-01",
+      "kind": "observacao",
+      "text": "Anotação do ADMIN usada no teste de permissão."
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      pm.environment.set("adminNoteId", pm.response.json().id);
+    language: text/javascript
+order: 6000

@@ -1,11 +1,3 @@
-"""Formato dos dados que entram e saem da API (contrato com o backend Java).
-
-As classes abaixo descrevem exatamente o JSON da seção 2 de
-`docs/CONTRATO-API.md`. No Python os campos usam snake_case; no JSON viram
-camelCase automaticamente (ex.: `do_mgl` ↔ `doMgl`, `station_id` ↔ `stationId`).
-Não há lógica aqui: só a forma dos dados.
-"""
-
 from __future__ import annotations
 
 from datetime import date
@@ -19,8 +11,6 @@ class CamelModel(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True,
                               ser_json_inf_nan="null")
 
-
-# ---------------------------------------------------------------- pedido
 
 class StationIn(CamelModel):
     id: str
@@ -56,8 +46,6 @@ class AnalyzeRequest(CamelModel):
     measurements: list[MeasurementIn] = Field(default_factory=list)
     events: list[EventIn] = Field(default_factory=list)
 
-
-# ---------------------------------------------------------------- resposta
 
 class Period(CamelModel):
     start: str

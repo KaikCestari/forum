@@ -1,5 +1,3 @@
-"""Testes das regras de domínio: IQA, limpeza e alertas."""
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,8 +7,6 @@ from app.domain.cleaning import (InsufficientDataError, build_daily_table,
                                  interpolate_short_gaps, rolling_zscore, validate_ranges)
 from app.domain.parameters import PARAM_KEYS
 
-
-# ------------------------------------------------------------------ IQA
 
 def test_clean_water_scores_high():
     value = iqa.compute(do_sat_pct=98, coliforms=10, ph=7.2, temp_dev=0.5,
@@ -67,8 +63,6 @@ def test_do_saturation_at_20c():
 def test_iqa_classes(value, expected):
     assert iqa.classify(value) == expected
 
-
-# ------------------------------------------------------------------ limpeza
 
 def _hourly(station, start, hours, **values):
     ts = pd.date_range(start, periods=hours, freq="h")
@@ -131,8 +125,6 @@ def test_daily_mean_and_short_hourly_gap_filled():
     assert daily["tempC"].iloc[0] == pytest.approx(20.25)
     assert np.isnan(daily["doMgl"].iloc[0])
 
-
-# ------------------------------------------------------------------ alertas
 
 def test_alerts_group_consecutive_days_and_severity():
     days = pd.DataFrame({

@@ -1,0 +1,25 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{adminEmail}}",
+      "password": "{{adminPassword}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      const r = pm.response.json();
+      pm.environment.set("token", r.token);
+      pm.environment.set("adminToken", r.token);
+      pm.test("Papel ADMIN", () => pm.expect(r.user.role).to.eql("ADMIN"));
+    language: text/javascript
+order: 1000

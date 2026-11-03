@@ -21,12 +21,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Casos de uso da análise: rodar o machine learning sobre os dados do banco e consultar os resultados.
- *
- * <p>A análise é síncrona: a requisição espera o serviço Python responder. Se ele estiver fora do ar, a execução
- * fica {@code FALHOU} com a mensagem do motivo (não é lançado erro para quem chamou).
- */
 @Service
 public class AnalysisService {
 
@@ -52,7 +46,6 @@ public class AnalysisService {
         this.tx = tx;
     }
 
-    /** Roda a análise com todas as leituras, estações e eventos do banco. */
     public AnalysisRun run() {
         AnalysisRun run = runs.save(AnalysisRun.start());
         List<Measurement> readings = measurements.findAllByOrderByStationIdAscTimestampAsc();
@@ -76,17 +69,14 @@ public class AnalysisService {
         }
     }
 
-    /** Última execução, de qualquer situação (para o painel). */
     public Optional<AnalysisRun> lastRun() {
         return runs.findFirstByOrderByIdDesc();
     }
 
-    /** Última execução concluída com sucesso. */
     public Optional<AnalysisRun> lastCompletedRun() {
         return runs.findFirstByStatusOrderByIdDesc(RunStatus.CONCLUIDA);
     }
 
-    /** Resultado completo da última análise concluída. */
     public Optional<AnalysisResult> latestResult() {
         return lastCompletedRun().flatMap(AnalysisRun::result);
     }
@@ -95,7 +85,6 @@ public class AnalysisService {
         return runs.findTop20ByOrderByIdDesc();
     }
 
-    /** Alertas da última análise concluída, com filtros opcionais de estação e severidade. */
     public List<Alert> alerts(String stationId, String severity) {
         return lastCompletedRun()
                 .map(run -> alerts.findByRunIdOrderByDateDescIdAsc(run.getId()).stream()
@@ -105,7 +94,6 @@ public class AnalysisService {
                 .orElse(List.of());
     }
 
-    /** Apaga o histórico de análises e alertas. */
     public void deleteAll() {
         alerts.removeAll();
         runs.removeAll();

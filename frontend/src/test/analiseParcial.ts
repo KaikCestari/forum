@@ -1,4 +1,3 @@
-// Cria respostas de teste com os campos nulos e os oito sensores previstos pelo contrato ML.
 import type { Estacao, ResultadoAnalise, Serie } from '../api/tipos';
 
 export function criarSerieSemSensores(): Serie {

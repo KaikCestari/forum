@@ -11,10 +11,6 @@ import jakarta.persistence.Table;
 import java.text.Normalizer;
 import java.util.Locale;
 
-/**
- * Entidade Estação de monitoramento: um ponto de um rio, lago, reservatório ou estuário.
- * O identificador é um código legível (ex.: {@code rio-a}), o mesmo usado nas planilhas.
- */
 @Entity
 @Table(name = "stations")
 public class Station {
@@ -45,7 +41,6 @@ public class Station {
         update(name == null || name.isBlank() ? this.id : name, type, lat, lon);
     }
 
-    /** Gera o código a partir do nome: "Rio Tietê - Ponto 2" vira "rio-tiete-ponto-2". */
     public static String codeFromName(String name) {
         if (name == null || name.isBlank()) {
             throw new BusinessRuleException("Informe o nome da estação.");
@@ -55,7 +50,6 @@ public class Station {
         return slug.isEmpty() ? "estacao" : slug;
     }
 
-    /** Atualiza o cadastro; latitude e longitude precisam estar dentro dos limites do globo. */
     public void update(String newName, StationType newType, Double newLat, Double newLon) {
         if (newName == null || newName.isBlank()) {
             throw new BusinessRuleException("Informe o nome da estação.");

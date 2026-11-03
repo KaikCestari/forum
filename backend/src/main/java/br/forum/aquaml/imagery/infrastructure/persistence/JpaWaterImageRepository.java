@@ -4,6 +4,5 @@ import br.forum.aquaml.imagery.domain.WaterImage;
 import br.forum.aquaml.imagery.domain.WaterImageRepository;
 import org.springframework.data.repository.Repository;
 
-/** Adaptador JPA da porta {@link WaterImageRepository}. */
 public interface JpaWaterImageRepository extends Repository<WaterImage, Long>, WaterImageRepository {
 }

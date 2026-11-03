@@ -1,4 +1,3 @@
-// Lista alertas com gravidade escrita, data e estação identificada.
 import type { Alerta } from '../api/tipos';
 import { data, numero } from './formatacao';
 import { Selo } from './Pagina';

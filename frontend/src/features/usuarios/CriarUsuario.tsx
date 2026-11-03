@@ -1,4 +1,3 @@
-// Cria contas internas com papel definido pelo administrador.
 import type { FormEvent } from 'react';
 import type { Papel } from '../../api/tipos';
 import { api } from '../../api/recursos';

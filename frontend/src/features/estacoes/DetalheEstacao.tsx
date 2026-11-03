@@ -1,4 +1,3 @@
-// Mostra o histórico de IQA e parâmetros de uma estação, destacando dias anômalos.
 import { useCallback } from 'react';
 import { Link, useParams } from 'react-router';
 import { api } from '../../api/recursos';

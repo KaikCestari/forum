@@ -1,4 +1,3 @@
-// Oferece apenas sensores com leituras e informa quais estão ausentes na série.
 import { useState } from 'react';
 import type { Serie } from '../../api/tipos';
 import { GraficoSerie } from '../../components/GraficoSerie';

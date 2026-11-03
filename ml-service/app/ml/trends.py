@@ -1,27 +1,3 @@
-"""Tendências de longo prazo (teste de Mann-Kendall sazonal + declive de Sen).
-
-Para o biólogo: responde "este parâmetro está subindo ou descendo de forma
-consistente ao longo do tempo, ou é só oscilação natural?". Exemplo: o fósforo
-de um reservatório aumentando mês a mês indica risco crescente de eutrofização.
-
-Como funciona:
-- Mann-Kendall: compara todos os pares de meses e conta quantas vezes o valor
-  posterior é maior que o anterior. Se "subiu" muito mais vezes do que
-  "desceu" (ou vice-versa), há tendência. O p-valor diz a chance de esse
-  padrão ser obra do acaso; abaixo de 0,05 consideramos real.
-- Versão sazonal (Hirsch et al., 1982): cada mês só é comparado com o mesmo
-  mês de outros anos (janeiro com janeiro...), para o ciclo de chuva/seca não
-  ser confundido com tendência. Exige pelo menos 13 meses de dados; com menos,
-  usamos o teste comum sobre médias semanais (mínimo de 8 semanas).
-- Declive de Sen: a mediana das inclinações entre os pares, ou seja, quanto o
-  parâmetro muda por ano, sem se deixar levar por valores extremos.
-
-Uma tendência só é marcada como "piora" ou "melhora" se for significativa
-(p < 0,05) e relevante (pelo menos 5% da média por ano). O sentido de "piora"
-depende do parâmetro: oxigênio caindo é piora; fósforo subindo é piora; pH se
-afastando do neutro (7) é piora.
-"""
-
 from __future__ import annotations
 
 import math
@@ -42,8 +18,7 @@ DAYS_PER_YEAR = 365.25
 
 
 def mann_kendall(values: np.ndarray, years: np.ndarray, seasons: np.ndarray) -> tuple[float, float]:
-    """Mann-Kendall (sazonal se houver mais de uma estação do ano em `seasons`).
-    `years` é o tempo em anos (fracionário). Devolve (p-valor, declive de Sen por ano)."""
+    """Mann-Kendall (sazonal se houver mais de uma estação do ano em `seasons`)."""
     s_total, var_total, slopes = 0.0, 0.0, []
     for season in np.unique(seasons):
         idx = np.flatnonzero(seasons == season)

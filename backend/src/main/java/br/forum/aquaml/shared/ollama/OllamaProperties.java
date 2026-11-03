@@ -2,10 +2,6 @@ package br.forum.aquaml.shared.ollama;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Configuração do Ollama lida do {@code .env} ou das variáveis de ambiente
- * (OLLAMA_URL, OLLAMA_API_KEY, LLAMA_MODEL, VISION_MODEL).
- */
 @ConfigurationProperties(prefix = "aquaml.ollama")
 public record OllamaProperties(String url, String apiKey, String model, String visionModel) {
 
@@ -16,7 +12,6 @@ public record OllamaProperties(String url, String apiKey, String model, String v
         visionModel = visionModel == null || visionModel.isBlank() ? "gemma4:31b" : visionModel.strip();
     }
 
-    /** Não mostra a chave em logs nem em mensagens. */
     @Override
     public String toString() {
         return "OllamaProperties[url=" + url + ", apiKey=" + (apiKey.isEmpty() ? "(vazia)" : "(definida)")

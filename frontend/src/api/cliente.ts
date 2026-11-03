@@ -1,4 +1,3 @@
-// Centraliza JSON, multipart, JWT, erros e encerramento de sessões expiradas.
 const CHAVE_TOKEN = 'aquaml.token';
 export const EVENTO_SESSAO_EXPIRADA = 'aquaml:sessao-expirada';
 export const sessao = {
@@ -59,7 +58,7 @@ export async function requisicao<T>(
 }
 export function urlImagem(fileUrl: string): string {
   const url = new URL(fileUrl, window.location.origin);
-  // O token só pode acompanhar arquivos da própria API, nunca endereços externos.
+  // só manda o token para arquivos da própria API
   if (url.origin !== window.location.origin || !url.pathname.startsWith('/api/images/')) return '';
   const token = sessao.token();
   if (token) url.searchParams.set('token', token);

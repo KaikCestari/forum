@@ -29,7 +29,9 @@ Navegador ──/api──► Backend Spring ──HTTP──► Serviço ML Pyt
 
 ## Swagger (testar a API pelo navegador)
 - Backend: http://localhost:8080/swagger-ui.html. Faça login em **1. Login → POST /api/auth/login**,
-  copie o `token`, clique em **Authorize** e cole. Depois é só usar "Try it out" em qualquer rota.
+  copie o `token`, clique em **Authorize** e cole. Depois é só usar "Try it out" em qualquer rota:
+  os corpos já vêm preenchidos com mocks. Guia e `openapi.json` para importar no Postman em
+  [`docs/swagger/`](docs/swagger/README.md).
 - Serviço de ML: http://localhost:8000/docs (FastAPI).
 
 ## Papéis (JWT)

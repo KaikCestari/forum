@@ -1,4 +1,3 @@
-// Gráfico que acompanha uma resposta da Limno: últimos 6 meses de um parâmetro em uma estação.
 import { useCallback } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../api/recursos';

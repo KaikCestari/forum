@@ -1,6 +1,3 @@
-// Limno: a IA especialista em ecossistemas aquáticos, num chat de coluna única (como o do Claude).
-// Antes da primeira mensagem mostra uma saudação com o compositor no centro; depois, a conversa
-// rola e o compositor fica preso embaixo. O painel "Contexto" mostra o que a Limno consulta.
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';

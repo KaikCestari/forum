@@ -1,5 +1,3 @@
-// Lê a resposta da Limno: separa o texto dos marcadores de gráfico [[grafico estacao=X parametro=Y]]
-// e quebra o texto em parágrafos e listas para exibir sem HTML.
 export interface PedidoGrafico {
   estacao: string;
   parametro: string;
@@ -40,7 +38,6 @@ export function emBlocos(texto: string): BlocoTexto[] {
   return blocos;
 }
 
-/** Divide um trecho em partes normais e em negrito (**assim**). */
 export function partesNegrito(texto: string): { texto: string; negrito: boolean }[] {
   return texto
     .split(/(\*\*[^*]+\*\*)/g)

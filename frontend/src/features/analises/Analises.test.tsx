@@ -1,4 +1,3 @@
-// Cobre etapas puladas, acurácia ausente, episódios incompletos e significado dos grupos.
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';

@@ -1,4 +1,3 @@
-// Consulta registros de campo por estação e permite excluir registros autorizados.
 import { useCallback, useState } from 'react';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';

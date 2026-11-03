@@ -18,10 +18,6 @@ import java.util.Map;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Base dos testes de API: sobe o Spring inteiro com banco H2 em memória e troca os serviços externos
- * (serviço de ML, modelo com visão e Ollama) por dublês do Mockito.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -58,7 +54,6 @@ public abstract class ApiTestSupport {
         return login(ADMIN_EMAIL, ADMIN_PASSWORD);
     }
 
-    /** Cria um usuário (como ADMIN) e devolve o token dele. */
     protected String createUserAndLogin(String email, String role) throws Exception {
         mvc.perform(post("/api/users")
                         .header("Authorization", "Bearer " + adminToken())

@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/** Casos de uso de gestão de usuários (só o ADMIN chega aqui; a regra de acesso fica na SecurityConfig). */
 @Service
 public class UserService {
 
@@ -41,7 +40,6 @@ public class UserService {
         return users.save(new User(name, normalized, passwordEncoder.encode(password), role));
     }
 
-    /** Altera papel, situação (ativo) e/ou nome; campos nulos ficam como estão. */
     @Transactional
     public User update(Long id, Role role, Boolean active, String name, CurrentUser changedBy) {
         User user = find(id);

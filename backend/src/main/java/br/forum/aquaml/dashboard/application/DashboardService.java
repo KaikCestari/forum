@@ -14,16 +14,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Monta a tela inicial (painel). Não é um contexto de negócio: só junta, para leitura, informações dos
- * contextos de monitoramento, análise e imagens.
- */
 @Service
 public class DashboardService {
 
     private static final int RECENT_ALERTS = 10;
 
-    /** Tudo o que o painel mostra; o controller transforma no JSON do contrato. */
     public record Dashboard(boolean hasData, DataSummary summary, AnalysisRun lastRun, Double iqaMean,
                             int stationsAtRisk, List<Alert> recentAlerts, List<String> insights,
                             long imagesPending, long imagesConfirmed) {
@@ -52,7 +47,6 @@ public class DashboardService {
                 images.countPending(), images.countConfirmed());
     }
 
-    /** Estações cujo IQA mais recente está abaixo de "Boa" (regra em {@link Iqa#isAtRisk()}). */
     private static int stationsAtRisk(AnalysisResult result) {
         int count = 0;
         for (JsonNode s : result.root().path("stations")) {

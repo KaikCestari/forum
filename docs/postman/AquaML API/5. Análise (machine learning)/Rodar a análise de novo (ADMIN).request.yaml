@@ -1,0 +1,15 @@
+$kind: http-request
+description: Chama o serviço de ML em Python (porta 8000). Leva alguns segundos.
+url: "{{baseUrl}}/api/analysis/run"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Concluída", () => pm.expect(pm.response.json().status).to.eql("CONCLUIDA"));
+    language: text/javascript
+order: 5000

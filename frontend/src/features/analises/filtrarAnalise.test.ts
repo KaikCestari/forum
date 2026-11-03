@@ -1,4 +1,3 @@
-// Garante que o filtro não altere a análise original nem apresente métricas globais recalculadas.
 import { expect, it } from 'vitest';
 import { criarAnaliseExtensa } from '../../test/analiseExtensa';
 import { filtrarAnalise } from './filtrarAnalise';

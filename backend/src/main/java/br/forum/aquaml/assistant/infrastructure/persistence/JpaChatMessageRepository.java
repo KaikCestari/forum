@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Adaptador JPA da porta {@link ChatMessageRepository}. */
 public interface JpaChatMessageRepository extends Repository<ChatMessage, Long>, ChatMessageRepository {
 
     @Override

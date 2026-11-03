@@ -1,0 +1,23 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{funcEmail}}",
+      "password": "{{funcPassword}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.environment.set("funcToken", pm.response.json().token);
+      pm.test("Papel FUNCIONARIO", () => pm.expect(pm.response.json().user.role).to.eql("FUNCIONARIO"));
+    language: text/javascript
+order: 1000

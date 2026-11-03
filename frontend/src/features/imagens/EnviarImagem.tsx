@@ -1,4 +1,3 @@
-// Envia JPG ou PNG para uma estação, com validação local e feedback da leitura visual.
 import { useRef, useState, type FormEvent } from 'react';
 import type { Estacao, ImagemAgua } from '../../api/tipos';
 import { api } from '../../api/recursos';
@@ -22,7 +21,6 @@ export function EnviarImagem({
   const [exemploEscolhido, setExemploEscolhido] = useState('');
   const formularioRef = useRef<HTMLFormElement>(null);
 
-  /** Preenche o formulário com uma imagem de exemplo: arquivo, tipo e estação sugerida. */
   async function usarExemplo(exemplo: ImagemExemplo) {
     const form = formularioRef.current;
     if (!form) return;

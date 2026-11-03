@@ -11,11 +11,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Casos de uso do assistente: ver se está no ar, perguntar, ver e limpar o histórico.
- *
- * <p>O modelo é fixo ({@code LLAMA_MODEL} no .env). Se o Ollama estiver fora, a pergunta devolve 503.
- */
 @Service
 public class AssistantService {
 
@@ -61,18 +56,12 @@ public class AssistantService {
         return ollama.chatModel();
     }
 
-    /** Histórico do usuário: até 50 mensagens, a mais antiga primeiro. */
     public List<ChatMessage> history(CurrentUser user) {
         List<ChatMessage> list = new ArrayList<>(messages.findTop50ByUserIdOrderByIdDesc(user.id()));
         java.util.Collections.reverse(list);
         return list;
     }
 
-    /**
-     * Pergunta ao modelo com o contexto atual e as 3 últimas trocas da conversa.
-     *
-     * @throws ServiceUnavailableException (503) se o Ollama não responder
-     */
     public ChatMessage ask(String question, CurrentUser user) {
         String q = ChatMessage.validQuestion(question);
         List<OllamaMessage> conversation = new ArrayList<>();

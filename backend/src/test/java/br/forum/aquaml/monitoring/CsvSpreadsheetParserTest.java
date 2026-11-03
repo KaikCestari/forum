@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Leitura das planilhas CSV (formato internacional e formato brasileiro do Excel). */
 class CsvSpreadsheetParserTest {
 
     @Test

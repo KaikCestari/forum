@@ -1,14 +1,3 @@
-"""Parâmetros de qualidade da água que o serviço entende.
-
-Cada parâmetro medido pelos sensores (pH, oxigênio, temperatura...) tem aqui:
-- a chave usada no JSON (camelCase, igual ao contrato da API);
-- o nome e a unidade mostrados para o biólogo;
-- a faixa fisicamente possível (fora dela é falha de sensor, não água real);
-- se é melhor analisá-lo em escala logarítmica (valores que variam muito,
-  como coliformes, que vão de 10 a 100.000);
-- o sentido em que a mudança piora a qualidade da água.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

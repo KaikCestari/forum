@@ -1,27 +1,3 @@
-"""Detecção de dias fora do padrão (anomalias).
-
-Para o biólogo: o algoritmo aprende como cada estação "costuma ser" e marca
-os dias em que a água se comportou de forma estranha para aquele local —
-por exemplo, um despejo de esgoto que derruba o oxigênio e faz os coliformes
-dispararem. Mudanças lentas (estação do ano, tendência de anos) não contam
-como anomalia; só alterações bruscas.
-
-Duas técnicas, combinadas (um dia é anômalo se qualquer uma o marcar):
-
-1. Isolation Forest (floresta de isolamento): monta centenas de árvores que
-   separam os dias com cortes aleatórios. Dias raros são isolados com poucos
-   cortes e recebem uma nota (score) de 0 a 1 — quanto maior, mais estranho.
-   Ele olha todos os parâmetros juntos, então percebe combinações incomuns.
-   Antes, cada parâmetro é comparado com a mediana dos ~60 dias anteriores
-   (com 7 dias de folga, para o próprio evento não contaminar a referência).
-2. Regra do z-score de 30 dias: marca o dia se pelo menos dois parâmetros
-   fugirem mais de 4 desvios-padrão do comportamento dos 30 dias anteriores.
-
-Dias anômalos próximos são agrupados em episódios. Se o pedido trouxer
-eventos conhecidos (ex.: despejo registrado em campo), medimos quantos deles
-o algoritmo encontrou (recall).
-"""
-
 from __future__ import annotations
 
 import math
@@ -47,8 +23,7 @@ EVENT_TOLERANCE_DAYS = 2  # folga ao comparar com eventos conhecidos
 
 
 def residual_features(station: pd.DataFrame, params: list[str]) -> pd.DataFrame:
-    """Desvio de cada parâmetro em relação à mediana móvel recente, em unidades
-    robustas (MAD), alinhado às linhas de `station`."""
+    """Desvio de cada parâmetro em relação à mediana móvel recente, em unidades robustas (MAD), alinhado às linhas de `station`."""
     x = log_transform(station, params)
     x.index = pd.to_datetime(station["date"])
     x = x.asfreq("D")  # calendário contínuo: janelas contam dias reais
@@ -86,8 +61,7 @@ def _top_params(feats: pd.DataFrame) -> list[list[str]]:
 
 
 def detect(daily: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
-    """Uma linha por (estação, dia) com score, marcação e parâmetros mais desviantes.
-    Devolve também se a floresta pôde ser treinada em ao menos uma estação."""
+    """Uma linha por (estação, dia) com score, marcação e parâmetros mais desviantes."""
     frames = []
     forest_ran = False
     for station_id, g in daily.groupby("stationId", sort=True):
@@ -151,9 +125,7 @@ def _episode(station_id: str, rows: pd.DataFrame) -> dict:
 
 
 def evaluate(flags: pd.DataFrame, events: list[dict]) -> dict | None:
-    """Quantos eventos conhecidos tiveram pelo menos um dia anômalo marcado
-    (com 2 dias de folga). Só conta eventos dentro do período monitorado da
-    estação. Devolve None se não houver eventos avaliáveis."""
+    """Quantos eventos conhecidos tiveram pelo menos um dia anômalo marcado (com 2 dias de folga)."""
     if not events or flags.empty:
         return None
     days = pd.to_datetime(flags["date"])

@@ -25,10 +25,6 @@ import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Adaptador HTTP da porta {@link MlServiceClient}: envia {@code POST /analyze} ao serviço Python (FastAPI) no
- * formato {@code AnalyzeRequest} do contrato e recebe o {@code AnalysisResult}.
- */
 @Component
 public class HttpMlServiceClient implements MlServiceClient {
 
@@ -69,7 +65,6 @@ public class HttpMlServiceClient implements MlServiceClient {
         }
     }
 
-    /** O FastAPI responde {@code {"detail": "mensagem"}}; se o detalhe não for texto, usamos uma frase genérica. */
     private String detail(String body) {
         try {
             JsonNode d = mapper.readTree(body).path("detail");
@@ -78,8 +73,6 @@ public class HttpMlServiceClient implements MlServiceClient {
             return "os dados estão num formato inesperado.";
         }
     }
-
-    /* ---------- formato AnalyzeRequest do contrato ---------- */
 
     record StationDto(String id, String name, String type, Double lat, Double lon) {
     }

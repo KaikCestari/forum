@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Regras do agregado WaterImage (sem Spring, sem banco). */
 class WaterImageTest {
 
     private static final ColorIndicators COLORS = new ColorIndicators(90, 120, 80, 42, 0.14, 0.27, 0.6, 0.05);

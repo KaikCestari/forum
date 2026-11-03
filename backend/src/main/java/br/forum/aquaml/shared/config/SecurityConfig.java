@@ -24,18 +24,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Segurança da API: login sem sessão (stateless) com JWT e a tabela de permissões do contrato.
- *
- * <p>A tabela abaixo é a mesma de {@code docs/CONTRATO-API.md}: rotas de ADMIN, rotas para qualquer usuário
- * logado e o login aberto. A regra "dono ou ADMIN" para apagar imagens e anotações fica nos casos de uso.
- */
 @Configuration
 public class SecurityConfig {
 
     private static final String ADMIN = "ADMIN";
 
-    /** Endereços do frontend que podem chamar a API (variável AQUAML_CORS_ORIGINS, separados por vírgula). */
     private final List<String> allowedOrigins;
 
     public SecurityConfig(@Value("${aquaml.cors-origins:http://localhost:5173,http://127.0.0.1:5173}") List<String> allowedOrigins) {
@@ -51,19 +44,19 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+                // o console do H2 usa frames
+                .headers(h -> h.frameOptions(f -> f.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
-                        // Swagger (documentação): aberto para leitura; as chamadas pedem o token no botão "Authorize"
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // Só ADMIN
+                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/users", "/api/users/**").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.POST, "/api/data/import").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.DELETE, "/api/data").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.POST, "/api/analysis/run").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.POST, "/api/stations").hasRole(ADMIN)
-                        // Qualquer usuário logado
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .exceptionHandling(e -> e
@@ -75,7 +68,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** O filtro JWT roda só dentro da cadeia do Spring Security, não como filtro solto do servidor. */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
@@ -88,7 +80,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /** Por padrão o frontend em desenvolvimento roda em http://localhost:5173. */
     private CorsConfigurationSource corsSource() {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(allowedOrigins);

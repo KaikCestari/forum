@@ -1,29 +1,3 @@
-"""Limpeza dos dados dos sensores e resumo diário.
-
-Sensores de campo erram: ficam sem energia, mandam valores impossíveis
-(pH −1, temperatura 150 °C) ou pulam algumas horas. Antes de qualquer
-análise, este módulo transforma as leituras brutas numa tabela com
-UMA linha por estação e por dia, em quatro passos:
-
-1. Validação de faixa: valores fisicamente impossíveis viram "vazio".
-2. Grade horária: as leituras são organizadas hora a hora (se houver mais de
-   uma leitura na mesma hora, usa-se a média delas).
-3. Preenchimento de lacunas curtas (interpolação linear): buracos de até 6
-   horas são preenchidos ligando o valor anterior ao seguinte por uma reta.
-   Buracos maiores ou nas pontas da série NÃO são inventados.
-4. Média diária: um dia só entra na análise se tiver pelo menos 6 leituras
-   válidas, e cada parâmetro só recebe média se tiver ao menos 6 horas com
-   valor naquele dia. Depois, lacunas de até 3 dias de um parâmetro são
-   interpoladas da mesma forma.
-
-Também calcula duas estatísticas móveis usadas adiante:
-- z-score de 30 dias (quanto o dia foge do comportamento dos 30 dias anteriores);
-- temperatura de referência (média móvel de 30 dias), usada pelo IQA.
-
-É uma tradução fiel do antigo processador em Rust (`processor/src/clean.rs`,
-`stats.rs` e `main.rs`).
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -68,8 +42,7 @@ def validate_ranges(values: pd.DataFrame) -> pd.DataFrame:
 
 
 def interpolate_short_gaps(series: pd.Series, max_gap: int) -> pd.Series:
-    """Interpolação linear só em buracos internos de até `max_gap` posições.
-    Buracos maiores ficam inteiramente vazios (não são preenchidos pela metade)."""
+    """Interpolação linear só em buracos internos de até `max_gap` posições."""
     if series.notna().sum() < 2:
         return series
     missing = series.isna()
@@ -128,10 +101,7 @@ def _station_daily(readings: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
 
 
 def build_daily_table(measurements: pd.DataFrame) -> tuple[pd.DataFrame, CleaningReport]:
-    """Leituras brutas → tabela diária limpa (uma linha por estação e dia).
-
-    `measurements` tem as colunas `timestamp`, `stationId` e os parâmetros.
-    Lança InsufficientDataError se nenhum dia tiver leituras suficientes."""
+    """Leituras brutas → tabela diária limpa (uma linha por estação e dia)."""
     report = CleaningReport(raw_readings=len(measurements))
     if measurements.empty:
         raise InsufficientDataError("Nenhuma medição foi enviada para a análise.")
@@ -166,7 +136,6 @@ def build_daily_table(measurements: pd.DataFrame) -> tuple[pd.DataFrame, Cleanin
 
 
 def _parse_timestamps(values: pd.Series) -> pd.Series:
-    """Converte textos ISO-8601 em data-hora; inválidos viram vazio.
-    Horários com fuso são convertidos para UTC e o fuso é descartado."""
+    """Converte textos ISO-8601 em data-hora; inválidos viram vazio."""
     parsed = pd.to_datetime(values, errors="coerce", format="ISO8601", utc=True)
     return parsed.dt.tz_localize(None)

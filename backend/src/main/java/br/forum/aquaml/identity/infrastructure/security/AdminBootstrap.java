@@ -11,10 +11,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * No primeiro início (banco sem nenhum usuário) cria o administrador a partir de ADMIN_EMAIL e ADMIN_PASSWORD.
- * Não há cadastro público: as demais contas são criadas por esse ADMIN.
- */
 @Component
 public class AdminBootstrap implements ApplicationRunner {
 

@@ -1,4 +1,3 @@
-// Mantém o filtro de estação entre abas e monta apenas a seção escolhida.
 import { useState } from 'react';
 import type { ResultadoAnalise } from '../../api/tipos';
 import { AbasAnalise, type SecaoAnalise } from './AbasAnalise';

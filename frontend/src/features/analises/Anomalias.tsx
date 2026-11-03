@@ -1,4 +1,3 @@
-// Apresenta dias fora do padrão e explica o método usado na análise.
 import { Link } from 'react-router';
 import { ComoFunciona } from '../../components/Pagina';
 import { EtapaAnalise } from './EtapaAnalise';

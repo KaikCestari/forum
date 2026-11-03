@@ -1,4 +1,3 @@
-// Inicializa o React e os estilos globais do AquaML.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

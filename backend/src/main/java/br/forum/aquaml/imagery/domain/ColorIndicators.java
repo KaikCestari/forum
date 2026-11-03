@@ -4,17 +4,10 @@ import jakarta.persistence.Embeddable;
 
 import java.awt.image.BufferedImage;
 
-/**
- * Objeto de valor com indicadores de cor calculados direto dos pixels da imagem.
- *
- * <p>Servem para comparar imagens parecidas entre datas e pontos (ex.: a água ficou mais verde?). Não são
- * concentração de clorofila nem de sedimentos: são só indícios visuais.
- */
 @Embeddable
 public record ColorIndicators(double meanRed, double meanGreen, double meanBlue, double brightnessPct,
                               double greenRedIndex, double blueRatio, double greenishFraction, double darkFraction) {
 
-    /** Calcula os indicadores percorrendo todos os pixels (use uma imagem já reduzida). */
     public static ColorIndicators measure(BufferedImage img) {
         long n = 0;
         double sr = 0;
@@ -52,7 +45,6 @@ public record ColorIndicators(double meanRed, double meanGreen, double meanBlue,
                 round((double) dark / n, 3));
     }
 
-    /** Brilho percebido pelo olho humano (pesos da norma ITU-R BT.709). */
     private static double luminance(double r, double g, double b) {
         return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     }

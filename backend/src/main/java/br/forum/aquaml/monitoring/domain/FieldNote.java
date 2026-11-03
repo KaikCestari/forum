@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Set;
 
-/** Entidade Anotação de campo: o caderno da equipe (observação, coleta ou evento numa estação). */
 @Entity
 @Table(name = "field_notes")
 public class FieldNote {
@@ -70,7 +69,6 @@ public class FieldNote {
         this.createdAt = Instant.now();
     }
 
-    /** Regra: só o autor ou um ADMIN pode apagar a anotação. */
     public void checkCanBeDeletedBy(Long userId, boolean isAdmin) {
         if (!isAdmin && !userId.equals(authorId)) {
             throw new ForbiddenException("Só quem escreveu a anotação ou um administrador pode apagá-la.");
@@ -95,10 +93,6 @@ public class FieldNote {
 
     public String getText() {
         return text;
-    }
-
-    public Long getAuthorId() {
-        return authorId;
     }
 
     public String getAuthorName() {

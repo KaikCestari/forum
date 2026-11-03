@@ -20,21 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Casos de uso das imagens: enviar (com leitura pela IA), listar, baixar o arquivo, confirmar e apagar.
- *
- * <p>O envio não abre transação durante a chamada ao modelo com visão (10 a 40 segundos). Se a IA falhar, a
- * imagem é guardada mesmo assim com status ERRO_ANALISE.
- */
 @Service
 public class ImageService {
 
-    /** Dados do envio. Use {@code stationId} ou {@code newStationName} (+ tipo e coordenadas opcionais). */
     public record UploadCommand(byte[] file, String kind, LocalDate observedOn, String stationId,
                                 String newStationName, String newStationType, Double lat, Double lon) {
     }
 
-    /** Bytes e tipo do arquivo, para a rota que devolve a imagem. */
     public record ImageFile(byte[] data, String mimeType) {
     }
 
@@ -63,7 +55,6 @@ public class ImageService {
         return images.countByStatus(ImageStatus.CONFIRMADA);
     }
 
-    /** Pendentes de conferência: lidas pela IA (PENDENTE) ou com erro de leitura (ERRO_ANALISE). */
     public long countPending() {
         return images.countByStatus(ImageStatus.PENDENTE) + images.countByStatus(ImageStatus.ERRO_ANALISE);
     }
@@ -73,7 +64,6 @@ public class ImageService {
     }
 
     public WaterImage upload(UploadCommand cmd, CurrentUser user) {
-        // 1. Validar tudo antes de gravar qualquer coisa.
         if (cmd.kind() == null || !WaterImage.KINDS.contains(cmd.kind())) {
             throw new BusinessRuleException("Tipo de imagem inválido: use foto ou satelite.");
         }
@@ -83,7 +73,6 @@ public class ImageService {
         Photo photo = PhotoProcessor.decode(cmd.file());
         String stationId = resolveStation(cmd);
 
-        // 2. Indicadores de cor (pixels) e leitura pelo modelo com visão.
         ColorIndicators colors = ColorIndicators.measure(PhotoProcessor.resize(photo.image(), PhotoProcessor.METRICS_MAX_SIDE));
         String fileName = storage.store(cmd.file(), photo.extension());
         WaterImage image = new WaterImage(stationId, cmd.kind(), cmd.observedOn(), user.id(), user.name(), fileName,
@@ -95,7 +84,6 @@ public class ImageService {
             image.markAnalysisFailed(e.getMessage());
         }
 
-        // 3. Gravar; se o banco falhar, o arquivo não fica órfão.
         try {
             return images.save(image);
         } catch (RuntimeException e) {
@@ -109,7 +97,6 @@ public class ImageService {
         return new ImageFile(storage.load(image.getFileName()), image.getMimeType());
     }
 
-    /** O biólogo conferiu: grava as correções e marca CONFIRMADA (regra na entidade). */
     @Transactional
     public WaterImage confirm(Long id, ImageCorrections corrections) {
         WaterImage image = find(id);
@@ -117,7 +104,6 @@ public class ImageService {
         return images.save(image);
     }
 
-    /** Só quem enviou ou um ADMIN pode apagar (regra na entidade). */
     @Transactional
     public void delete(Long id, CurrentUser user) {
         WaterImage image = find(id);

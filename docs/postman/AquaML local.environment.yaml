@@ -1,0 +1,28 @@
+name: AquaML local
+values:
+  - key: baseUrl
+    value: 'http://localhost:8080'
+  - key: adminEmail
+    value: admin@aquaml.local
+  - key: adminPassword
+    value: admin123
+  - key: funcEmail
+    value: ana@aquaml.local
+  - key: funcPassword
+    value: segredo1
+  - key: token
+    value: ''
+  - key: adminToken
+    value: ''
+  - key: funcToken
+    value: ''
+  - key: stationId
+    value: RIO-02
+  - key: userId
+    value: ''
+  - key: imageId
+    value: ''
+  - key: noteId
+    value: ''
+  - key: adminNoteId
+    value: ''

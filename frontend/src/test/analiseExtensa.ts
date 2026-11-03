@@ -1,4 +1,3 @@
-// Reproduz o volume de dois anos de monitoramento para testar navegação e listas grandes.
 import type { ResultadoAnalise } from '../api/tipos';
 import { criarAnaliseParcial } from './analiseParcial';
 

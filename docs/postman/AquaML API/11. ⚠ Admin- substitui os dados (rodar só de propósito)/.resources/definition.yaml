@@ -1,0 +1,4 @@
+$kind: collection
+name: "11. ⚠ Admin: substitui os dados (rodar só de propósito)"
+description: "Cuidado: estas rotas mudam os dados que aparecem no painel."
+order: 11000

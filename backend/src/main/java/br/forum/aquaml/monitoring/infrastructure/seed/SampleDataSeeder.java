@@ -15,14 +15,6 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
-/**
- * Dados de exemplo: quando o banco não tem nenhuma leitura, importa 2 anos de leituras de 6 estações
- * (arquivos em {@code resources/exemplo}) e roda a análise, para o sistema já abrir com resultados.
- *
- * <p>Roda em segundo plano para não atrasar a subida da API. Se o serviço de ML ainda não estiver no ar,
- * tenta a análise de novo a cada 10 segundos por até 5 minutos. Desligue com {@code AQUAML_SAMPLE_DATA=false}.
- * Importar uma planilha real substitui estes dados.
- */
 @Component
 public class SampleDataSeeder implements ApplicationRunner {
 
@@ -57,7 +49,7 @@ public class SampleDataSeeder implements ApplicationRunner {
     void seed() {
         try {
             if (data.summary().measurements() > 0) {
-                return; // já há dados (importados por alguém): não mexe neles
+                return;
             }
             log.info("Banco sem leituras: importando os dados de exemplo.");
             try (InputStream measurements = new GZIPInputStream(open("measurements.csv.gz"));
@@ -72,7 +64,6 @@ public class SampleDataSeeder implements ApplicationRunner {
         }
     }
 
-    /** Garante uma análise concluída: se o serviço de ML estava fora, tenta de novo por alguns minutos. */
     private void ensureAnalysis() throws InterruptedException {
         for (int i = 1; analysis.lastCompletedRun().isEmpty() && i <= TENTATIVAS; i++) {
             log.info("Aguardando o serviço de ML para analisar os dados de exemplo ({}/{}).", i, TENTATIVAS);

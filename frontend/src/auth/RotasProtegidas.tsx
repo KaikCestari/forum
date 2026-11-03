@@ -1,4 +1,3 @@
-// Impede acesso sem sessão e apresenta a guarda das páginas exclusivas de administrador.
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useAuth } from './AuthContext';
 import { Carregando, Erro } from '../components/Estados';

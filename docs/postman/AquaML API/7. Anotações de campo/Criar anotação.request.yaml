@@ -1,0 +1,26 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/notes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "stationId": "{{stationId}}",
+      "notedOn": "2026-11-01",
+      "kind": "coleta",
+      "text": "Coleta de água para laboratório; cheiro forte e cor escura perto da galeria pluvial."
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      pm.environment.set("noteId", pm.response.json().id);
+    language: text/javascript
+order: 1000

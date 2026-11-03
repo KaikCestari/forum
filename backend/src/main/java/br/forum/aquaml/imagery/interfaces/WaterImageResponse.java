@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
 
-/** JSON {@code WaterImage} do contrato. {@code vision} é null quando a IA não conseguiu ler a imagem. */
 public record WaterImageResponse(Long id, String stationId, String stationName, String kind, LocalDate observedOn,
                                  Instant uploadedAt, String uploadedBy, ImageStatus status, String fileUrl,
                                  ColorIndicators colorIndicators, VisionReading vision, String analysisError) {

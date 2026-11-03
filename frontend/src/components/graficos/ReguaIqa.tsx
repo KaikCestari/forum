@@ -1,5 +1,3 @@
-// Régua linimétrica do IQA: a escala de 0 a 100 pintada nas cores da CETESB, com cada estação marcada
-// no seu valor atual e uma marca curta embaixo onde ela estava 30 dias antes.
 import { Link } from 'react-router';
 import { numero } from '../formatacao';
 import { corIqa, faixasIqa } from './iqa';
@@ -11,15 +9,13 @@ export interface MarcaRegua {
   anterior: number | null;
 }
 
-const LARGURA_NOME = 20; // cada nome ocupa ~20% da largura da régua
+const LARGURA_NOME = 20; // % da régua
 const ALTURA_FAIXA = 44;
 
-/** Trecho da régua ocupado pelo nome: à direita do ponteiro, ou à esquerda perto do fim da escala. */
 function trecho(iqa: number): [number, number] {
   return iqa > 80 ? [iqa - LARGURA_NOME, iqa] : [iqa, iqa + LARGURA_NOME];
 }
 
-/** Distribui os nomes em faixas acima e abaixo da régua para não se sobreporem. */
 function emFaixas(marcas: MarcaRegua[]) {
   const ocupados: [number, number][][] = [];
   return [...marcas]
@@ -29,7 +25,6 @@ function emFaixas(marcas: MarcaRegua[]) {
       let faixa = ocupados.findIndex((lista) => lista.every(([a, b]) => fim <= a || ini >= b));
       if (faixa === -1) faixa = ocupados.push([]) - 1;
       ocupados[faixa].push([ini, fim]);
-      // faixas pares ficam abaixo da régua, ímpares acima
       return { ...m, faixa: Math.floor(faixa / 2), acima: faixa % 2 === 1 };
     });
 }

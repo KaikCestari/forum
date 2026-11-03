@@ -1,4 +1,3 @@
-// Confere o último lote incompleto, o total exibido e a possibilidade de recolher a lista.
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 import { ListaProgressiva } from './ListaProgressiva';

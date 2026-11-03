@@ -1,0 +1,30 @@
+$kind: http-request
+description: A IA leva de 10 a 40 s para ler a imagem. Se o Ollama estiver fora, volta 201 com status ERRO_ANALISE.
+url: "{{baseUrl}}/api/images"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: /home/kaikdev/orca/forum/frontend/public/exemplos/foto-encontro-das-aguas.jpg
+    - type: text
+      key: kind
+      value: foto
+    - type: text
+      key: observedOn
+      value: 2026-11-01
+    - type: text
+      key: stationId
+      value: "{{stationId}}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      pm.environment.set("imageId", pm.response.json().id);
+    language: text/javascript
+order: 1000

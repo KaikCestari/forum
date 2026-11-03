@@ -1,31 +1,9 @@
-"""IQA — Índice de Qualidade das Águas (versão simplificada do IQA-CETESB/NSF).
-
-O que é: uma nota de 0 a 100 que resume vários parâmetros num único número,
-fácil de comparar entre rios, lagos e datas. Quanto maior, melhor a água.
-
-Como funciona:
-1. Cada parâmetro vira uma "nota de qualidade" q (0 a 100) por meio de uma
-   curva. Exemplo: oxigênio perto de 100% de saturação recebe q≈100; água
-   quase sem oxigênio recebe q≈2.
-2. As notas são combinadas por um produtório ponderado: IQA = ∏ qᵢ^wᵢ.
-   O produtório faz um parâmetro muito ruim derrubar o índice inteiro,
-   como acontece na natureza (pouco oxigênio mata peixes mesmo com o resto bom).
-
-O IQA original usa nove parâmetros. Aqui DBO e sólidos totais não são medidos,
-então usamos os sete disponíveis e redistribuímos os pesos. Exigimos pelo menos
-5 dos 7 parâmetros no dia; com menos, o IQA fica vazio (não inventamos nota).
-
-As curvas são aproximações lineares por partes das curvas da NSF e são
-idênticas às do antigo processador em Rust (`processor/src/iqa.rs`).
-"""
-
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-# Curvas de qualidade: pontos (x, q). Entre pontos, interpolação linear;
-# fora da tabela, o valor da ponta (saturação), igual ao Rust.
+# Curvas de qualidade (x, q): interpolação linear entre pontos; fora da tabela, vale a ponta.
 CURVE_DO_SAT = [(0, 2), (20, 12), (40, 30), (60, 56), (80, 85), (100, 100),
                 (120, 90), (140, 70), (160, 55), (200, 40)]
 CURVE_COLIFORMS_LOG = [(0, 100), (1, 80), (2, 55), (3, 30), (4, 15), (5, 5), (6, 3)]
@@ -51,7 +29,6 @@ MIN_PARAMS = 5
 # Classes CETESB: (limite inferior, nome), da melhor para a pior.
 CLASSES = [(80.0, "Ótima"), (52.0, "Boa"), (37.0, "Regular"), (20.0, "Ruim")]
 WORST_CLASS = "Péssima"
-CLASS_ORDER = ["Ótima", "Boa", "Regular", "Ruim", "Péssima"]
 
 
 def _curve(points, x):
@@ -106,9 +83,7 @@ Q_FUNCTIONS = {
 
 
 def compute_many(inputs: dict[str, np.ndarray]) -> np.ndarray:
-    """IQA para vários dias de uma vez. `inputs` tem um vetor por termo do IQA
-    (chaves de WEIGHTS); NaN = parâmetro indisponível naquele dia.
-    Devolve NaN nos dias com menos de 5 parâmetros."""
+    """IQA para vários dias de uma vez."""
     n = len(next(iter(inputs.values())))
     log_sum = np.zeros(n)
     weight_sum = np.zeros(n)
@@ -146,10 +121,7 @@ def classify(iqa: float | None) -> str | None:
 
 
 def add_iqa_columns(daily: pd.DataFrame) -> pd.DataFrame:
-    """Acrescenta à tabela diária: saturação de OD (%), IQA e classe do IQA.
-
-    Espera as colunas dos parâmetros e `tempRef` (média móvel de 30 dias da
-    temperatura, referência para o termo de variação térmica)."""
+    """Acrescenta à tabela diária: saturação de OD (%), IQA e classe do IQA."""
     out = daily.copy()
     out["doSatPct"] = out["doMgl"] / do_saturation(out["tempC"]) * 100.0
     out["iqa"] = compute_many({

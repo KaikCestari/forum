@@ -1,24 +1,3 @@
-"""Classificação da qualidade da água (Random Forest).
-
-Para o biólogo: o IQA só pode ser calculado quando há pelo menos 5 dos 7
-parâmetros. Este modelo aprende, com o histórico, a reconhecer a classe de
-qualidade (Ótima, Boa, Regular, Ruim, Péssima) diretamente das leituras dos
-sensores — e continua dando um palpite mesmo quando algum sensor falha
-(o valor que falta é preenchido com a mediana).
-
-Técnica: Random Forest (floresta aleatória) — centenas de árvores de decisão,
-cada uma treinada numa amostra diferente dos dias; a classe final é a mais
-votada. Também mostra quais parâmetros mais pesaram na decisão
-(importância das variáveis).
-
-Como medimos o acerto: o modelo treina com os primeiros 75% do período e é
-testado nos 25% finais, que ele nunca viu (como prever o futuro). Depois é
-retreinado com todos os dias para dar a classe atual de cada estação.
-
-Com poucos dias ou uma única classe no histórico, não há o que aprender:
-a etapa é pulada e o motivo aparece em `method`.
-"""
-
 from __future__ import annotations
 
 import pandas as pd
@@ -71,7 +50,6 @@ def train_and_evaluate(daily: pd.DataFrame) -> dict:
         model = _new_model().fit(X[train], y[train])
         accuracy = round(float(accuracy_score(y[~train], model.predict(X[~train]))), 4)
 
-    # Modelo final com todo o histórico.
     model = _new_model().fit(X, y)
     forest = model.named_steps["randomforestclassifier"]
     importance = sorted(

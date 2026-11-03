@@ -1,4 +1,3 @@
-// Apresenta uma imagem autenticada, seu estado e as ações de revisão ou exclusão.
 import { useState } from 'react';
 import type { ImagemAgua } from '../../api/tipos';
 import { api } from '../../api/recursos';

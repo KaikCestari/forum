@@ -1,4 +1,3 @@
-// Filtra a gravidade dos alertas da estação selecionada e limita a lista inicial a dez.
 import { useState } from 'react';
 import type { ResultadoAnalise } from '../../api/tipos';
 import { Bloco, ComoFunciona } from '../../components/Pagina';

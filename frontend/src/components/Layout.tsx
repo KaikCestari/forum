@@ -1,4 +1,3 @@
-// Menu lateral com a marca, a navegação (que muda conforme o papel) e o usuário logado.
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
@@ -19,7 +18,6 @@ const paginasAdmin: Pagina[] = [
   ['/usuarios', 'Usuários', 'usuarios'],
 ];
 
-/** Símbolo: uma gota com a lâmina d'água marcada por uma régua. */
 export function SimboloRegua({ tamanho = 28 }: { tamanho?: number }) {
   return (
     <svg width={tamanho} height={tamanho} viewBox="0 0 32 32" aria-hidden="true" className="simbolo">

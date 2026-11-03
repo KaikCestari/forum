@@ -1,4 +1,3 @@
-/* Estrutura da aplicação: menu lateral escuro fixo e área de trabalho clara. */
 .aplicacao {
   min-height: 100dvh;
   display: grid;

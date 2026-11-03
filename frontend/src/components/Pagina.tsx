@@ -1,4 +1,3 @@
-// Define o cabeçalho de uma página e blocos de conteúdo reutilizáveis.
 import type { ReactNode } from 'react';
 export function Pagina({
   titulo,

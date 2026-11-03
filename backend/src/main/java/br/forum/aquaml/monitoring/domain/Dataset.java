@@ -9,7 +9,6 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-/** Entidade Conjunto de dados: registra cada planilha importada (nome e quando). O mais recente é o atual. */
 @Entity
 @Table(name = "datasets")
 public class Dataset {
@@ -50,17 +49,5 @@ public class Dataset {
 
     public Instant getImportedAt() {
         return importedAt;
-    }
-
-    public int getMeasurements() {
-        return measurements;
-    }
-
-    public int getStations() {
-        return stations;
-    }
-
-    public int getEvents() {
-        return events;
     }
 }

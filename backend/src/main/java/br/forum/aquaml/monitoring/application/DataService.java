@@ -9,7 +9,6 @@ import br.forum.aquaml.monitoring.domain.StationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Casos de uso sobre o conjunto de dados atual: ver o resumo e apagar tudo. */
 @Service
 public class DataService {
 
@@ -36,10 +35,6 @@ public class DataService {
                 measurements.firstReadingTime(), measurements.lastReadingTime());
     }
 
-    /**
-     * Apaga leituras, eventos, importações e análises. Estações, imagens e anotações ficam, porque são
-     * registros da equipe e não vêm da planilha.
-     */
     @Transactional
     public void deleteAll() {
         measurements.removeAll();

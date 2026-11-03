@@ -1,4 +1,3 @@
-// Declara as páginas da aplicação e agrupa as rotas protegidas por sessão e papel.
 import { BrowserRouter, Link, Route, Routes } from 'react-router';
 import { AuthProvider } from './auth/AuthContext';
 import { GuardaPapel, RotaProtegida } from './auth/RotasProtegidas';

@@ -1,0 +1,4 @@
+$kind: collection
+name: "9. Permissões: FUNCIONARIO recebe 403"
+description: O token de FUNCIONARIO fica em {{funcToken}}.
+order: 9000

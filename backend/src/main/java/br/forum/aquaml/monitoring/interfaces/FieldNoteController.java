@@ -1,5 +1,14 @@
 package br.forum.aquaml.monitoring.interfaces;
 
+import br.forum.aquaml.shared.docs.ApiExamples;
+import br.forum.aquaml.shared.interfaces.ApiError;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.identity.application.CurrentUser;
 import br.forum.aquaml.monitoring.application.FieldNoteService;
@@ -25,7 +34,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/** Rotas do caderno de campo ({@code /api/notes}). Apagar: só o autor ou ADMIN. */
 @RestController
 @RequestMapping("/api/notes")
 @Tag(name = "8. Anotações de campo", description = "Observações dos biólogos")
@@ -37,7 +45,6 @@ public class FieldNoteController {
                                     @NotBlank(message = "escreva o texto") String text) {
     }
 
-    /** JSON {@code FieldNote} do contrato. */
     public record FieldNoteResponse(Long id, String stationId, String stationName, LocalDate notedOn, String kind,
                                     String text, String author, Instant createdAt) {
 
@@ -57,13 +64,32 @@ public class FieldNoteController {
     }
 
     @GetMapping
-    public List<FieldNoteResponse> list(@RequestParam(required = false) String station) {
+    @Operation(summary = "Listar anotações", description = "Filtro opcional por estação.",
+            responses = @ApiResponse(responseCode = "200", description = "Anotações",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = FieldNoteResponse.class)),
+                            examples = @ExampleObject(value = ApiExamples.NOTE_LIST))))
+    public List<FieldNoteResponse> list(@Parameter(description = "Código da estação", example = "RIO-02")
+                                        @RequestParam(required = false) String station) {
         Map<String, String> names = stations.names();
         return notes.list(station).stream().map(n -> FieldNoteResponse.from(n, names)).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Criar anotação de campo",
+            description = "`kind`: observacao, coleta ou evento. Texto até 2000 caracteres.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
+                    mediaType = "application/json", schema = @Schema(implementation = CreateNoteRequest.class),
+                    examples = {
+                            @ExampleObject(name = "Observação", value = ApiExamples.NOTE_CREATE),
+                            @ExampleObject(name = "Coleta", value = ApiExamples.NOTE_CREATE_COLLECT)})),
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Anotação criada",
+                            content = @Content(schema = @Schema(implementation = FieldNoteResponse.class),
+                                    examples = @ExampleObject(value = ApiExamples.NOTE))),
+                    @ApiResponse(responseCode = "400", description = "Estação inexistente, tipo inválido ou texto vazio",
+                            content = @Content(schema = @Schema(implementation = ApiError.class),
+                                    examples = @ExampleObject(value = ApiExamples.ERR_400_NOTE)))})
     public FieldNoteResponse create(@Valid @RequestBody CreateNoteRequest body,
                                     @AuthenticationPrincipal CurrentUser user) {
         FieldNote note = notes.create(body.stationId(), body.notedOn(), body.kind(), body.text(), user);
@@ -72,7 +98,16 @@ public class FieldNoteController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id, @AuthenticationPrincipal CurrentUser user) {
+    @Operation(summary = "Apagar anotação", description = "Só o autor ou um ADMIN.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Anotação apagada"),
+                    @ApiResponse(responseCode = "403", description = "Anotação de outra pessoa",
+                            content = @Content(schema = @Schema(implementation = ApiError.class),
+                                    examples = @ExampleObject(value = ApiExamples.ERR_403_OWNER))),
+                    @ApiResponse(responseCode = "404", description = "Anotação não existe",
+                            content = @Content(schema = @Schema(implementation = ApiError.class),
+                                    examples = @ExampleObject(value = ApiExamples.ERR_404_NOTE)))})
+    public void delete(@Parameter(example = "1") @PathVariable Long id, @AuthenticationPrincipal CurrentUser user) {
         notes.delete(id, user);
     }
 }

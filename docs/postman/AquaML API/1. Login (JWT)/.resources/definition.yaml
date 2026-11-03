@@ -1,0 +1,3 @@
+$kind: collection
+description: O token vale 8 horas e é salvo na variável {{token}} do ambiente.
+order: 1000

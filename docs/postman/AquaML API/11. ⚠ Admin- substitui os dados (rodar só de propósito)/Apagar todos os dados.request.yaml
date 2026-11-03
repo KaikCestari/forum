@@ -1,0 +1,13 @@
+$kind: http-request
+description: "Apaga leituras, eventos e análises. Para voltar: rode a importação acima ou reinicie a API com o banco vazio."
+url: "{{baseUrl}}/api/data"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminToken}}"
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 204", () => pm.response.to.have.status(204));
+    language: text/javascript
+order: 2000

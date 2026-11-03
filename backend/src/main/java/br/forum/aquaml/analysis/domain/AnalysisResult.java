@@ -9,10 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Objeto de valor com o resultado completo devolvido pelo serviço de ML (formato {@code AnalysisResult} do
- * contrato). Guardamos o JSON inteiro e oferecemos leituras fáceis das partes que o backend usa.
- */
 public final class AnalysisResult {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -25,7 +21,6 @@ public final class AnalysisResult {
         this.root = root;
     }
 
-    /** Lê o JSON; se não for um objeto, a análise é considerada inválida. */
     public static AnalysisResult fromJson(String json) {
         try {
             JsonNode root = MAPPER.readTree(json);
@@ -46,7 +41,6 @@ public final class AnalysisResult {
         return root;
     }
 
-    /** Média do IQA mais recente de cada estação (1 casa decimal), ou null se nenhuma tiver IQA. */
     public Double iqaMean() {
         double sum = 0;
         int n = 0;
@@ -60,7 +54,6 @@ public final class AnalysisResult {
         return n == 0 ? null : Math.round(sum / n * 10) / 10.0;
     }
 
-    /** Acurácia do classificador (Random Forest), ou null se não houver. */
     public Double accuracy() {
         JsonNode a = root.path("classification").path("accuracy");
         return a.isNumber() ? a.asDouble() : null;
@@ -72,7 +65,6 @@ public final class AnalysisResult {
         return out;
     }
 
-    /** Alertas do resultado, já como entidades ligadas à execução {@code runId}. */
     public List<Alert> alerts(Long runId) {
         List<Alert> out = new ArrayList<>();
         for (JsonNode a : root.path("alerts")) {
@@ -87,7 +79,6 @@ public final class AnalysisResult {
         return root.path("alerts").size();
     }
 
-    /** Resumo da estação no resultado ({@code stations[]}), se ela foi analisada. */
     public Optional<JsonNode> station(String stationId) {
         for (JsonNode s : root.path("stations")) {
             if (stationId.equals(s.path("stationId").asText())) {
@@ -97,7 +88,6 @@ public final class AnalysisResult {
         return Optional.empty();
     }
 
-    /** Série diária da estação ({@code series[id]}). */
     public Optional<JsonNode> series(String stationId) {
         JsonNode s = root.path("series").path(stationId);
         return s.isObject() ? Optional.of(s) : Optional.empty();

@@ -1,20 +1,3 @@
-"""Alertas por limites legais (Resolução CONAMA 357/2005).
-
-O que faz: compara a média diária de cada parâmetro com os limites da lei
-brasileira para rios, lagos e reservatórios de classe 2 (água doce que pode
-ser usada para abastecimento após tratamento, recreação e pesca). Para
-estuários usamos os limites de água salobra classe 1.
-
-Dois níveis de gravidade:
-- "atencao": o valor passou do limite da CONAMA;
-- "critico": o valor passou muito do limite (ex.: oxigênio abaixo de 3 mg/L,
-  nível em que peixes começam a morrer).
-
-Para não gerar um alerta por dia, dias de violação próximos (separados por
-até 2 dias) são agrupados num único episódio. O alerta usa a data do último
-dia do episódio e o pior valor observado nele.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -71,8 +54,7 @@ RULES = [
 
 
 def group_runs(dates: pd.Series, max_gap: int = MERGE_GAP_DAYS) -> list[list[int]]:
-    """Agrupa posições de dias em episódios, unindo dias separados por até `max_gap` dias.
-    `dates` deve estar em ordem crescente; devolve listas de posições."""
+    """Agrupa posições de dias em episódios, unindo dias separados por até `max_gap` dias."""
     runs: list[list[int]] = []
     previous = None
     for pos, day in enumerate(pd.to_datetime(dates)):
@@ -130,8 +112,7 @@ def station_alerts(days: pd.DataFrame, station_type: str) -> list[dict]:
 
 
 def build_alerts(daily: pd.DataFrame, station_types: dict[str, str]) -> list[dict]:
-    """Alertas de todas as estações, do mais recente para o mais antigo
-    (no mesmo dia, os críticos primeiro)."""
+    """Alertas de todas as estações, do mais recente para o mais antigo (no mesmo dia, os críticos primeiro)."""
     alerts: list[dict] = []
     for station_id, days in daily.groupby("stationId", sort=True):
         stype = station_types.get(station_id, "rio")

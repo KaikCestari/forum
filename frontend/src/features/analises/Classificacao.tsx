@@ -1,4 +1,3 @@
-// Explica a qualidade prevista, o desempenho do modelo e a contribuição dos parâmetros.
 import type { ResultadoAnalise } from '../../api/tipos';
 import { ComoFunciona } from '../../components/Pagina';
 import { EtapaAnalise } from './EtapaAnalise';

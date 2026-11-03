@@ -5,7 +5,6 @@ import br.forum.aquaml.analysis.domain.RunStatus;
 
 import java.time.Instant;
 
-/** JSON {@code AnalysisRun} do contrato. */
 public record AnalysisRunResponse(Long id, Instant startedAt, Instant finishedAt, RunStatus status, Double iqaMean,
                                   Integer alertCount, Double accuracy, String error) {
 

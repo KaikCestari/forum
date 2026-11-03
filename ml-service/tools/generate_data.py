@@ -1,18 +1,3 @@
-"""Gera um pedido de exemplo (AnalyzeRequest) com dados sintéticos realistas.
-
-SÓ PARA TESTES LOCAIS: o serviço nunca carrega estes dados sozinho.
-
-Seis estações (rios, lagoa, reservatório, estuário) com leituras horárias por
-até dois anos, incluindo sazonalidade, ciclo diário, chuvas, falhas de sensor
-(valores vazios e impossíveis) e eventos ambientais conhecidos (esgoto,
-floração de algas, hipóxia...), que servem para avaliar a detecção de anomalias.
-
-Porte de `ml/generate_data.py`; em vez de CSVs, produz o JSON do contrato.
-
-Uso (dentro de ml-service/):
-    .venv/bin/python -m tools.generate_data --out samples/request.json [--days 730] [--seed 42]
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -26,8 +11,6 @@ import pandas as pd
 
 START = "2024-10-01"
 END = "2026-09-30 23:00"
-PARAMS = ["ph", "do_mgl", "temp_c", "turbidity_ntu", "conductivity_uscm",
-          "nitrate_mgl", "phosphorus_mgl", "coliforms_nmp"]
 # Mesmas colunas, com os nomes do contrato da API (camelCase).
 CAMEL = ["ph", "doMgl", "tempC", "turbidityNtu", "conductivityUscm",
          "nitrateMgl", "phosphorusMgl", "coliformsNmp"]

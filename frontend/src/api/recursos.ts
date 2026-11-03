@@ -1,4 +1,3 @@
-// Reúne as rotas do contrato; componentes não precisam montar URLs ou cabeçalhos.
 import { requisicao } from './cliente';
 import type {
   Anotacao,

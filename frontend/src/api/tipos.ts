@@ -1,4 +1,3 @@
-// Espelha os campos JSON e as opções do contrato da API, sem renomeá-los.
 export type Papel = 'ADMIN' | 'FUNCIONARIO';
 export type TipoEstacao = 'rio' | 'lago' | 'reservatorio' | 'estuario';
 export type ClasseIqa = 'Ótima' | 'Boa' | 'Regular' | 'Ruim' | 'Péssima';
@@ -88,7 +87,7 @@ export interface Serie {
   iqaClass: (ClasseIqa | null)[];
   anomaly: boolean[];
   anomalyScore: (number | null)[];
-  // As oito chaves de sensores sempre existem; uma lista toda null indica sensor ausente.
+  // lista toda null = sensor ausente
   params: Record<string, (number | null)[]>;
 }
 export interface EstacaoAnalisada {
@@ -113,7 +112,6 @@ export interface PontoGrupo {
   cluster: number;
 }
 export interface PerfilGrupo {
-  // O identificador começa em zero e não representa qualidade; o significado vem de label.
   cluster: number;
   label: string;
   size: number;

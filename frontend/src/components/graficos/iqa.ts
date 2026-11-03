@@ -1,4 +1,3 @@
-// Faixas do IQA (CETESB/NSF) e funções para cor, classe e redução de séries para gráficos.
 export const faixasIqa = [
   { classe: 'Péssima', de: 0, ate: 20, cor: 'var(--iqa-pessima)' },
   { classe: 'Ruim', de: 20, ate: 37, cor: 'var(--iqa-ruim)' },
@@ -15,7 +14,6 @@ export function corIqa(valor: number | null | undefined): string {
   return valor == null ? 'var(--sedimento)' : faixaDoIqa(valor).cor;
 }
 
-/** Junta os valores diários em médias semanais (ignora vazios) para gráficos pequenos ficarem legíveis. */
 export function mediasSemanais(
   datas: string[],
   valores: (number | null)[],
@@ -30,7 +28,6 @@ export function mediasSemanais(
   return saida;
 }
 
-/** Valor de cerca de N dias antes do último dia com dado (para mostrar o movimento na régua). */
 export function valorDiasAntes(valores: (number | null)[], dias: number): number | null {
   for (let i = valores.length - 1 - dias; i >= 0; i--) {
     const v = valores[i];
@@ -39,7 +36,6 @@ export function valorDiasAntes(valores: (number | null)[], dias: number): number
   return null;
 }
 
-/** Piso do eixo do IQA: 8 pontos abaixo do menor valor, em dezenas, para a linha não ficar achatada. */
 export function pisoIqa(valores: number[]): number {
   if (!valores.length) return 0;
   return Math.max(0, Math.floor((Math.min(...valores) - 8) / 10) * 10);

@@ -12,7 +12,6 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
-/** Entidade Leitura: o que um sensor mediu numa estação, num instante. */
 @Entity
 @Table(name = "measurements", indexes = @Index(name = "idx_measurement_station_time", columnList = "stationId,timestamp"))
 public class Measurement {
@@ -53,7 +52,6 @@ public class Measurement {
         return timestamp;
     }
 
-    /** O JPA devolve null quando todos os parâmetros estão vazios; aqui isso vira um objeto vazio. */
     public WaterParameters getParameters() {
         return parameters != null ? parameters : new WaterParameters(null, null, null, null, null, null, null, null);
     }

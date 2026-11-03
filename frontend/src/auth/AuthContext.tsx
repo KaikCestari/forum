@@ -1,4 +1,3 @@
-// Restaura o usuário pela API e mantém o estado da sessão JWT em toda a aplicação.
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api } from '../api/recursos';
 import { EVENTO_SESSAO_EXPIRADA, sessao } from '../api/cliente';

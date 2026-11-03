@@ -17,13 +17,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * Lê o token de cada requisição e diz ao Spring Security quem é o usuário.
- *
- * <p>O token vem do cabeçalho {@code Authorization: Bearer ...}. Só a rota do arquivo da imagem aceita também
- * {@code ?token=}, porque a tag {@code <img>} do navegador não envia cabeçalhos. O usuário é relido do banco a
- * cada requisição: assim uma conta desativada perde o acesso na hora.
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

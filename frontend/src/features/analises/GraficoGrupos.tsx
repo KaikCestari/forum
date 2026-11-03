@@ -1,4 +1,3 @@
-// Desenha pontos pequenos e transparentes; identifica grupos na legenda e na tabela progressiva.
 import type { PerfilGrupo, PontoGrupo } from '../../api/tipos';
 import { data, numero } from '../../components/formatacao';
 import { ListaProgressiva } from '../../components/ListaProgressiva';

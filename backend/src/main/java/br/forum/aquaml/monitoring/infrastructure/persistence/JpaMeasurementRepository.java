@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-/** Adaptador JPA da porta {@link MeasurementRepository}; as consultas especiais ficam aqui em JPQL. */
 public interface JpaMeasurementRepository extends Repository<Measurement, Long>, MeasurementRepository {
 
     @Override

@@ -1,4 +1,3 @@
-// Gráfico pequeno da evolução do IQA de uma estação, com as faixas de qualidade ao fundo.
 import { data, numero } from '../formatacao';
 import { corIqa, faixasIqa } from './iqa';
 

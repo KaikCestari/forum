@@ -5,7 +5,7 @@ JAVA_HOME ?= $(HOME)/.local/opt/jdk-21
 MVN       ?= $(shell command -v mvn 2>/dev/null || echo $(HOME)/.local/bin/mvn)
 export JAVA_HOME
 
-.PHONY: setup ml backend frontend test clean-db
+.PHONY: setup ml backend frontend test clean-db openapi
 
 setup:                 ## instala dependências das três partes
 	cd ml-service && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
@@ -28,3 +28,6 @@ test:                  ## testes das três partes
 
 clean-db:              ## apaga o banco H2 (inclusive dados importados)
 	rm -f data/db/aquaml-spring*.db
+
+openapi:               ## exporta o Swagger (com os mocks) para docs/swagger/openapi.json; o backend precisa estar rodando
+	curl -sf $${AQUAML_API:-http://localhost:8080}/v3/api-docs | python3 -c 'import sys,json; d=json.load(sys.stdin); d["servers"]=[{"url":"http://localhost:8080","description":"Backend local (make backend)"}]; json.dump(d, open("docs/swagger/openapi.json","w"), ensure_ascii=False, indent=2)'

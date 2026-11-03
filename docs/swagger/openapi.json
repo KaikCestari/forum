@@ -1,0 +1,3295 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AquaML API",
+    "description": "Algoritmos e machine learning no estudo de ecossistemas aquáticos.\n\n**Como testar por esta página**\n1. Abra **1. Login → POST /api/auth/login**, clique em *Try it out* e em *Execute* (o corpo do ADMIN já vem preenchido).\n2. Copie o `token` da resposta, clique no cadeado **Authorize** no topo e cole.\n3. Pronto: todas as rotas têm corpos de exemplo (mocks) prontos. Em várias há mais de um exemplo no menu *Examples*.\n\nOrdem sugerida para um sistema vazio: **4. Dados → importar** (arquivos em `docs/postman/dados/`), depois painel, estações, alertas, imagens, anotações e assistente.\n\n**Papéis:** `ADMIN` faz tudo; `FUNCIONARIO` recebe **403** em usuários, importar/apagar dados, rodar análise e criar estação. Erros sempre no formato `{\"status\": 400, \"error\": \"mensagem\"}`.\n\nContrato completo em `docs/CONTRATO-API.md`.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Backend local (make backend)"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "6. Análise (ML)",
+      "description": "Rodar o serviço de ML, resultados e alertas"
+    },
+    {
+      "name": "7. Imagens",
+      "description": "Foto/satélite lidas pelo modelo com visão e conferidas"
+    },
+    {
+      "name": "9. Assistente (Ollama)",
+      "description": "Perguntas sobre os resultados"
+    },
+    {
+      "name": "2. Usuários (ADMIN)",
+      "description": "Criar, mudar papel, ativar e apagar contas. Só ADMIN; FUNCIONARIO recebe 403."
+    },
+    {
+      "name": "1. Login",
+      "description": "Entrar e ver o usuário logado (JWT)"
+    },
+    {
+      "name": "3. Painel",
+      "description": "Resumo para a tela inicial"
+    },
+    {
+      "name": "8. Anotações de campo",
+      "description": "Observações dos biólogos"
+    },
+    {
+      "name": "5. Estações",
+      "description": "Pontos de monitoramento e séries"
+    },
+    {
+      "name": "4. Dados",
+      "description": "Importar planilhas CSV, resumo e apagar dados"
+    }
+  ],
+  "paths": {
+    "/api/users": {
+      "get": {
+        "tags": [
+          "2. Usuários (ADMIN)"
+        ],
+        "summary": "Listar contas",
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "Todas as contas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "name": "Administrador",
+                    "email": "admin@aquaml.local",
+                    "role": "ADMIN",
+                    "active": true
+                  },
+                  {
+                    "id": 2,
+                    "name": "Ana Souza",
+                    "email": "ana@aquaml.local",
+                    "role": "FUNCIONARIO",
+                    "active": true
+                  }
+                ]
+              }
+            }
+          },
+          "403": {
+            "description": "Papel sem permissão (só ADMIN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "2. Usuários (ADMIN)"
+        ],
+        "summary": "Criar conta",
+        "description": "Não há cadastro público: o ADMIN cria as contas. Senha com pelo menos 6 caracteres; `role` é `ADMIN` ou `FUNCIONARIO`.",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              },
+              "examples": {
+                "FUNCIONARIO": {
+                  "description": "FUNCIONARIO",
+                  "value": {
+                    "name": "Ana Souza",
+                    "email": "ana@aquaml.local",
+                    "password": "segredo1",
+                    "role": "FUNCIONARIO"
+                  }
+                },
+                "ADMIN": {
+                  "description": "ADMIN",
+                  "value": {
+                    "name": "Bruno Lima",
+                    "email": "bruno@aquaml.local",
+                    "password": "segredo2",
+                    "role": "ADMIN"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Conta criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": 2,
+                  "name": "Ana Souza",
+                  "email": "ana@aquaml.local",
+                  "role": "FUNCIONARIO",
+                  "active": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "E-mail repetido, senha curta ou campo vazio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Já existe uma conta com este e-mail."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Papel sem permissão (só ADMIN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stations": {
+      "get": {
+        "tags": [
+          "5. Estações"
+        ],
+        "summary": "Listar estações",
+        "description": "Cadastro de cada estação + o que a última análise disse dela.",
+        "operationId": "list_1",
+        "responses": {
+          "200": {
+            "description": "Estações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StationResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "EST-01",
+                    "name": "Estuário Baía Norte",
+                    "type": "estuario",
+                    "lat": -23.4,
+                    "lon": -45.2,
+                    "latest": {
+                      "date": "2026-09-30",
+                      "iqa": 74.69,
+                      "iqaClass": "Boa"
+                    },
+                    "predictedClass": "Boa",
+                    "clusterLabel": "Água com sinais de impacto",
+                    "alertsRecent": 2,
+                    "worseningTrends": []
+                  },
+                  {
+                    "id": "LAG-01",
+                    "name": "Lagoa Azul",
+                    "type": "lago",
+                    "lat": -22.95,
+                    "lon": -46.9,
+                    "latest": {
+                      "date": "2026-09-30",
+                      "iqa": 81.42,
+                      "iqaClass": "Ótima"
+                    },
+                    "predictedClass": "Ótima",
+                    "clusterLabel": "Água com sinais de impacto",
+                    "alertsRecent": 2,
+                    "worseningTrends": []
+                  },
+                  {
+                    "id": "RIO-02",
+                    "name": "Rio Claro — Jusante urbana",
+                    "type": "rio",
+                    "lat": -22.8,
+                    "lon": -47.05,
+                    "latest": {
+                      "date": "2026-09-30",
+                      "iqa": 61.0,
+                      "iqaClass": "Boa"
+                    },
+                    "predictedClass": "Boa",
+                    "clusterLabel": "Água muito impactada",
+                    "alertsRecent": 19,
+                    "worseningTrends": [
+                      "coliformsNmp",
+                      "phosphorusMgl",
+                      "turbidityNtu"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "5. Estações"
+        ],
+        "summary": "Criar estação",
+        "description": "Só ADMIN. `type`: rio, lago, reservatorio ou estuario. Sem `id`, o código é gerado do nome.",
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStationRequest"
+              },
+              "examples": {
+                "Com código": {
+                  "description": "Com código",
+                  "value": {
+                    "id": "RIO-04",
+                    "name": "Córrego Fundo",
+                    "type": "rio",
+                    "lat": -22.81,
+                    "lon": -47.06
+                  }
+                },
+                "Sem código": {
+                  "description": "Sem código",
+                  "value": {
+                    "name": "Represa do Jaguari",
+                    "type": "reservatorio"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Estação criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationResponse"
+                },
+                "example": {
+                  "id": "RIO-04",
+                  "name": "Córrego Fundo",
+                  "type": "rio",
+                  "lat": -22.81,
+                  "lon": -47.06,
+                  "latest": null,
+                  "predictedClass": null,
+                  "clusterLabel": null,
+                  "alertsRecent": 0,
+                  "worseningTrends": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Código repetido, tipo inválido ou coordenada fora da faixa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Já existe uma estação com o código RIO-04."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só ADMIN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notes": {
+      "get": {
+        "tags": [
+          "8. Anotações de campo"
+        ],
+        "summary": "Listar anotações",
+        "description": "Filtro opcional por estação.",
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "station",
+            "in": "query",
+            "description": "Código da estação",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "RIO-02"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anotações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FieldNoteResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "stationId": "RIO-02",
+                    "stationName": "Rio Claro — Jusante urbana",
+                    "notedOn": "2026-09-30",
+                    "kind": "observacao",
+                    "text": "Água escura e com cheiro forte perto da galeria pluvial.",
+                    "author": "Administrador",
+                    "createdAt": "2026-11-03T16:24:15.707717Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "8. Anotações de campo"
+        ],
+        "summary": "Criar anotação de campo",
+        "description": "`kind`: observacao, coleta ou evento. Texto até 2000 caracteres.",
+        "operationId": "create_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteRequest"
+              },
+              "examples": {
+                "Observação": {
+                  "description": "Observação",
+                  "value": {
+                    "stationId": "RIO-02",
+                    "notedOn": "2026-09-30",
+                    "kind": "observacao",
+                    "text": "Água escura e com cheiro forte perto da galeria pluvial."
+                  }
+                },
+                "Coleta": {
+                  "description": "Coleta",
+                  "value": {
+                    "stationId": "LAG-01",
+                    "notedOn": "2026-10-02",
+                    "kind": "coleta",
+                    "text": "Coletadas 3 amostras para fósforo total, enviadas ao laboratório."
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Anotação criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldNoteResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "stationId": "RIO-02",
+                  "stationName": "Rio Claro — Jusante urbana",
+                  "notedOn": "2026-09-30",
+                  "kind": "observacao",
+                  "text": "Água escura e com cheiro forte perto da galeria pluvial.",
+                  "author": "Administrador",
+                  "createdAt": "2026-11-03T16:24:15.707717Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Estação inexistente, tipo inválido ou texto vazio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Tipo de anotação inválido: use observacao, coleta ou evento."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/images": {
+      "get": {
+        "tags": [
+          "7. Imagens"
+        ],
+        "summary": "Listar imagens",
+        "description": "A mais recente primeiro.",
+        "operationId": "list_3",
+        "responses": {
+          "200": {
+            "description": "Imagens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WaterImageResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "status": "PENDENTE",
+                    "stationId": "RIO-02",
+                    "stationName": "Rio Claro — Jusante urbana",
+                    "kind": "foto",
+                    "observedOn": "2026-09-28",
+                    "uploadedAt": "2026-11-03T16:24:20.415381Z",
+                    "uploadedBy": "Administrador",
+                    "fileUrl": "/api/images/1/file",
+                    "colorIndicators": {
+                      "meanRed": 145.6,
+                      "meanGreen": 152.8,
+                      "meanBlue": 151.4,
+                      "brightnessPct": 59.3,
+                      "greenRedIndex": 0.024,
+                      "blueRatio": 0.337,
+                      "greenishFraction": 0.003,
+                      "darkFraction": 0.004
+                    },
+                    "vision": {
+                      "waterColor": "marrom-turva e azul-escura",
+                      "turbidity": "alta",
+                      "algaeBloom": null,
+                      "foam": false,
+                      "oil": null,
+                      "floatingDebris": false,
+                      "surroundings": "linha de costa distante com vegetação verde",
+                      "attentionLevel": 2,
+                      "summary": "A imagem mostra o encontro de duas massas de água com cores e turbidez distintas."
+                    },
+                    "analysisError": null
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "7. Imagens"
+        ],
+        "summary": "Enviar foto ou imagem de satélite",
+        "description": "Formulário multipart. Demora **10 a 40 s** (o modelo com visão lê a imagem). Informe `stationId` **ou** `newStationName` + `newStationType`. Se a IA falhar, a imagem é guardada com `status: ERRO_ANALISE` para o biólogo preencher à mão. Fotos de exemplo em `frontend/public/exemplos/`.",
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagem JPG ou PNG até 12 MB"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "description": "foto ou satelite",
+                    "enum": [
+                      "foto",
+                      "satelite"
+                    ],
+                    "example": "foto"
+                  },
+                  "observedOn": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Data em que a imagem foi feita",
+                    "example": "2026-09-28"
+                  },
+                  "stationId": {
+                    "type": "string",
+                    "description": "Estação já cadastrada",
+                    "example": "RIO-02"
+                  },
+                  "newStationName": {
+                    "type": "string",
+                    "description": "Nome de uma estação nova (no lugar de stationId)"
+                  },
+                  "newStationType": {
+                    "type": "string",
+                    "description": "Tipo da estação nova: rio, lago, reservatorio ou estuario"
+                  },
+                  "lat": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Latitude da estação nova"
+                  },
+                  "lon": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Longitude da estação nova"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Imagem guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaterImageResponse"
+                },
+                "examples": {
+                  "Lida pela IA": {
+                    "description": "Lida pela IA",
+                    "value": {
+                      "id": 1,
+                      "status": "PENDENTE",
+                      "stationId": "RIO-02",
+                      "stationName": "Rio Claro — Jusante urbana",
+                      "kind": "foto",
+                      "observedOn": "2026-09-28",
+                      "uploadedAt": "2026-11-03T16:24:20.415381Z",
+                      "uploadedBy": "Administrador",
+                      "fileUrl": "/api/images/1/file",
+                      "colorIndicators": {
+                        "meanRed": 145.6,
+                        "meanGreen": 152.8,
+                        "meanBlue": 151.4,
+                        "brightnessPct": 59.3,
+                        "greenRedIndex": 0.024,
+                        "blueRatio": 0.337,
+                        "greenishFraction": 0.003,
+                        "darkFraction": 0.004
+                      },
+                      "vision": {
+                        "waterColor": "marrom-turva e azul-escura",
+                        "turbidity": "alta",
+                        "algaeBloom": null,
+                        "foam": false,
+                        "oil": null,
+                        "floatingDebris": false,
+                        "surroundings": "linha de costa distante com vegetação verde",
+                        "attentionLevel": 2,
+                        "summary": "A imagem mostra o encontro de duas massas de água com cores e turbidez distintas."
+                      },
+                      "analysisError": null
+                    }
+                  },
+                  "IA fora do ar": {
+                    "description": "IA fora do ar",
+                    "value": {
+                      "id": 2,
+                      "stationId": "RIO-02",
+                      "stationName": "Rio Claro — Jusante urbana",
+                      "kind": "satelite",
+                      "observedOn": "2026-09-28",
+                      "uploadedAt": "2026-11-03T16:30:00Z",
+                      "uploadedBy": "Ana Souza",
+                      "status": "ERRO_ANALISE",
+                      "fileUrl": "/api/images/2/file",
+                      "colorIndicators": {
+                        "meanRed": 120.2,
+                        "meanGreen": 98.4,
+                        "meanBlue": 71.0,
+                        "brightnessPct": 39.8,
+                        "greenRedIndex": -0.1,
+                        "blueRatio": 0.244,
+                        "greenishFraction": 0.01,
+                        "darkFraction": 0.08
+                      },
+                      "vision": null,
+                      "analysisError": "O modelo com visão não respondeu. A imagem foi guardada: confira e preencha os campos à mão."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Sem arquivo, formato não aceito, maior que 12 MB ou estação inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Formato não reconhecido: envie uma imagem JPG ou PNG."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/images/{id}/confirm": {
+      "post": {
+        "tags": [
+          "7. Imagens"
+        ],
+        "summary": "Conferir a leitura da IA",
+        "description": "O biólogo corrige o que quiser; campos ausentes ficam como a IA leu. `turbidity`: baixa, media ou alta. `attentionLevel`: 0 a 3.",
+        "operationId": "confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmImageRequest"
+              },
+              "examples": {
+                "Com correções": {
+                  "description": "Com correções",
+                  "value": {
+                    "waterColor": "marrom",
+                    "turbidity": "alta",
+                    "algaeBloom": false,
+                    "foam": false,
+                    "oil": false,
+                    "floatingDebris": false,
+                    "attentionLevel": 2,
+                    "notes": "Conferido em campo: água barrenta depois da chuva."
+                  }
+                },
+                "Aceitar como está": {
+                  "description": "Aceitar como está",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Imagem confirmada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaterImageResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "status": "CONFIRMADA",
+                  "stationId": "RIO-02",
+                  "stationName": "Rio Claro — Jusante urbana",
+                  "kind": "foto",
+                  "observedOn": "2026-09-28",
+                  "uploadedAt": "2026-11-03T16:24:20.415381Z",
+                  "uploadedBy": "Administrador",
+                  "fileUrl": "/api/images/1/file",
+                  "colorIndicators": {
+                    "meanRed": 145.6,
+                    "meanGreen": 152.8,
+                    "meanBlue": 151.4,
+                    "brightnessPct": 59.3,
+                    "greenRedIndex": 0.024,
+                    "blueRatio": 0.337,
+                    "greenishFraction": 0.003,
+                    "darkFraction": 0.004
+                  },
+                  "vision": {
+                    "waterColor": "marrom-turva e azul-escura",
+                    "turbidity": "alta",
+                    "algaeBloom": null,
+                    "foam": false,
+                    "oil": null,
+                    "floatingDebris": false,
+                    "surroundings": "linha de costa distante com vegetação verde",
+                    "attentionLevel": 2,
+                    "summary": "A imagem mostra o encontro de duas massas de água com cores e turbidez distintas."
+                  },
+                  "analysisError": null
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagem não existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Imagem não encontrada."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/import": {
+      "post": {
+        "tags": [
+          "4. Dados"
+        ],
+        "summary": "Importar planilhas CSV (substitui os dados)",
+        "description": "Só ADMIN. Formulário multipart. **Apaga as leituras atuais** e roda a análise de ML em seguida. Arquivos de exemplo em `docs/postman/dados/` (leituras.csv, estacoes.csv, eventos.csv).",
+        "operationId": "importData",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "measurements": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSV de leituras dos sensores (obrigatório)"
+                  },
+                  "stations": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSV das estações (opcional)"
+                  },
+                  "events": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSV de eventos conhecidos, ex.: despejos (opcional)"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nome do conjunto de dados",
+                    "example": "Rede de exemplo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Importado e analisado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponse"
+                },
+                "example": {
+                  "name": "Rede de exemplo",
+                  "measurements": 105120,
+                  "stations": 6,
+                  "events": 7,
+                  "readingsPerDay": 24.0,
+                  "warnings": [],
+                  "analysis": {
+                    "id": 2,
+                    "startedAt": "2026-11-03T16:24:00.702709Z",
+                    "finishedAt": "2026-11-03T16:24:06.089270Z",
+                    "status": "CONCLUIDA",
+                    "iqaMean": 75.9,
+                    "alertCount": 157,
+                    "accuracy": 0.9416,
+                    "error": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CSV ausente ou com colunas erradas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Envie o CSV de leituras no campo measurements."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só ADMIN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "1. Login"
+        ],
+        "summary": "Entrar e receber o token JWT",
+        "description": "Rota aberta. Copie o `token` da resposta e cole no botão **Authorize** (cadeado) no topo da página. O token vale 8 horas.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "examples": {
+                "ADMIN": {
+                  "summary": "Administrador padrão",
+                  "description": "ADMIN",
+                  "value": {
+                    "email": "admin@aquaml.local",
+                    "password": "admin123"
+                  }
+                },
+                "FUNCIONARIO": {
+                  "summary": "Funcionária (crie antes em POST /api/users)",
+                  "description": "FUNCIONARIO",
+                  "value": {
+                    "email": "ana@aquaml.local",
+                    "password": "segredo1"
+                  }
+                },
+                "Senha errada": {
+                  "summary": "Recebe 401",
+                  "description": "Senha errada",
+                  "value": {
+                    "email": "admin@aquaml.local",
+                    "password": "senha-errada"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login feito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "example": {
+                  "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwicm9sZSI6IkFETUlOIn0.assinatura",
+                  "expiresAt": "2026-11-04T00:24:00Z",
+                  "user": {
+                    "id": 1,
+                    "name": "Administrador",
+                    "email": "admin@aquaml.local",
+                    "role": "ADMIN",
+                    "active": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Campo vazio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "email: informe o e-mail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "E-mail ou senha incorretos (ou conta desativada)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 401,
+                  "error": "E-mail ou senha incorretos."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/assistant/ask": {
+      "post": {
+        "tags": [
+          "9. Assistente (Ollama)"
+        ],
+        "summary": "Perguntar ao Limno",
+        "description": "O backend junta a última análise, as imagens confirmadas e as anotações como contexto. Pode demorar alguns segundos. A resposta pode trazer marcadores `[[grafico estacao=X parametro=Y]]`, que o frontend troca por gráficos.",
+        "operationId": "ask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              },
+              "examples": {
+                "Pior estação": {
+                  "description": "Pior estação",
+                  "value": {
+                    "question": "Qual estação está pior e por quê?"
+                  }
+                },
+                "Pedir gráfico": {
+                  "description": "Pedir gráfico",
+                  "value": {
+                    "question": "Mostre o fósforo da RIO-02 num gráfico."
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Resposta do assistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "question": "Qual estação está pior e por quê?",
+                  "answer": "A estação com pior qualidade de água é **Rio Claro — Jusante urbana (RIO-02)**: coliformes e fósforo acima do limite CONAMA 357, com tendência de piora.\n\n[[grafico estacao=RIO-02 parametro=phosphorusMgl]]",
+                  "model": "gpt-oss:20b",
+                  "createdAt": "2026-11-03T16:25:02Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pergunta vazia ou longa demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Escreva uma pergunta."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Ollama fora do ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 503,
+                  "error": "Não foi possível falar com o Ollama em http://localhost:11434."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analysis/run": {
+      "post": {
+        "tags": [
+          "6. Análise (ML)"
+        ],
+        "summary": "Rodar a análise de machine learning",
+        "description": "Só ADMIN. Síncrono (alguns segundos): envia as leituras ao serviço Python e devolve a execução já `CONCLUIDA` ou `FALHOU` (com o motivo em `error`).",
+        "operationId": "run",
+        "responses": {
+          "200": {
+            "description": "Execução terminada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisRunResponse"
+                },
+                "examples": {
+                  "Concluída": {
+                    "description": "Concluída",
+                    "value": {
+                      "id": 2,
+                      "startedAt": "2026-11-03T16:24:00.702709Z",
+                      "finishedAt": "2026-11-03T16:24:06.089270Z",
+                      "status": "CONCLUIDA",
+                      "iqaMean": 75.9,
+                      "alertCount": 157,
+                      "accuracy": 0.9416,
+                      "error": null
+                    }
+                  },
+                  "Falhou": {
+                    "description": "Falhou",
+                    "value": {
+                      "id": 3,
+                      "startedAt": "2026-11-03T16:30:00Z",
+                      "finishedAt": "2026-11-03T16:30:01Z",
+                      "status": "FALHOU",
+                      "iqaMean": null,
+                      "alertCount": null,
+                      "accuracy": null,
+                      "error": "Não há leituras de sensores para analisar. Importe uma planilha primeiro."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só ADMIN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "delete": {
+        "tags": [
+          "2. Usuários (ADMIN)"
+        ],
+        "summary": "Apagar conta",
+        "description": "O ADMIN não pode apagar a própria conta.",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Conta apagada"
+          },
+          "400": {
+            "description": "Tentou apagar a si mesmo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 400,
+                  "error": "Você não pode apagar a sua própria conta."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conta não existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Usuário não encontrado."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Papel sem permissão (só ADMIN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "2. Usuários (ADMIN)"
+        ],
+        "summary": "Mudar papel, ativar/desativar ou renomear",
+        "description": "Todos os campos são opcionais: só o que vier preenchido muda. Ninguém tira o próprio papel de ADMIN nem desativa a própria conta.",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 2
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              },
+              "examples": {
+                "Promover a ADMIN": {
+                  "description": "Promover a ADMIN",
+                  "value": {
+                    "role": "ADMIN"
+                  }
+                },
+                "Desativar": {
+                  "description": "Desativar",
+                  "value": {
+                    "active": false
+                  }
+                },
+                "Renomear": {
+                  "description": "Renomear",
+                  "value": {
+                    "name": "Ana Souza Pereira"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Conta alterada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": 2,
+                  "name": "Ana Souza",
+                  "email": "ana@aquaml.local",
+                  "role": "FUNCIONARIO",
+                  "active": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conta não existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Usuário não encontrado."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Papel sem permissão (só ADMIN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stations/{id}/series": {
+      "get": {
+        "tags": [
+          "5. Estações"
+        ],
+        "summary": "Série diária da estação",
+        "description": "Listas alinhadas por data (IQA, classe, anomalia e os 8 parâmetros) da última análise.",
+        "operationId": "series",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "RIO-02"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Série",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "dates": [
+                    "2024-10-01",
+                    "2024-10-02",
+                    "2024-10-03"
+                  ],
+                  "iqa": [
+                    61.42,
+                    58.33,
+                    59.5
+                  ],
+                  "iqaClass": [
+                    "Boa",
+                    "Boa",
+                    "Boa"
+                  ],
+                  "anomaly": [
+                    false,
+                    false,
+                    false
+                  ],
+                  "anomalyScore": [
+                    null,
+                    null,
+                    null
+                  ],
+                  "params": {
+                    "ph": [
+                      6.9176,
+                      6.8408,
+                      6.8477
+                    ],
+                    "doMgl": [
+                      6.0052,
+                      6.0744,
+                      6.0594
+                    ],
+                    "tempC": [
+                      21.2875,
+                      20.6765,
+                      21.4457
+                    ],
+                    "turbidityNtu": [
+                      15.3602,
+                      18.7579,
+                      19.0482
+                    ],
+                    "conductivityUscm": [
+                      362.7108,
+                      373.2537,
+                      368.6494
+                    ],
+                    "nitrateMgl": [
+                      3.8967,
+                      3.636,
+                      4.3971
+                    ],
+                    "phosphorusMgl": [
+                      0.293,
+                      0.4555,
+                      0.429
+                    ],
+                    "coliformsNmp": [
+                      3968.6239,
+                      5534.6608,
+                      4093.1177
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Estação sem série (rode a análise)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Não há série para esta estação: rode a análise com leituras dela."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/images/{id}/file": {
+      "get": {
+        "tags": [
+          "7. Imagens"
+        ],
+        "summary": "Arquivo da imagem",
+        "description": "Devolve os bytes (JPEG). Aceita também `?token=<jwt>`, porque a tag img não envia cabeçalho.",
+        "operationId": "file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagem",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagem não existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Imagem não encontrada."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/summary": {
+      "get": {
+        "tags": [
+          "4. Dados"
+        ],
+        "summary": "Resumo dos dados importados",
+        "description": "Campos de texto e data vêm null quando não há dados.",
+        "operationId": "summary",
+        "responses": {
+          "200": {
+            "description": "Resumo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSummary"
+                },
+                "examples": {
+                  "Com dados": {
+                    "description": "Com dados",
+                    "value": {
+                      "datasetName": "Rede de exemplo",
+                      "importedAt": "2026-11-03T16:23:59.357641Z",
+                      "stations": 6,
+                      "measurements": 105120,
+                      "firstReading": "2024-10-01T00:00:00",
+                      "lastReading": "2026-09-30T23:00:00"
+                    }
+                  },
+                  "Vazio": {
+                    "description": "Vazio",
+                    "value": {
+                      "datasetName": null,
+                      "importedAt": null,
+                      "stations": 0,
+                      "measurements": 0,
+                      "firstReading": null,
+                      "lastReading": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "3. Painel"
+        ],
+        "summary": "Resumo da tela inicial",
+        "description": "Dados importados, última análise, IQA médio, estações em risco, até 10 alertas recentes, frases de destaque e contagem de imagens.",
+        "operationId": "get",
+        "responses": {
+          "200": {
+            "description": "Painel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                },
+                "examples": {
+                  "Com dados": {
+                    "description": "Com dados",
+                    "value": {
+                      "hasData": true,
+                      "summary": {
+                        "datasetName": "Rede de exemplo",
+                        "importedAt": "2026-11-03T16:23:59.357641Z",
+                        "stations": 6,
+                        "measurements": 105120,
+                        "firstReading": "2024-10-01T00:00:00",
+                        "lastReading": "2026-09-30T23:00:00"
+                      },
+                      "lastRun": {
+                        "id": 2,
+                        "startedAt": "2026-11-03T16:24:00.702709Z",
+                        "finishedAt": "2026-11-03T16:24:06.089270Z",
+                        "status": "CONCLUIDA",
+                        "iqaMean": 75.9,
+                        "alertCount": 157,
+                        "accuracy": 0.9416,
+                        "error": null
+                      },
+                      "iqaMean": 75.9,
+                      "stationsAtRisk": 0,
+                      "recentAlerts": [
+                        {
+                          "stationId": "RIO-02",
+                          "date": "2026-09-30",
+                          "parameter": "coliformsNmp",
+                          "value": 175140.5946,
+                          "unit": "NMP/100mL",
+                          "severity": "critico",
+                          "message": "Coliformes acima de 1000 NMP/100mL (limite CONAMA 357) em 579 dia(s); pior valor 175.141 NMP/100mL."
+                        }
+                      ],
+                      "insights": [
+                        "Rio Claro — Jusante urbana tem a pior qualidade da rede no período."
+                      ],
+                      "imagesPending": 1,
+                      "imagesConfirmed": 0
+                    }
+                  },
+                  "Sistema vazio": {
+                    "description": "Sistema vazio",
+                    "value": {
+                      "hasData": false,
+                      "summary": {
+                        "datasetName": null,
+                        "importedAt": null,
+                        "stations": 0,
+                        "measurements": 0,
+                        "firstReading": null,
+                        "lastReading": null
+                      },
+                      "lastRun": null,
+                      "iqaMean": null,
+                      "stationsAtRisk": 0,
+                      "recentAlerts": [],
+                      "insights": [],
+                      "imagesPending": 0,
+                      "imagesConfirmed": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "1. Login"
+        ],
+        "summary": "Usuário logado",
+        "description": "Devolve quem é o dono do token enviado.",
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "Usuário do token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "name": "Administrador",
+                  "email": "admin@aquaml.local",
+                  "role": "ADMIN",
+                  "active": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/status": {
+      "get": {
+        "tags": [
+          "9. Assistente (Ollama)"
+        ],
+        "summary": "O assistente está no ar?",
+        "description": "Modelo fixo, definido no .env (LLAMA_MODEL).",
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "Situação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                },
+                "example": {
+                  "available": true,
+                  "model": "gpt-oss:20b"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/history": {
+      "get": {
+        "tags": [
+          "9. Assistente (Ollama)"
+        ],
+        "summary": "Conversa do usuário logado",
+        "description": "Até 50 mensagens, a mais antiga primeiro.",
+        "operationId": "history",
+        "responses": {
+          "200": {
+            "description": "Histórico",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatMessageResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "question": "Qual estação está pior e por quê?",
+                    "answer": "A estação com pior qualidade de água é **Rio Claro — Jusante urbana (RIO-02)**: coliformes e fósforo acima do limite CONAMA 357, com tendência de piora.\n\n[[grafico estacao=RIO-02 parametro=phosphorusMgl]]",
+                    "model": "gpt-oss:20b",
+                    "createdAt": "2026-11-03T16:25:02Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "9. Assistente (Ollama)"
+        ],
+        "summary": "Limpar a conversa",
+        "description": "Apaga só as mensagens do usuário logado.",
+        "operationId": "clear",
+        "responses": {
+          "204": {
+            "description": "Conversa apagada"
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analysis/runs": {
+      "get": {
+        "tags": [
+          "6. Análise (ML)"
+        ],
+        "summary": "Histórico de execuções",
+        "description": "Até 20, a mais recente primeiro.",
+        "operationId": "runs",
+        "responses": {
+          "200": {
+            "description": "Execuções",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisRunResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 2,
+                    "startedAt": "2026-11-03T16:24:00.702709Z",
+                    "finishedAt": "2026-11-03T16:24:06.089270Z",
+                    "status": "CONCLUIDA",
+                    "iqaMean": 75.9,
+                    "alertCount": 157,
+                    "accuracy": 0.9416,
+                    "error": null
+                  },
+                  {
+                    "id": 1,
+                    "startedAt": "2026-11-03T16:23:50.960071Z",
+                    "finishedAt": "2026-11-03T16:23:59.748522Z",
+                    "status": "CONCLUIDA",
+                    "iqaMean": 75.9,
+                    "alertCount": 157,
+                    "accuracy": 0.9416,
+                    "error": null
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analysis/latest": {
+      "get": {
+        "tags": [
+          "6. Análise (ML)"
+        ],
+        "summary": "Resultado completo da última análise",
+        "description": "IQA, alertas, anomalias, classificação, agrupamentos, tendências e séries. O exemplo abaixo está encurtado: as listas reais têm centenas de itens.",
+        "operationId": "latest",
+        "responses": {
+          "200": {
+            "description": "AnalysisResult",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "generatedAt": "2026-11-03T16:24:06Z",
+                  "period": {
+                    "start": "2024-10-01",
+                    "end": "2026-09-30"
+                  },
+                  "parameters": {
+                    "ph": {
+                      "label": "pH",
+                      "unit": ""
+                    },
+                    "doMgl": {
+                      "label": "Oxigênio dissolvido",
+                      "unit": "mg/L"
+                    }
+                  },
+                  "processing": {
+                    "rawReadings": 105120,
+                    "validReadings": 104980,
+                    "days": 4380,
+                    "discardedDays": 0
+                  },
+                  "stations": [
+                    {
+                      "stationId": "RIO-02",
+                      "name": "Rio Claro — Jusante urbana",
+                      "type": "rio",
+                      "latest": {
+                        "date": "2026-09-30",
+                        "iqa": 61.0,
+                        "iqaClass": "Boa"
+                      },
+                      "iqaPeriod": 58.4,
+                      "predictedClass": "Boa",
+                      "cluster": 1,
+                      "clusterLabel": "Água muito impactada",
+                      "worseningTrends": [
+                        "coliformsNmp",
+                        "phosphorusMgl",
+                        "turbidityNtu"
+                      ],
+                      "alertsTotal": 19,
+                      "alertsRecent": 19,
+                      "criticalTotal": 4
+                    }
+                  ],
+                  "insights": [
+                    "Rio Claro — Jusante urbana tem a pior qualidade da rede no período."
+                  ],
+                  "alerts": [
+                    {
+                      "stationId": "RIO-02",
+                      "date": "2026-09-30",
+                      "parameter": "phosphorusMgl",
+                      "value": 1.0869,
+                      "unit": "mg/L",
+                      "severity": "critico",
+                      "message": "Fósforo total acima de 0,1 mg/L (limite CONAMA 357) em 581 dia(s); pior valor 1,09 mg/L."
+                    }
+                  ],
+                  "anomalies": {
+                    "method": "Isolation Forest + z-score (30 dias)",
+                    "episodes": [
+                      {
+                        "stationId": "RIO-02",
+                        "start": "2025-02-01",
+                        "end": "2025-02-03",
+                        "days": 3,
+                        "maxScore": 0.71,
+                        "parameters": [
+                          "turbidityNtu"
+                        ]
+                      }
+                    ],
+                    "evaluation": {
+                      "knownEvents": 7,
+                      "detected": 6,
+                      "recall": 0.857
+                    }
+                  },
+                  "classification": {
+                    "method": "Random Forest",
+                    "accuracy": 0.9416,
+                    "featureImportance": [
+                      {
+                        "feature": "doMgl",
+                        "importance": 0.34
+                      }
+                    ],
+                    "current": {
+                      "RIO-02": "Boa"
+                    }
+                  },
+                  "clusters": {
+                    "method": "K-Means + PCA",
+                    "points": [
+                      {
+                        "stationId": "RIO-02",
+                        "date": "2026-09-30",
+                        "x": 0.4,
+                        "y": -1.2,
+                        "cluster": 1
+                      }
+                    ],
+                    "profiles": [
+                      {
+                        "cluster": 1,
+                        "label": "Água muito impactada",
+                        "size": 730,
+                        "means": {
+                          "doMgl": 6.0
+                        }
+                      }
+                    ]
+                  },
+                  "trends": [
+                    {
+                      "stationId": "RIO-02",
+                      "parameter": "phosphorusMgl",
+                      "direction": "piora",
+                      "slopePerYear": 0.01,
+                      "pValue": 0.03
+                    }
+                  ],
+                  "series": {
+                    "RIO-02": {
+                      "dates": [
+                        "2026-09-30"
+                      ],
+                      "iqa": [
+                        61.0
+                      ],
+                      "iqaClass": [
+                        "Boa"
+                      ],
+                      "anomaly": [
+                        false
+                      ],
+                      "anomalyScore": [
+                        0.12
+                      ],
+                      "params": {
+                        "ph": [
+                          7.1
+                        ],
+                        "doMgl": [
+                          6.06
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Nenhuma análise concluída ainda"
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts": {
+      "get": {
+        "tags": [
+          "6. Análise (ML)"
+        ],
+        "summary": "Alertas da última análise",
+        "description": "Limites da CONAMA 357. Filtros opcionais.",
+        "operationId": "alerts",
+        "parameters": [
+          {
+            "name": "station",
+            "in": "query",
+            "description": "Código da estação",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "RIO-02"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "description": "atencao ou critico",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "atencao",
+                "critico"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "stationId": "RIO-02",
+                    "date": "2026-09-30",
+                    "parameter": "coliformsNmp",
+                    "value": 175140.5946,
+                    "unit": "NMP/100mL",
+                    "severity": "critico",
+                    "message": "Coliformes acima de 1000 NMP/100mL (limite CONAMA 357) em 579 dia(s); pior valor 175.141 NMP/100mL."
+                  },
+                  {
+                    "stationId": "RIO-02",
+                    "date": "2026-09-30",
+                    "parameter": "phosphorusMgl",
+                    "value": 1.0869,
+                    "unit": "mg/L",
+                    "severity": "critico",
+                    "message": "Fósforo total acima de 0,1 mg/L (limite CONAMA 357) em 581 dia(s); pior valor 1,09 mg/L."
+                  },
+                  {
+                    "stationId": "LAG-01",
+                    "date": "2026-09-30",
+                    "parameter": "phosphorusMgl",
+                    "value": 0.0505,
+                    "unit": "mg/L",
+                    "severity": "atencao",
+                    "message": "Fósforo total acima de 0,03 mg/L (limite CONAMA 357) em 15 dia(s); pior valor 0,05 mg/L."
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notes/{id}": {
+      "delete": {
+        "tags": [
+          "8. Anotações de campo"
+        ],
+        "summary": "Apagar anotação",
+        "description": "Só o autor ou um ADMIN.",
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Anotação apagada"
+          },
+          "403": {
+            "description": "Anotação de outra pessoa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Só quem escreveu a anotação ou um administrador pode apagá-la."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Anotação não existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Anotação não encontrada."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/images/{id}": {
+      "delete": {
+        "tags": [
+          "7. Imagens"
+        ],
+        "summary": "Apagar imagem",
+        "description": "Só quem enviou ou um ADMIN.",
+        "operationId": "delete_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Imagem apagada"
+          },
+          "403": {
+            "description": "Imagem de outra pessoa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Imagem não existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 404,
+                  "error": "Imagem não encontrada."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data": {
+      "delete": {
+        "tags": [
+          "4. Dados"
+        ],
+        "summary": "Apagar todos os dados",
+        "description": "Só ADMIN. Apaga leituras, eventos e análises. Não tem volta.",
+        "operationId": "deleteAll",
+        "responses": {
+          "204": {
+            "description": "Dados apagados"
+          },
+          "403": {
+            "description": "Só ADMIN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "status": 403,
+                  "error": "Seu papel não tem permissão para esta ação."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou vencido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "examples": {
+                  "sem login": {
+                    "value": {
+                      "status": 401,
+                      "error": "Faça login para continuar (token ausente, inválido ou vencido)."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "FUNCIONARIO"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "name",
+          "password",
+          "role"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "FUNCIONARIO"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateStationRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number",
+            "format": "double"
+          },
+          "lon": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "Latest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "iqa": {
+            "type": "number",
+            "format": "double"
+          },
+          "iqaClass": {
+            "type": "string"
+          }
+        }
+      },
+      "StationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number",
+            "format": "double"
+          },
+          "lon": {
+            "type": "number",
+            "format": "double"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/Latest"
+          },
+          "predictedClass": {
+            "type": "string"
+          },
+          "clusterLabel": {
+            "type": "string"
+          },
+          "alertsRecent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "worseningTrends": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateNoteRequest": {
+        "type": "object",
+        "properties": {
+          "stationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "kind",
+          "notedOn",
+          "stationId",
+          "text"
+        ]
+      },
+      "FieldNoteResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stationId": {
+            "type": "string"
+          },
+          "stationName": {
+            "type": "string"
+          },
+          "notedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ColorIndicators": {
+        "type": "object",
+        "properties": {
+          "meanRed": {
+            "type": "number",
+            "format": "double"
+          },
+          "meanGreen": {
+            "type": "number",
+            "format": "double"
+          },
+          "meanBlue": {
+            "type": "number",
+            "format": "double"
+          },
+          "brightnessPct": {
+            "type": "number",
+            "format": "double"
+          },
+          "greenRedIndex": {
+            "type": "number",
+            "format": "double"
+          },
+          "blueRatio": {
+            "type": "number",
+            "format": "double"
+          },
+          "greenishFraction": {
+            "type": "number",
+            "format": "double"
+          },
+          "darkFraction": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "VisionReading": {
+        "type": "object",
+        "properties": {
+          "waterColor": {
+            "type": "string"
+          },
+          "turbidity": {
+            "type": "string"
+          },
+          "algaeBloom": {
+            "type": "boolean"
+          },
+          "foam": {
+            "type": "boolean"
+          },
+          "oil": {
+            "type": "boolean"
+          },
+          "floatingDebris": {
+            "type": "boolean"
+          },
+          "surroundings": {
+            "type": "string"
+          },
+          "attentionLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "WaterImageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stationId": {
+            "type": "string"
+          },
+          "stationName": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "observedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uploadedBy": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDENTE",
+              "CONFIRMADA",
+              "ERRO_ANALISE"
+            ]
+          },
+          "fileUrl": {
+            "type": "string"
+          },
+          "colorIndicators": {
+            "$ref": "#/components/schemas/ColorIndicators"
+          },
+          "vision": {
+            "$ref": "#/components/schemas/VisionReading"
+          },
+          "analysisError": {
+            "type": "string"
+          }
+        }
+      },
+      "ConfirmImageRequest": {
+        "type": "object",
+        "properties": {
+          "waterColor": {
+            "type": "string"
+          },
+          "turbidity": {
+            "type": "string"
+          },
+          "algaeBloom": {
+            "type": "boolean"
+          },
+          "foam": {
+            "type": "boolean"
+          },
+          "oil": {
+            "type": "boolean"
+          },
+          "floatingDebris": {
+            "type": "boolean"
+          },
+          "attentionLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "AnalysisRunResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "EXECUTANDO",
+              "CONCLUIDA",
+              "FALHOU"
+            ]
+          },
+          "iqaMean": {
+            "type": "number",
+            "format": "double"
+          },
+          "alertCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "accuracy": {
+            "type": "number",
+            "format": "double"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ImportResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "measurements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stations": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "events": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "readingsPerDay": {
+            "type": "number",
+            "format": "double"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/AnalysisRunResponse"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        }
+      },
+      "AskRequest": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          }
+        }
+      },
+      "ChatMessageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "FUNCIONARIO"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "DataSummary": {
+        "type": "object",
+        "properties": {
+          "datasetName": {
+            "type": "string"
+          },
+          "importedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stations": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "measurements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "firstReading": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastReading": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AlertResponse": {
+        "type": "object",
+        "properties": {
+          "stationId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "parameter": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "hasData": {
+            "type": "boolean"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DataSummary"
+          },
+          "lastRun": {
+            "$ref": "#/components/schemas/AnalysisRunResponse"
+          },
+          "iqaMean": {
+            "type": "number",
+            "format": "double"
+          },
+          "stationsAtRisk": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recentAlerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            }
+          },
+          "insights": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imagesPending": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "imagesConfirmed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Cole só o token, sem a palavra Bearer.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

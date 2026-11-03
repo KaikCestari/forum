@@ -1,0 +1,22 @@
+$kind: http-request
+name: "Perguntar: pior estação"
+description: ""
+url: "{{baseUrl}}/api/assistant/ask"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "question": "Qual estação está em pior situação e por quê?"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: pm.test("Respondeu (200) ou Ollama fora (503)", () => pm.expect(pm.response.code).to.be.oneOf([200, 503]));
+    language: text/javascript
+order: 2000

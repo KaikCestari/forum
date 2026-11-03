@@ -1,4 +1,3 @@
-// Apresenta perfis de água semelhantes e explica o método usado na análise.
 import { ComoFunciona } from '../../components/Pagina';
 import { EtapaAnalise } from './EtapaAnalise';
 import { numero } from '../../components/formatacao';

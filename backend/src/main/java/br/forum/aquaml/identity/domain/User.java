@@ -13,12 +13,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Locale;
 
-/**
- * Entidade (agregado) Usuário: uma pessoa da equipe que entra no sistema.
- *
- * <p>As regras ficam aqui dentro, e não espalhadas nos serviços: o e-mail é sempre guardado em minúsculas, o
- * nome não pode ficar vazio e ninguém pode tirar o próprio acesso de administrador.
- */
 @Entity
 @Table(name = "users")
 public class User {
@@ -56,7 +50,6 @@ public class User {
         this.createdAt = Instant.now();
     }
 
-    /** E-mail em minúsculas e sem espaços, para o login não depender de maiúsculas. */
     public static String normalizeEmail(String email) {
         if (email == null || !email.strip().contains("@")) {
             throw new BusinessRuleException("Informe um e-mail válido.");
@@ -71,7 +64,6 @@ public class User {
         this.name = newName.strip();
     }
 
-    /** Troca o papel. Quem está fazendo a mudança não pode rebaixar a si mesmo (evita ficar sem administrador). */
     public void changeRole(Role newRole, Long changedBy) {
         if (newRole == null) {
             return;
@@ -82,7 +74,6 @@ public class User {
         this.role = newRole;
     }
 
-    /** Ativa ou desativa a conta. Uma conta desativada não consegue entrar. */
     public void setActive(boolean value, Long changedBy) {
         if (!value && id != null && id.equals(changedBy)) {
             throw new BusinessRuleException("Você não pode desativar a sua própria conta.");

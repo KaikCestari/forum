@@ -1,0 +1,28 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/images"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: /home/kaikdev/orca/forum/frontend/public/exemplos/satelite-rio-doce-lama.jpg
+    - type: text
+      key: kind
+      value: satelite
+    - type: text
+      key: observedOn
+      value: 2015-11-23
+    - type: text
+      key: stationId
+      value: EST-01
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 201", () => pm.response.to.have.status(201));
+    language: text/javascript
+order: 2000

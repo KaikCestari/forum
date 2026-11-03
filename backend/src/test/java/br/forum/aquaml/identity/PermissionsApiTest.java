@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Tabela de permissões do contrato: ADMIN x FUNCIONARIO, e a regra "dono ou ADMIN". */
 class PermissionsApiTest extends ApiTestSupport {
 
     @Test
@@ -35,7 +34,6 @@ class PermissionsApiTest extends ApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.email == 'ana@aquaml.local')]").exists());
 
-        // E-mail repetido é recusado.
         mvc.perform(post("/api/users")
                         .header("Authorization", bearer(adminToken()))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -65,7 +63,6 @@ class PermissionsApiTest extends ApiTestSupport {
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isForbidden());
 
-        // Rotas de leitura continuam abertas para o FUNCIONARIO.
         mvc.perform(get("/api/dashboard").header("Authorization", bearer(token))).andExpect(status().isOk());
         mvc.perform(get("/api/stations").header("Authorization", bearer(token))).andExpect(status().isOk());
     }

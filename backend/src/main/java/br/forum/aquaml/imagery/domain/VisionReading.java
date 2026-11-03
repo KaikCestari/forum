@@ -5,12 +5,6 @@ import jakarta.persistence.Embeddable;
 
 import java.util.Set;
 
-/**
- * Objeto de valor com o que foi visto na imagem (pelo modelo com visão e/ou corrigido pelo biólogo).
- *
- * <p>É imutável e sempre válido: turbidez só pode ser baixa, media, alta ou null, e o nível de atenção fica entre
- * 0 e 3. Valores {@code null} significam "não deu para avaliar".
- */
 @Embeddable
 public record VisionReading(String waterColor, String turbidity, Boolean algaeBloom, Boolean foam, Boolean oil,
                             Boolean floatingDebris, String surroundings, Integer attentionLevel, String summary) {
@@ -35,12 +29,10 @@ public record VisionReading(String waterColor, String turbidity, Boolean algaeBl
         }
     }
 
-    /** Leitura vazia, usada quando a IA falhou e o biólogo vai preencher tudo à mão. */
     public static VisionReading empty() {
         return new VisionReading(null, null, null, null, null, null, null, 0, "");
     }
 
-    /** Nova leitura com as correções do biólogo por cima (campos não informados ficam como estavam). */
     public VisionReading correctedWith(ImageCorrections c) {
         return new VisionReading(
                 c.waterColor() != null ? c.waterColor() : waterColor,

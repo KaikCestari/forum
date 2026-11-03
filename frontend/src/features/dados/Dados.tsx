@@ -1,4 +1,3 @@
-// Reúne resumo, importação, execução manual e exclusão de dados para administradores.
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../api/recursos';

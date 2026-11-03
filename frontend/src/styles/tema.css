@@ -1,5 +1,3 @@
-/* Acabamento do tema Red Vivid: brutalista, preto e branco com vermelho vivo, bordas pretas
- * e sombras duras de 3px. Carregado por último para valer sobre os estilos de base. */
 body {
   background: var(--background);
 }
@@ -71,7 +69,7 @@ label {
   color: var(--foreground);
 }
 
-/* Botões: sombra dura que "afunda" ao clicar */
+/* Botões */
 .botao {
   border-radius: 0;
   font-weight: 700;
@@ -288,7 +286,7 @@ tbody th {
   background-clip: text;
 }
 
-/* Login: painel preto com o vermelho do tema e formulário branco */
+/* Login */
 .login-apresentacao {
   background: var(--secondary);
   color: var(--secondary-foreground);

@@ -1,4 +1,3 @@
-// Autentica email e senha e devolve o usuário à página solicitada.
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';

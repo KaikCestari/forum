@@ -1,4 +1,3 @@
-// Painel: a régua do IQA com todas as estações, a evolução de cada uma, os alertas e o que os dados mostram.
 import { Link } from 'react-router';
 import { api } from '../../api/recursos';
 import { useConsulta } from '../../api/useConsulta';
@@ -13,7 +12,6 @@ import { SerieMiniatura } from '../../components/graficos/SerieMiniatura';
 import { BarrasHorizontais } from '../../components/graficos/BarrasHorizontais';
 import { corIqa, mediasSemanais, pisoIqa, valorDiasAntes } from '../../components/graficos/iqa';
 
-/** Monta as marcas da régua a partir da última análise: valor atual e valor de 30 dias antes. */
 function marcasDaRegua(analise: ResultadoAnalise): MarcaRegua[] {
   return analise.stations
     .filter((s) => s.latest?.iqa != null)
@@ -25,7 +23,6 @@ function marcasDaRegua(analise: ResultadoAnalise): MarcaRegua[] {
     }));
 }
 
-/** Conta os alertas por parâmetro, do mais frequente para o menos frequente. */
 function alertasPorParametro(analise: ResultadoAnalise) {
   const contagem = new Map<string, number>();
   analise.alerts.forEach((a) => contagem.set(a.parameter, (contagem.get(a.parameter) ?? 0) + 1));

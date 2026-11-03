@@ -1,4 +1,3 @@
-// Exercita a tela de estação quando o ML retorna todos os resultados de leitura como null.
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it, vi } from 'vitest';

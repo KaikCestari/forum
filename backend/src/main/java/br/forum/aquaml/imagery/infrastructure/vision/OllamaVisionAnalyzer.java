@@ -17,13 +17,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Adaptador da porta {@link VisionAnalyzer} que pede ao modelo com visão do Ollama ({@code VISION_MODEL}) uma
- * descrição da imagem em JSON e transforma a resposta num {@link VisionReading} válido.
- *
- * <p>Modelos de linguagem às vezes devolvem valores fora do combinado ("Média", "sim", 5...); a normalização
- * abaixo corrige o que dá e troca o resto por "não avaliado" (null).
- */
 @Component
 public class OllamaVisionAnalyzer implements VisionAnalyzer {
 
@@ -93,7 +86,6 @@ public class OllamaVisionAnalyzer implements VisionAnalyzer {
         }
     }
 
-    /** Transforma o JSON do modelo num {@link VisionReading} sempre válido. */
     static VisionReading normalize(JsonNode j) {
         String turbidity = fold(j.path("turbidity").asText(""));
         return new VisionReading(
@@ -126,7 +118,6 @@ public class OllamaVisionAnalyzer implements VisionAnalyzer {
         return n.isMissingNode() || n.isNull() ? null : n.asText("").strip();
     }
 
-    /** "Média " vira "media". */
     private static String fold(String s) {
         return Normalizer.normalize(s.strip().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "").replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
