@@ -20,4 +20,11 @@
 Os arquivos de upload apontam para caminhos desta máquina (`/home/kaikdev/orca/forum/...`). Em outro
 computador, escolha os arquivos de novo no campo **Body → form-data** de cada requisição.
 
-Pela linha de comando: `npx newman run AquaML.postman_collection.json -e AquaML-local.postman_environment.json`.
+## Sem conta no Postman: pelo terminal
+O Postman CLI roda a coleção sem login:
+```bash
+cd ~/orca/forum/docs/postman
+./rodar-testes.sh             # tudo, menos a pasta 11
+./rodar-testes.sh permissoes  # login, cria a funcionária e mostra os 403
+./rodar-testes.sh login       # só o login
+```
