@@ -55,6 +55,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Swagger (documentação): aberto para leitura; as chamadas pedem o token no botão "Authorize"
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Só ADMIN
                         .requestMatchers("/api/users", "/api/users/**").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.POST, "/api/data/import").hasRole(ADMIN)

@@ -1,5 +1,6 @@
 package br.forum.aquaml.assistant.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.assistant.application.AssistantService;
 import br.forum.aquaml.assistant.domain.ChatMessage;
 import br.forum.aquaml.identity.application.CurrentUser;
@@ -19,6 +20,7 @@ import java.util.List;
 /** Rotas do assistente ({@code /api/assistant}). */
 @RestController
 @RequestMapping("/api/assistant")
+@Tag(name = "9. Assistente (Ollama)", description = "Perguntas sobre os resultados")
 public class AssistantController {
 
     public record StatusResponse(boolean available, String model) {

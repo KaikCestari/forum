@@ -1,5 +1,6 @@
 package br.forum.aquaml.identity.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.identity.application.CurrentUser;
 import br.forum.aquaml.identity.application.UserService;
 import br.forum.aquaml.identity.interfaces.UserDtos.CreateUserRequest;
@@ -22,6 +23,7 @@ import java.util.List;
 /** Gestão de usuários ({@code /api/users}), só para ADMIN. */
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "2. Usuários (ADMIN)", description = "Criar, mudar papel, ativar e apagar contas")
 public class UserController {
 
     private final UserService users;

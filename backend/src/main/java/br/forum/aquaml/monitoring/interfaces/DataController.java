@@ -1,5 +1,6 @@
 package br.forum.aquaml.monitoring.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.analysis.interfaces.AnalysisRunResponse;
 import br.forum.aquaml.monitoring.application.DataImportService;
 import br.forum.aquaml.monitoring.application.DataImportService.ImportCommand;
@@ -23,6 +24,7 @@ import java.util.List;
 /** Rotas do conjunto de dados ({@code /api/data}): resumo, importar planilha (ADMIN) e apagar (ADMIN). */
 @RestController
 @RequestMapping("/api/data")
+@Tag(name = "4. Dados", description = "Importar planilhas CSV, resumo e apagar dados")
 public class DataController {
 
     /** Resposta da importação, no formato do contrato. */

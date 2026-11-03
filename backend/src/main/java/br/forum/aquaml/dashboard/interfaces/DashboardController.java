@@ -1,5 +1,6 @@
 package br.forum.aquaml.dashboard.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.analysis.interfaces.AlertResponse;
 import br.forum.aquaml.analysis.interfaces.AnalysisRunResponse;
 import br.forum.aquaml.dashboard.application.DashboardService;
@@ -13,6 +14,7 @@ import java.util.List;
 /** Rota do painel ({@code GET /api/dashboard}). */
 @RestController
 @RequestMapping("/api/dashboard")
+@Tag(name = "3. Painel", description = "Resumo para a tela inicial")
 public class DashboardController {
 
     /** JSON {@code Dashboard} do contrato. */

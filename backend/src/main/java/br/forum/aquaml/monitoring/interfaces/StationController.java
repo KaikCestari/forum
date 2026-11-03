@@ -1,5 +1,6 @@
 package br.forum.aquaml.monitoring.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.monitoring.application.StationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import java.util.List;
 /** Rotas das estações ({@code /api/stations}). Criar é só para ADMIN. */
 @RestController
 @RequestMapping("/api/stations")
+@Tag(name = "5. Estações", description = "Pontos de monitoramento e séries")
 public class StationController {
 
     /** Corpo de {@code POST /api/stations}; {@code id} é gerado do nome se vier vazio. */

@@ -1,5 +1,6 @@
 package br.forum.aquaml.imagery.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.identity.application.CurrentUser;
 import br.forum.aquaml.imagery.application.ImageService;
 import br.forum.aquaml.imagery.application.ImageService.UploadCommand;
@@ -29,6 +30,7 @@ import java.util.List;
 /** Rotas das imagens da água ({@code /api/images}). */
 @RestController
 @RequestMapping("/api/images")
+@Tag(name = "7. Imagens", description = "Foto/satélite lidas pelo modelo com visão e conferidas")
 public class ImageController {
 
     /** Corpo de {@code POST /api/images/{id}/confirm}: todos os campos são opcionais. */

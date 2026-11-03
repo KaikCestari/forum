@@ -1,5 +1,6 @@
 package br.forum.aquaml.monitoring.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.identity.application.CurrentUser;
 import br.forum.aquaml.monitoring.application.FieldNoteService;
 import br.forum.aquaml.monitoring.application.StationService;
@@ -27,6 +28,7 @@ import java.util.Map;
 /** Rotas do caderno de campo ({@code /api/notes}). Apagar: só o autor ou ADMIN. */
 @RestController
 @RequestMapping("/api/notes")
+@Tag(name = "8. Anotações de campo", description = "Observações dos biólogos")
 public class FieldNoteController {
 
     public record CreateNoteRequest(@NotBlank(message = "escolha a estação") String stationId,

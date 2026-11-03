@@ -1,5 +1,6 @@
 package br.forum.aquaml.identity.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.identity.application.AuthService;
 import br.forum.aquaml.identity.application.CurrentUser;
 import br.forum.aquaml.identity.interfaces.AuthDtos.LoginRequest;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** Rotas de login ({@code /api/auth}). O login é a única rota aberta, sem token. */
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "1. Login", description = "Entrar e ver o usuário logado (JWT)")
 public class AuthController {
 
     private final AuthService auth;

@@ -1,5 +1,6 @@
 package br.forum.aquaml.analysis.interfaces;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import br.forum.aquaml.analysis.application.AnalysisService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.util.List;
 /** Rotas da análise de machine learning ({@code /api/analysis}) e dos alertas ({@code /api/alerts}). */
 @RestController
 @RequestMapping("/api")
+@Tag(name = "6. Análise (ML)", description = "Rodar o serviço de ML, resultados e alertas")
 public class AnalysisController {
 
     private final AnalysisService analysis;
