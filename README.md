@@ -27,6 +27,8 @@ Navegador ──/api──► Backend Spring ──HTTP──► Serviço ML Pyt
 - [`docs/DIAGRAMA-CLASSES.md`](docs/DIAGRAMA-CLASSES.md): diagrama de classes (domínio, camadas DDD e módulos Python)
 - READMEs de cada parte: [`backend/`](backend/README.md), [`ml-service/`](ml-service/README.md), [`frontend/`](frontend/README.md)
 
+Passo a passo para rodar tudo pelo IntelliJ: [`COMO-RODAR-INTELLIJ.md`](COMO-RODAR-INTELLIJ.md).
+
 ## Swagger (testar a API pelo navegador)
 - Backend: http://localhost:8080/swagger-ui.html. Faça login em **1. Login → POST /api/auth/login**,
   copie o `token`, clique em **Authorize** e cole. Depois é só usar "Try it out" em qualquer rota:

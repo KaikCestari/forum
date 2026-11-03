@@ -1,5 +1,3 @@
-// Configura o React, o proxy da API Java e os testes do frontend.
-// AQUAML_API e WEB_PORT permitem trocar as portas quando 8080/5173 já estão ocupadas.
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
