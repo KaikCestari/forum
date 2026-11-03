@@ -56,7 +56,3 @@ Portas ocupadas? `PORT=8089` no backend, `AQUAML_API=http://localhost:8089 WEB_P
 (`;`, vírgula decimal, `dd/mm/aaaa hh:mm`, cabeçalhos como "OD (mg/L)", `<0,02`). Um dia só entra na
 análise com pelo menos 6 leituras, então use dados de sensores contínuos.
 
-## Versão antiga
-As pastas `app/` (Javalin), `processor/` (Rust), `web/` (React antigo) e `ml/` são da versão anterior e
-foram substituídas por `backend/`, `ml-service/` e `frontend/`. Elas podem ser removidas com
-`git rm -r app processor web ml`.
