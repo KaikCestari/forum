@@ -1,0 +1,8 @@
+station_id,start,end,type,description
+RIO-02,2025-03-10,2025-03-14,efluente,Descarga de esgoto não tratado
+LAG-01,2025-01-15,2025-02-01,floracao,Floração de cianobactérias
+RES-01,2026-02-01,2026-02-12,hipoxia,Estratificação térmica e hipóxia
+EST-01,2025-08-05,2025-08-08,industrial,Descarga industrial ácida
+RIO-03,2025-11-20,2025-11-25,escoamento,Escoamento agrícola após chuva intensa
+RIO-02,2026-07-12,2026-07-14,efluente,Rompimento de coletor de esgoto
+RIO-01,2026-05-20,2026-05-22,contaminacao,Lançamento clandestino de efluente
