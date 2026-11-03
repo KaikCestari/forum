@@ -5,7 +5,7 @@
   grid-template-columns: 1.05fr 1fr;
 }
 .login-apresentacao {
-  background: var(--leito);
+  background: var(--abismo);
   color: var(--margem);
   padding: clamp(32px, 5vw, 80px);
   display: grid;
@@ -19,7 +19,7 @@
   margin: 0 0 20px;
 }
 .login-apresentacao p {
-  color: #c9dadb;
+  color: #a9b8cc;
   max-width: 44ch;
 }
 .login-formulario {
@@ -233,7 +233,7 @@
 }
 .barra-importancia {
   height: 7px;
-  background: #e5edf0;
+  background: #edf0f5;
   border-radius: 3px;
   margin-top: 8px;
   overflow: hidden;
@@ -249,7 +249,7 @@
   gap: 26px;
 }
 .foto {
-  background: #e7eff2;
+  background: #edf0f5;
   min-height: 180px;
   border-radius: 6px;
   display: grid;

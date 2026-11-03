@@ -1,25 +1,25 @@
 /*
- * Identidade visual do AquaML: a "régua linimétrica" das estações hidrométricas.
- * Cores de base frias (água e sedimento) e a escala oficial de cores do IQA da CETESB,
- * usada somente para dados. Tipografia Barlow, de origem na sinalização de estradas.
+ * Identidade visual do AquaML: "fundo de lago".
+ * Um azul-abismo profundo para a estrutura (menu lateral), superfícies claras e frias para o trabalho,
+ * e um único azul elétrico para ações. As cores oficiais do IQA (CETESB) ficam reservadas aos dados.
+ * Tipografia Manrope (variável), geométrica e legível em tamanhos pequenos.
  */
-@import '@fontsource/barlow/400.css';
-@import '@fontsource/barlow/500.css';
-@import '@fontsource/barlow/600.css';
-@import '@fontsource/barlow/700.css';
-@import '@fontsource/barlow-condensed/500.css';
-@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource-variable/manrope';
 
 :root {
   /* Base */
-  --leito: #12343b;       /* texto e tinta principal */
-  --leito-suave: #4a6468; /* texto de apoio */
-  --lamina: #f2f5f4;      /* fundo */
-  --margem: #ffffff;      /* superfícies */
-  --sedimento: #d5dedc;   /* linhas e divisões */
-  --correnteza: #1f6f8b;  /* ações e links */
-  --correnteza-escura: #165468;
-  --correnteza-clara: #e2eef2;
+  --abismo: #0b1b2e;        /* menu lateral e superfícies escuras */
+  --abismo-2: #13263d;      /* item ativo no menu escuro */
+  --leito: #15233a;         /* texto principal */
+  --leito-suave: #5e6e85;   /* texto de apoio */
+  --lamina: #f3f5f9;        /* fundo da aplicação */
+  --margem: #ffffff;        /* superfícies */
+  --sedimento: #e2e7ef;     /* linhas e divisões */
+  --sedimento-forte: #c9d2df;
+  --correnteza: #2e5bff;    /* ações e links */
+  --correnteza-escura: #1e44d6;
+  --correnteza-clara: #eaf0ff;
+  --aqua: #12b5a6;          /* estados positivos */
 
   /* Escala do IQA (CETESB) */
   --iqa-otima: #2f6db5;
@@ -29,27 +29,33 @@
   --iqa-pessima: #3d2b3d;
 
   /* Estados */
-  --critico: #b13a1f;
+  --critico: #c8372d;
   --atencao: #8a5a00;
+
+  /* Raios por hierarquia: controles, cartões, painéis */
+  --raio-p: 8px;
+  --raio: 12px;
+  --raio-g: 18px;
+  --sombra: 0 1px 2px rgba(11, 27, 46, 0.04), 0 4px 16px rgba(11, 27, 46, 0.05);
 
   /* Nomes antigos mantidos para os componentes existentes */
   --azul: var(--leito);
   --azul-claro: var(--correnteza-clara);
   --verde: var(--correnteza);
   --verde-escuro: var(--correnteza-escura);
-  --verde-claro: #e3f1e6;
+  --verde-claro: #e3f6f3;
   --texto: var(--leito);
   --apoio: var(--leito-suave);
   --linha: var(--sedimento);
   --fundo: var(--lamina);
   --branco: var(--margem);
-  --raio: 4px;
 
   /* Tipografia */
-  --fonte: 'Barlow', system-ui, sans-serif;
-  --fonte-estreita: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+  --fonte: 'Manrope Variable', system-ui, sans-serif;
+  --fonte-estreita: var(--fonte);
 
   font-family: var(--fonte);
+  font-feature-settings: 'tnum' 1;
   color: var(--leito);
   background: var(--lamina);
   font-synthesis: none;

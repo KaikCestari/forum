@@ -1,102 +1,151 @@
-/* Estrutura da aplicação: barra superior com a navegação, conteúdo alinhado à esquerda e rodapé. */
+/* Estrutura da aplicação: menu lateral escuro fixo e área de trabalho clara. */
 .aplicacao {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
 }
-.barra-superior {
-  background: var(--margem);
-  border-bottom: 1px solid var(--sedimento);
+.lateral {
   position: sticky;
   top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--abismo);
+  color: #c6d1e0;
+  padding: 18px 14px 14px;
   z-index: 10;
 }
-.barra-superior-interna {
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 0 32px;
+.lateral-topo {
   display: flex;
-  align-items: stretch;
-  gap: 36px;
-  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px 22px;
 }
 .link-marca {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: var(--leito);
+  color: #fff;
 }
 .link-marca:hover {
-  color: var(--leito);
+  color: #fff;
 }
 .marca {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--fonte-estreita);
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: 1.2rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
 .marca svg {
   display: block;
 }
 .navegacao {
   display: flex;
-  align-items: stretch;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
   flex: 1;
-  min-width: 0;
+  overflow-y: auto;
 }
 .navegacao a {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  color: var(--leito-suave);
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: #9fb0c6;
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.95rem;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
-  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: background 0.15s, color 0.15s;
+}
+.navegacao a svg {
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 .navegacao a:hover {
-  color: var(--leito);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
 }
 .navegacao a.active {
-  color: var(--leito);
-  border-bottom-color: var(--correnteza);
+  color: #fff;
+  background: var(--abismo-2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
-.navegacao .separador {
-  width: 1px;
-  background: var(--sedimento);
-  margin: 18px 10px;
+.navegacao a.active svg {
+  color: #7f9cff;
+  opacity: 1;
+}
+.navegacao-grupo {
+  margin: 22px 12px 8px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #6c7f98;
 }
 .identidade {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-left: auto;
+  gap: 10px;
+  padding: 12px 8px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.identidade > div {
+  flex: 1;
+  min-width: 0;
 }
 .identidade strong {
   display: block;
-  font-size: 0.9rem;
-  line-height: 1.2;
+  font-size: 0.88rem;
+  line-height: 1.25;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .identidade > div > span {
   display: block;
-  color: var(--leito-suave);
+  color: #8193ab;
+  font-size: 0.78rem;
+}
+.avatar {
+  display: grid;
+  place-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--correnteza), var(--aqua));
+  color: #fff;
   font-size: 0.8rem;
+  font-weight: 750;
+  flex-shrink: 0;
+}
+.botao-icone {
+  display: inline-grid;
+  place-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+}
+.botao-icone:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 .area-principal {
-  flex: 1;
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 36px 32px 64px;
+  max-width: 1280px;
+  padding: 36px 44px 64px;
 }
 .area-principal:focus {
   outline: none;
+}
+.area-principal.modo-chat {
+  max-width: none;
+  padding: 0;
+  height: 100dvh;
 }
 .cabecalho-pagina {
   display: flex;
@@ -110,7 +159,7 @@
 }
 .cabecalho-pagina p {
   color: var(--leito-suave);
-  font-size: 1rem;
+  font-size: 0.98rem;
   margin-bottom: 0;
 }
 .cabecalho-pagina > .acoes {
@@ -130,16 +179,6 @@
 .cabecalho-lista label {
   min-width: 220px;
 }
-.rodape {
-  border-top: 1px solid var(--sedimento);
-  color: var(--leito-suave);
-  font-size: 0.85rem;
-}
-.rodape p {
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 18px 32px;
-}
 .pular {
   position: fixed;
   left: 20px;
@@ -147,6 +186,7 @@
   background: white;
   color: var(--leito);
   padding: 16px;
+  border-radius: var(--raio);
   z-index: 20;
 }
 .pular:focus {
@@ -161,19 +201,8 @@
   margin: auto;
 }
 @media (max-width: 1100px) {
-  .barra-superior-interna {
-    flex-wrap: wrap;
-    gap: 0 24px;
-    padding: 0 20px;
-  }
-  .navegacao {
-    order: 3;
-    flex-basis: 100%;
-    overflow-x: auto;
-    min-height: 48px;
-  }
   .area-principal {
-    padding: 28px 20px 48px;
+    padding: 28px 24px 48px;
   }
   .cabecalho-pagina {
     align-items: flex-start;
@@ -181,37 +210,40 @@
     gap: 16px;
   }
 }
-@media (max-width: 760px) {
-  .identidade > div {
-    display: none;
+@media (max-width: 860px) {
+  .aplicacao {
+    grid-template-columns: 1fr;
+  }
+  .lateral {
+    height: auto;
+    padding: 10px 12px;
+  }
+  .lateral-topo {
+    padding: 0 4px;
   }
   .menu-movel {
-    display: inline-flex;
+    display: inline-grid;
   }
-  .navegacao {
+  .lateral .navegacao,
+  .lateral .identidade {
     display: none;
   }
-  .navegacao.aberto {
+  .lateral.aberto .navegacao,
+  .lateral.aberto .identidade {
     display: flex;
-    flex-direction: column;
-    padding-bottom: 12px;
   }
-  .navegacao.aberto a {
-    padding: 12px 4px;
-    border-bottom: 1px solid var(--sedimento);
+  .lateral.aberto .navegacao {
+    padding-top: 12px;
   }
-  .navegacao.aberto a.active {
-    border-bottom: 3px solid var(--correnteza);
+  .area-principal {
+    padding: 24px 18px 48px;
   }
-  .navegacao .separador {
-    display: none;
+  .area-principal.modo-chat {
+    height: calc(100dvh - 56px);
   }
   .cabecalho-lista {
     align-items: stretch;
     flex-direction: column;
     gap: 14px;
-  }
-  .rodape p {
-    padding: 18px 20px;
   }
 }

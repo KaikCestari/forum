@@ -14,7 +14,9 @@
 /* Régua linimétrica do IQA */
 .secao-regua {
   background: var(--margem);
-  border-top: 3px solid var(--leito);
+  border: 1px solid var(--sedimento);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra);
   padding: 24px 28px 8px;
   margin-bottom: 40px;
 }
@@ -35,7 +37,6 @@
   align-items: flex-end;
   padding: 0 8px 6px;
   color: var(--margem);
-  font-family: var(--fonte-estreita);
   font-weight: 600;
   font-size: 0.9rem;
   overflow: hidden;
@@ -68,7 +69,6 @@
 .regua-graduacao {
   position: relative;
   height: 26px;
-  font-family: var(--fonte-estreita);
   font-size: 0.85rem;
   color: var(--leito-suave);
 }
@@ -112,7 +112,6 @@
   text-decoration: underline;
 }
 .regua-nomes strong {
-  font-family: var(--fonte-estreita);
   font-size: 1.15rem;
   font-weight: 600;
 }
@@ -135,7 +134,6 @@
 }
 .fatos dd {
   margin: 0;
-  font-family: var(--fonte-estreita);
   font-size: 2rem;
   font-weight: 600;
   line-height: 1.1;
@@ -168,7 +166,6 @@
   white-space: nowrap;
 }
 .miniatura-titulo strong {
-  font-family: var(--fonte-estreita);
   font-size: 1.4rem;
   font-weight: 600;
 }
@@ -208,7 +205,6 @@
   min-width: 2px;
 }
 .barra-valor {
-  font-family: var(--fonte-estreita);
   font-weight: 600;
 }
 
@@ -283,6 +279,13 @@
   flex-direction: column-reverse;
   min-height: 420px;
   align-self: stretch;
+  border-radius: 12px;
+}
+.login-regua span:first-child {
+  border-radius: 0 0 12px 12px;
+}
+.login-regua span:last-child {
+  border-radius: 12px 12px 0 0;
 }
 .login-regua span {
   position: relative;
@@ -295,7 +298,6 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   font-style: normal;
-  font-family: var(--fonte-estreita);
   font-weight: 600;
   font-size: 0.85rem;
   color: var(--margem);
@@ -307,7 +309,6 @@
   position: absolute;
   right: -30px;
   bottom: -9px;
-  font-family: var(--fonte-estreita);
   font-weight: 500;
   font-size: 0.85rem;
   color: rgb(255 255 255 / 0.7);

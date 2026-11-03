@@ -1,211 +1,411 @@
-/* Limno, a IA especialista em ecossistemas aquáticos. */
-.limno-cabecalho {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+/* Limno: chat de coluna única, com saudação central e compositor arredondado. */
+.chat {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--margem);
+}
+.chat-topo {
+  display: flex;
   align-items: center;
-  gap: 18px;
-  padding-bottom: 20px;
-  margin-bottom: 24px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
   border-bottom: 1px solid var(--sedimento);
 }
-.limno-simbolo {
-  display: grid;
-  place-content: center;
-  width: 64px;
-  height: 64px;
-  background: var(--margem);
-  border: 1px solid var(--sedimento);
+.chat-titulo {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
-.limno-cabecalho h1 {
-  margin-bottom: 2px;
-}
-.limno-cabecalho p {
+.chat-titulo h1 {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
   margin: 0;
-  color: var(--leito-suave);
 }
-.limno-status {
-  font-family: var(--fonte-estreita);
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--critico);
-  text-align: right;
-}
-.limno-status.pronta {
-  color: var(--iqa-boa);
-}
-.limno-status small {
-  display: block;
-  font-family: var(--fonte);
-  font-weight: 400;
+.chat-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.8rem;
   color: var(--leito-suave);
 }
-.limno-grade {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 40px;
-  align-items: start;
+.chat-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--critico);
 }
-.limno-conversa {
+.chat-status.pronta i {
+  background: var(--aqua);
+  box-shadow: 0 0 0 3px #d4f3ef;
+}
+.chat-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--sedimento);
+  border-radius: 999px;
   background: var(--margem);
-  border-top: 3px solid var(--leito);
+  color: var(--leito);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.chat-botao:hover,
+.chat-botao.ativo {
+  background: var(--lamina);
+}
+.chat-corpo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 560px;
 }
-.limno-conversa .conversa {
+.chat-rolagem {
   flex: 1;
-  max-height: 64vh;
-  margin: 0;
-  padding: 24px 28px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
 }
-.limno-boas-vindas {
-  max-width: 60ch;
+
+/* Tela inicial */
+.chat-inicio {
+  min-height: 100%;
+  width: min(720px, 100% - 40px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0 12vh;
+  text-align: center;
+}
+.chat-inicio h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  margin: 18px 0 8px;
+}
+.chat-inicio > p {
   color: var(--leito-suave);
-}
-.troca {
+  max-width: 54ch;
   margin-bottom: 28px;
 }
+.chat-inicio .compositor {
+  width: 100%;
+  text-align: left;
+}
+.chat-sugestoes {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.chat-sugestoes button {
+  border: 1px solid var(--sedimento);
+  background: var(--margem);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 550;
+  color: var(--leito-suave);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chat-sugestoes button:hover:not(:disabled) {
+  color: var(--leito);
+  border-color: var(--sedimento-forte);
+  background: var(--lamina);
+}
+.chat-inicio .aviso {
+  margin-top: 20px;
+}
+
+/* Conversa */
+.chat-coluna {
+  width: min(760px, 100% - 40px);
+  margin: 0 auto;
+  padding: 32px 0 24px;
+}
+.troca {
+  margin-bottom: 20px;
+}
 .fala-pessoa {
-  margin: 0 0 12px auto;
+  margin: 0 0 22px auto;
   width: fit-content;
-  max-width: 70%;
-  padding: 10px 14px;
-  background: var(--correnteza-clara);
+  max-width: min(80%, 60ch);
+  padding: 10px 16px;
+  background: var(--lamina);
+  border-radius: 18px 18px 4px 18px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .fala-limno {
-  border-left: 3px solid var(--correnteza);
-  padding: 2px 0 2px 16px;
-  max-width: 72ch;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
 }
-.fala-limno p,
-.fala-limno ul {
-  margin: 0 0 10px;
+.fala-avatar {
+  display: block;
+  padding-top: 1px;
 }
-.fala-limno ul {
-  padding-left: 20px;
+.fala-avatar svg {
+  display: block;
 }
-.fala-limno small {
-  color: var(--leito-suave);
+.fala-avatar.pensando svg {
+  animation: respirar 1.4s ease-in-out infinite;
 }
-.fala-limno.pensando {
-  color: var(--leito-suave);
-  animation: pulsar 1.6s ease-in-out infinite;
-}
-@keyframes pulsar {
+@keyframes respirar {
   50% {
-    opacity: 0.45;
+    transform: scale(0.86);
+    opacity: 0.6;
   }
+}
+.pensando-texto {
+  margin: 2px 0 0;
+  color: transparent;
+  background: linear-gradient(90deg, var(--leito-suave) 30%, var(--sedimento-forte) 50%, var(--leito-suave) 70%)
+    0 0 / 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: brilho 1.8s linear infinite;
+}
+@keyframes brilho {
+  to {
+    background-position: -200% 0;
+  }
+}
+.fala-conteudo {
+  line-height: 1.7;
+  min-width: 0;
+}
+.fala-conteudo p,
+.fala-conteudo ul {
+  margin: 0 0 14px;
+  max-width: none;
+}
+.fala-conteudo ul {
+  padding-left: 22px;
+}
+.fala-conteudo li {
+  margin-bottom: 6px;
+}
+.fala-conteudo li::marker {
+  color: var(--leito-suave);
+}
+.fala-conteudo strong {
+  font-weight: 700;
+}
+.fala-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--leito-suave);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.troca:hover .fala-acoes,
+.troca:last-child .fala-acoes,
+.fala-acoes:focus-within {
+  opacity: 1;
+}
+.fala-acoes button {
+  display: inline-grid;
+  place-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+}
+.fala-acoes button:hover {
+  background: var(--lamina);
+  color: var(--leito);
 }
 .graficos-resposta {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin: 14px 0 10px;
+  gap: 14px;
+  margin: 6px 0 14px;
 }
 .grafico-resposta {
   margin: 0;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border: 1px solid var(--sedimento);
-  background: var(--lamina);
+  border-radius: var(--raio);
+  background: var(--margem);
 }
 .grafico-resposta figcaption {
   display: grid;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
   margin-bottom: 8px;
 }
 .grafico-resposta figcaption a {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--leito);
+  text-decoration: none;
 }
-.grafico-resposta figcaption strong {
-  font-family: var(--fonte-estreita);
-  font-size: 1.05rem;
+.grafico-resposta figcaption a:hover {
+  color: var(--correnteza);
 }
 .carregando-grafico {
   min-height: 150px;
+  background: var(--lamina);
   animation: pulsar 1.6s ease-in-out infinite;
 }
-.limno-compositor {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  padding: 16px 28px 20px;
-  border-top: 1px solid var(--sedimento);
+@keyframes pulsar {
+  50% {
+    opacity: 0.5;
+  }
 }
-.limno-compositor textarea {
-  flex: 1;
-  resize: vertical;
-  min-height: 52px;
+
+/* Rodapé com o compositor */
+.chat-rodape {
+  width: min(760px, 100% - 40px);
+  margin: 0 auto;
+  padding: 0 0 14px;
 }
-.limno-lateral h2 {
-  font-size: 1.2rem;
+.chat-rodape .aviso {
   margin-bottom: 10px;
 }
-.limno-lateral > section {
-  margin-bottom: 28px;
+.chat-nota {
+  margin: 8px 0 0;
+  max-width: none;
+  text-align: center;
+  font-size: 0.76rem;
+  color: var(--leito-suave);
 }
-.limno-fontes {
+.compositor {
+  display: block;
+  background: var(--margem);
+  border: 1px solid var(--sedimento-forte);
+  border-radius: 22px;
+  padding: 14px 14px 10px 18px;
+  box-shadow: 0 2px 6px rgba(11, 27, 46, 0.04), 0 12px 32px rgba(11, 27, 46, 0.07);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.compositor:focus-within {
+  border-color: #9fb3ff;
+  box-shadow: 0 0 0 4px var(--correnteza-clara), 0 12px 32px rgba(11, 27, 46, 0.07);
+}
+.compositor textarea,
+.compositor textarea:focus {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 2px 0;
+  min-height: 28px;
+  resize: none;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1.55;
+  font-size: 1rem;
+}
+.compositor-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.compositor-acoes span {
+  font-size: 0.75rem;
+  color: var(--leito-suave);
+}
+.compositor-enviar {
+  display: inline-grid;
+  place-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--correnteza);
+  color: #fff;
+  transition: background 0.15s;
+}
+.compositor-enviar:hover:not(:disabled) {
+  background: var(--correnteza-escura);
+}
+.compositor-enviar:disabled {
+  background: var(--sedimento-forte);
+  opacity: 1;
+}
+.compositor-enviar .indicador {
+  border-color: rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+}
+
+/* Painel de contexto */
+.chat-contexto {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: min(340px, 100% - 32px);
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  background: var(--margem);
+  border: 1px solid var(--sedimento);
+  border-radius: var(--raio-g);
+  box-shadow: 0 18px 48px rgba(11, 27, 46, 0.16);
+  padding: 18px 20px 20px;
+  z-index: 5;
+}
+.chat-contexto h2 {
+  font-size: 1rem;
   margin: 0;
 }
+.chat-contexto .linha {
+  margin-bottom: 14px;
+}
+.botao-icone.escuro {
+  color: var(--leito-suave);
+  width: 30px;
+  height: 30px;
+}
+.botao-icone.escuro:hover {
+  background: var(--lamina);
+  color: var(--leito);
+}
+.limno-fontes {
+  margin: 0 0 14px;
+}
 .limno-fontes dt {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--leito-suave);
 }
 .limno-fontes dd {
   margin: 0 0 10px;
-  font-weight: 500;
+  font-weight: 600;
 }
-.limno-sugestoes {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.limno-sugestoes li {
-  border-top: 1px solid var(--sedimento);
-}
-.limno-sugestoes li:last-child {
-  border-bottom: 1px solid var(--sedimento);
-}
-.limno-sugestoes button {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: 0;
-  padding: 10px 0;
-  color: var(--correnteza);
-  font-weight: 500;
-}
-.limno-sugestoes button:hover:not(:disabled) {
-  color: var(--correnteza-escura);
-  text-decoration: underline;
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .fala-limno.pensando,
+  .fala-avatar.pensando svg,
+  .pensando-texto,
   .carregando-grafico {
     animation: none;
   }
-}
-@media (max-width: 1000px) {
-  .limno-grade {
-    grid-template-columns: 1fr;
+  .pensando-texto {
+    color: var(--leito-suave);
   }
 }
 @media (max-width: 760px) {
-  .limno-cabecalho {
-    grid-template-columns: auto 1fr;
+  .chat-topo {
+    padding: 12px 16px;
   }
-  .limno-status {
-    grid-column: 1 / -1;
-    text-align: left;
-  }
-  .limno-conversa .conversa,
-  .limno-compositor {
-    padding-left: 16px;
-    padding-right: 16px;
+  .compositor-acoes span {
+    visibility: hidden;
   }
   .fala-pessoa {
     max-width: 90%;
+  }
+  .fala-limno {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 }
