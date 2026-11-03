@@ -6,6 +6,7 @@ import { useAcao } from '../../api/useAcao';
 import { Carregando, Erro } from '../../components/Estados';
 import { Marca } from '../../components/Layout';
 import { faixasIqa } from '../../components/graficos/iqa';
+import { Chuva } from '../../components/Chuva';
 export function Login() {
   const auth = useAuth();
   const local = useLocation();
@@ -32,6 +33,7 @@ export function Login() {
   return (
     <main className="login">
       <section className="login-apresentacao">
+        <Chuva />
         <Marca />
         <div className="login-regua" aria-hidden="true">
           {faixasIqa.map((f) => (

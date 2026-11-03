@@ -6,7 +6,7 @@
 }
 .login-apresentacao {
   background: var(--abismo);
-  color: var(--margem);
+  color: var(--foreground);
   padding: clamp(32px, 5vw, 80px);
   display: grid;
   grid-template-columns: 56px 1fr;
@@ -19,7 +19,7 @@
   margin: 0 0 20px;
 }
 .login-apresentacao p {
-  color: #a9b8cc;
+  color: var(--muted-foreground);
   max-width: 44ch;
 }
 .login-formulario {
@@ -27,7 +27,7 @@
   display: grid;
   align-content: center;
   justify-content: center;
-  background: white;
+  background: var(--background);
 }
 .login-formulario > div {
   width: min(390px, 100%);
@@ -96,7 +96,7 @@
 }
 .indicadores a:hover {
   background: var(--azul-claro);
-  border-radius: 4px;
+  border-radius: 0;
 }
 .grade-estacoes {
   display: grid;
@@ -163,7 +163,7 @@
 .legenda-grupos li > span {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: 0;
   flex-shrink: 0;
 }
 .filtro-estacao-analise {
@@ -182,7 +182,7 @@
   background: var(--branco);
   color: var(--azul);
   border: 1px solid var(--linha);
-  border-radius: 6px;
+  border-radius: 0;
   min-height: 44px;
   padding: 10px 16px;
   font-weight: 600;
@@ -233,8 +233,8 @@
 }
 .barra-importancia {
   height: 7px;
-  background: #edf0f5;
-  border-radius: 3px;
+  background: var(--muted);
+  border-radius: 0;
   margin-top: 8px;
   overflow: hidden;
 }
@@ -249,9 +249,9 @@
   gap: 26px;
 }
 .foto {
-  background: #edf0f5;
+  background: var(--muted);
   min-height: 180px;
-  border-radius: 6px;
+  border-radius: 0;
   display: grid;
   place-content: center;
   align-self: start;
@@ -325,7 +325,7 @@ blockquote p {
 }
 .pergunta,
 .resposta {
-  border-radius: 9px;
+  border-radius: 0;
   padding: 20px 24px;
   max-width: 85%;
 }
@@ -336,7 +336,7 @@ blockquote p {
   width: fit-content;
 }
 .resposta {
-  background: white;
+  background: var(--background);
   border: 1px solid var(--linha);
 }
 .pergunta > strong,
@@ -356,9 +356,9 @@ blockquote p {
 .compositor {
   margin-top: 24px;
   padding: 24px;
-  background: white;
+  background: var(--background);
   border: 1px solid var(--linha);
-  border-radius: var(--raio);
+  border-radius: 0;
 }
 .resumo-dados {
   border-left: 4px solid var(--verde);
@@ -366,7 +366,7 @@ blockquote p {
   margin: 0 0 30px;
 }
 .zona-exclusao {
-  border-color: #dfb8bb;
+  border-color: var(--destructive);
 }
 .zona-exclusao h2 {
   color: var(--critico);

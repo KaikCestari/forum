@@ -23,8 +23,8 @@ const paginasAdmin: Pagina[] = [
 export function SimboloRegua({ tamanho = 28 }: { tamanho?: number }) {
   return (
     <svg width={tamanho} height={tamanho} viewBox="0 0 32 32" aria-hidden="true" className="simbolo">
-      <rect width="32" height="32" rx="9" fill="var(--correnteza)" />
-      <path d="M16 6.5s-7 7.6-7 12.4a7 7 0 0 0 14 0c0-4.8-7-12.4-7-12.4Z" fill="#fff" />
+      <rect width="32" height="32" fill="var(--correnteza)" />
+      <path d="M16 6.5s-7 7.6-7 12.4a7 7 0 0 0 14 0c0-4.8-7-12.4-7-12.4Z" fill="var(--primary-foreground)" />
       <path d="M9.4 20.5h13.2" stroke="var(--correnteza)" strokeWidth="1.6" />
       <path d="M12 23.4h8" stroke="var(--correnteza)" strokeWidth="1.6" opacity=".6" />
     </svg>

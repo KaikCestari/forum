@@ -1,0 +1,348 @@
+/* Acabamento do tema Matrix Green: brilho de fósforo, linhas de varredura e controles de terminal.
+ * Carregado por último para valer sobre os estilos de base. */
+html {
+  font-size: 20px;
+}
+body {
+  background: var(--background);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+/* Linhas de varredura de monitor CRT, por cima de tudo e sem capturar cliques. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.18) 0 1px, transparent 1px 3px);
+}
+h1,
+h2,
+.marca,
+.chat-inicio h2 {
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 8px rgb(0 255 65 / 0.45);
+  font-weight: 400;
+}
+h1 {
+  font-size: clamp(2rem, 2.6vw, 2.5rem);
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+.login-apresentacao h1 {
+  font-size: clamp(2.2rem, 3vw, 2.9rem);
+}
+.chat-inicio h2 {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  letter-spacing: 0.04em;
+}
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+strong,
+b {
+  font-weight: 400;
+  color: var(--foreground);
+  text-shadow: 0 0 6px rgb(0 255 65 / 0.35);
+}
+a {
+  color: var(--primary);
+}
+a:hover {
+  color: var(--primary);
+  text-shadow: 0 0 8px rgb(0 255 65 / 0.6);
+}
+:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: 3px;
+  box-shadow: var(--brilho-forte);
+}
+
+/* Campos */
+input,
+select,
+textarea {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  caret-color: var(--primary);
+  letter-spacing: 0.05em;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: var(--brilho);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+}
+input::file-selector-button {
+  background: var(--secondary);
+  color: var(--foreground);
+  border-radius: 0;
+  font-family: var(--fonte);
+}
+option {
+  background: var(--background);
+  color: var(--foreground);
+}
+.checkbox input,
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--primary);
+}
+label {
+  font-weight: 400;
+  color: var(--muted-foreground);
+  letter-spacing: 0.1em;
+}
+
+/* Botões */
+.botao {
+  border-radius: 0;
+  font-weight: 400;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+}
+.botao:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--brilho-forte);
+}
+.botao.secundario {
+  background: transparent;
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.botao.secundario:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+}
+.botao.perigo {
+  background: var(--destructive);
+  border-color: var(--destructive);
+  color: #fff;
+}
+.botao.perigo.discreto {
+  background: transparent;
+  color: var(--destructive);
+  border-color: transparent;
+}
+.botao.perigo.discreto:hover {
+  background: #1a0000;
+  box-shadow: none;
+}
+
+/* Superfícies */
+.bloco,
+.secao-regua,
+.chat-contexto,
+.grafico-resposta,
+.compositor {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: var(--brilho);
+}
+.vazio {
+  background: var(--card);
+  border: 1px dashed var(--sedimento-forte);
+}
+th {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+.selo {
+  border-radius: 0;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  background: var(--muted);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+.selo.critico {
+  color: #ff4d4d;
+  border-color: #5a0000;
+  background: #1a0000;
+}
+.selo.atencao {
+  color: var(--atencao);
+  border-color: #5c4b00;
+  background: #141000;
+}
+.aviso {
+  border-radius: 0;
+}
+
+/* Menu lateral */
+.lateral {
+  background: var(--card);
+  border-right: 1px solid var(--border);
+}
+.navegacao a {
+  border-radius: 0;
+  font-weight: 400;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  border-left: 2px solid transparent;
+}
+.navegacao a.active {
+  background: var(--muted);
+  border-left-color: var(--primary);
+  box-shadow: none;
+  text-shadow: 0 0 8px rgb(0 255 65 / 0.5);
+}
+.navegacao-grupo {
+  letter-spacing: 0.1em;
+}
+.avatar {
+  border-radius: 0;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 400;
+  font-size: 1rem;
+}
+.botao-icone,
+.fala-acoes button,
+.compositor-enviar,
+.chat-botao,
+.chat-sugestoes button {
+  border-radius: 0;
+}
+.botao-icone:hover:not(:disabled) {
+  background: var(--muted);
+  color: var(--primary);
+}
+
+/* Chat da Limno */
+.chat,
+.chat-topo {
+  background: var(--background);
+}
+.chat-botao,
+.chat-sugestoes button {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted-foreground);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  font-size: 1rem;
+}
+.chat-botao:hover,
+.chat-botao.ativo,
+.chat-sugestoes button:hover:not(:disabled) {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--primary);
+}
+.fala-pessoa {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+.fala-pessoa::before {
+  content: '> ';
+  color: var(--muted-foreground);
+}
+.compositor-enviar {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.compositor-enviar:disabled {
+  background: var(--secondary);
+  color: var(--muted-foreground);
+}
+.compositor textarea {
+  background: transparent;
+  box-shadow: none;
+  font-size: 1.15rem;
+}
+.compositor textarea:focus {
+  box-shadow: none;
+}
+.pensando-texto {
+  background: linear-gradient(90deg, var(--muted-foreground) 30%, var(--primary) 50%, var(--muted-foreground) 70%)
+    0 0 / 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.pensando-texto::after {
+  content: '█';
+  color: var(--primary);
+  margin-left: 4px;
+  animation: cursor 1s steps(1) infinite;
+}
+@keyframes cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Login com chuva de caracteres */
+.login {
+  background: var(--background);
+}
+.login-apresentacao {
+  position: relative;
+  overflow: hidden;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+}
+.login-apresentacao > :not(.chuva) {
+  position: relative;
+  z-index: 1;
+}
+.chuva {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.28;
+  mask-image: linear-gradient(90deg, #000 0%, rgb(0 0 0 / 0.5) 100%);
+}
+.login-texto {
+  background: rgb(0 0 0 / 0.72);
+  box-shadow: 0 0 40px 30px rgb(0 0 0 / 0.72);
+}
+.login-apresentacao p {
+  color: var(--muted-foreground);
+}
+.login-formulario {
+  background: var(--card);
+}
+.login-formulario h2 {
+  font-size: 2rem;
+}
+
+.fala-conteudo {
+  line-height: 1.4;
+}
+.fala-conteudo p,
+.fala-conteudo ul {
+  margin-bottom: 10px;
+}
+
+/* Barras de rolagem */
+* {
+  scrollbar-color: var(--sedimento-forte) var(--background);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pensando-texto::after {
+    animation: none;
+  }
+}

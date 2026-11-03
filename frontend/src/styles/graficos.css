@@ -15,7 +15,7 @@
 .secao-regua {
   background: var(--margem);
   border: 1px solid var(--sedimento);
-  border-radius: var(--raio-g);
+  border-radius: 0;
   box-shadow: var(--sombra);
   padding: 24px 28px 8px;
   margin-bottom: 40px;
@@ -36,16 +36,16 @@
   display: flex;
   align-items: flex-end;
   padding: 0 8px 6px;
-  color: var(--margem);
+  color: #000;
   font-weight: 600;
   font-size: 0.9rem;
   overflow: hidden;
   /* marcas de graduação a cada 2 pontos, como numa régua de rio */
-  background-image: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.35) 0 1px, transparent 1px 2%);
+  background-image: repeating-linear-gradient(90deg, rgb(0 0 0 / 0.35) 0 1px, transparent 1px 2%);
   background-blend-mode: normal;
 }
 .regua-faixa:nth-child(3) {
-  color: var(--leito);
+  color: #000;
 }
 .regua-ponteiro,
 .regua-anterior {
@@ -279,17 +279,17 @@
   flex-direction: column-reverse;
   min-height: 420px;
   align-self: stretch;
-  border-radius: 12px;
+  border-radius: 0;
 }
 .login-regua span:first-child {
-  border-radius: 0 0 12px 12px;
+  border-radius: 0;
 }
 .login-regua span:last-child {
-  border-radius: 12px 12px 0 0;
+  border-radius: 0;
 }
 .login-regua span {
   position: relative;
-  background-image: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.3) 0 1px, transparent 1px 10px);
+  background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.3) 0 1px, transparent 1px 10px);
 }
 .login-regua em {
   position: absolute;
@@ -300,10 +300,10 @@
   font-style: normal;
   font-weight: 600;
   font-size: 0.85rem;
-  color: var(--margem);
+  color: #000;
 }
 .login-regua span:nth-child(3) em {
-  color: var(--leito);
+  color: #000;
 }
 .login-regua b {
   position: absolute;
@@ -311,7 +311,7 @@
   bottom: -9px;
   font-weight: 500;
   font-size: 0.85rem;
-  color: rgb(255 255 255 / 0.7);
+  color: rgb(0 0 0 / 0.75);
 }
 .login-texto {
   align-self: end;

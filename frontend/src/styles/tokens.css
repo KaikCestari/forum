@@ -1,64 +1,83 @@
 /*
- * Identidade visual do AquaML: "fundo de lago".
- * Um azul-abismo profundo para a estrutura (menu lateral), superfícies claras e frias para o trabalho,
- * e um único azul elétrico para ações. As cores oficiais do IQA (CETESB) ficam reservadas aos dados.
- * Tipografia Manrope (variável), geométrica e legível em tamanhos pequenos.
+ * Tema "Matrix Green" (21st.dev, @serafimcloud): fundo preto, fósforo verde #00FF41,
+ * cantos retos, brilho verde no lugar de sombras e a fonte VT323 com letras espaçadas.
+ * As cores oficiais do IQA (CETESB) continuam só nos dados, porque carregam significado.
  */
-@import '@fontsource-variable/manrope';
+@import '@fontsource/vt323';
 
 :root {
-  /* Base */
-  --abismo: #0b1b2e;        /* menu lateral e superfícies escuras */
-  --abismo-2: #13263d;      /* item ativo no menu escuro */
-  --leito: #15233a;         /* texto principal */
-  --leito-suave: #5e6e85;   /* texto de apoio */
-  --lamina: #f3f5f9;        /* fundo da aplicação */
-  --margem: #ffffff;        /* superfícies */
-  --sedimento: #e2e7ef;     /* linhas e divisões */
-  --sedimento-forte: #c9d2df;
-  --correnteza: #2e5bff;    /* ações e links */
-  --correnteza-escura: #1e44d6;
-  --correnteza-clara: #eaf0ff;
-  --aqua: #12b5a6;          /* estados positivos */
+  color-scheme: dark;
 
-  /* Escala do IQA (CETESB) */
-  --iqa-otima: #2f6db5;
-  --iqa-boa: #3b9b4f;
-  --iqa-regular: #e3b23c;
-  --iqa-ruim: #d1502f;
-  --iqa-pessima: #3d2b3d;
+  /* Tokens do tema */
+  --background: #000000;
+  --foreground: #00ff41;
+  --card: #050505;
+  --primary: #00ff41;
+  --primary-foreground: #000000;
+  --secondary: #003b00;
+  --muted: #001a00;
+  --muted-foreground: #008f11;
+  --border: #003b00;
+  --ring: #00ff41;
+  --destructive: #ff0000;
+  --brilho: 0 0 10px 1px rgb(0 255 65 / 0.2);
+  --brilho-forte: 0 0 15px 2px rgb(0 255 65 / 0.4);
+
+  /* Nomes usados pelos componentes do AquaML, apontando para o tema */
+  --abismo: var(--card);
+  --abismo-2: var(--muted);
+  --leito: var(--foreground);
+  --leito-suave: var(--muted-foreground);
+  --lamina: var(--background);
+  --margem: var(--card);
+  --sedimento: var(--border);
+  --sedimento-forte: #006b14;
+  --correnteza: var(--primary);
+  --correnteza-escura: #00c932;
+  --correnteza-clara: var(--muted);
+  --aqua: var(--primary);
+  --texto-sobre-primaria: var(--primary-foreground);
+
+  /* Escala do IQA (CETESB), clareada para ler sobre o preto */
+  --iqa-otima: #3d8bff;
+  --iqa-boa: #3fbf5a;
+  --iqa-regular: #f0c040;
+  --iqa-ruim: #ff5a32;
+  --iqa-pessima: #8a5a8a;
 
   /* Estados */
-  --critico: #c8372d;
-  --atencao: #8a5a00;
+  --critico: var(--destructive);
+  --atencao: #ffd000;
 
-  /* Raios por hierarquia: controles, cartões, painéis */
-  --raio-p: 8px;
-  --raio: 12px;
-  --raio-g: 18px;
-  --sombra: 0 1px 2px rgba(11, 27, 46, 0.04), 0 4px 16px rgba(11, 27, 46, 0.05);
+  --raio-p: 0;
+  --raio: 0;
+  --raio-g: 0;
+  --sombra: var(--brilho);
 
-  /* Nomes antigos mantidos para os componentes existentes */
   --azul: var(--leito);
-  --azul-claro: var(--correnteza-clara);
-  --verde: var(--correnteza);
+  --azul-claro: var(--muted);
+  --verde: var(--primary);
   --verde-escuro: var(--correnteza-escura);
-  --verde-claro: #e3f6f3;
+  --verde-claro: var(--muted);
   --texto: var(--leito);
   --apoio: var(--leito-suave);
-  --linha: var(--sedimento);
-  --fundo: var(--lamina);
-  --branco: var(--margem);
+  --linha: var(--border);
+  --fundo: var(--background);
+  --branco: var(--card);
 
   /* Tipografia */
-  --fonte: 'Manrope Variable', system-ui, sans-serif;
+  --fonte: 'VT323', 'Courier New', monospace;
   --fonte-estreita: var(--fonte);
 
   font-family: var(--fonte);
-  font-feature-settings: 'tnum' 1;
-  color: var(--leito);
-  background: var(--lamina);
+  letter-spacing: 0.05em;
+  color: var(--foreground);
+  background: var(--background);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
