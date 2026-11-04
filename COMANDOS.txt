@@ -1,0 +1,42 @@
+COMANDOS PARA INICIAR O AQUAML
+==============================
+
+JEITO RÁPIDO: um comando sobe tudo (e Ctrl+C desliga tudo)
+   ./iniciar.sh
+Na primeira vez ele mesmo instala as dependências do Python e do frontend.
+Logs de cada parte ficam na pasta logs/.
+
+JEITO MANUAL: abra 3 terminais na pasta do projeto e rode um bloco em cada um, nesta ordem.
+
+1) Serviço de ML (porta 8000)
+   cd ml-service
+   .venv/bin/uvicorn app.main:app --port 8000
+
+2) Backend (porta 8080)
+   cd backend
+   mvn spring-boot:run
+
+3) Frontend (porta 5173)
+   cd frontend
+   npm run dev
+
+Abra http://localhost:5173 e entre com admin@aquaml.local / admin123
+
+
+OLLAMA (assistente Limno e leitura de imagens)
+----------------------------------------------
+Não precisa iniciar nada: o projeto usa o Ollama na nuvem (OLLAMA_URL=https://ollama.com no .env).
+Só confira se a OLLAMA_API_KEY está preenchida no .env.
+
+Se um dia quiser usar o Ollama no próprio computador, em vez da nuvem:
+   ollama serve
+   ollama pull gpt-oss:20b
+   ollama pull gemma4:31b
+Depois, no .env: OLLAMA_URL=http://localhost:11434 e OLLAMA_API_KEY vazio.
+
+
+PRIMEIRA VEZ (só uma vez)
+-------------------------
+   cp .env.example .env              (e preencha OLLAMA_API_KEY e JWT_SECRET)
+   cd ml-service && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+   cd ../frontend && npm install

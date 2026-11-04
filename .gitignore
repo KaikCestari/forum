@@ -13,10 +13,6 @@ __pycache__/
 # Inspeções de design (taste-skill)
 .taste-skill/
 
-# Segredos locais
-.env
-.env.*
-!.env.example
 
 backend/target/
 ml-service/.venv/
@@ -26,3 +22,6 @@ frontend/dist/
 
 # Postman (configuração local do app)
 .postman/
+
+# Logs do iniciar.sh
+logs/
